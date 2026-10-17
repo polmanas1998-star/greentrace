@@ -1,0 +1,10 @@
+# secrets: never on GitHub
+.env
+.env.local
+*.key
+# python
+__pycache__/
+.venv/
+*.pyc
+# run outputs
+logs/*.jsonl
