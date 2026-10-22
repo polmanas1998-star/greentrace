@@ -1,7 +1,12 @@
 # How Cursor was used
 
-The rules ask every team to build in Cursor (with Space XAI). This file records, honestly and as it
-happens, every use of Cursor during the build window, so a judge can check it against the git history.
+The rules first asked every team to build in Cursor (with Space XAI). This file records, honestly and as
+it happens, every use of Cursor during the build window, so a judge can check it against the git history.
+
+**Update, 22 October 2026.** The organisers made Cursor optional: teams may use any AI coding tool
+(Cursor, Claude Code, Windsurf, GitHub Copilot), and all Cursor credits were removed from the guide. The
+core Build requirement is unchanged, a Meterless Engine in a working feature: GreenTrace runs two, the
+World Model and H-MEM, each with passing tests. GreenTrace was built mainly with Claude Code.
 
 **Context.** The sponsor credit for Cursor was never distributed during the build window (the "Get
 sponsor credits" task on HackOS had no link or code; see the Help Cursor channel, 21-22 October). We
