@@ -1,8 +1,10 @@
 """Fetch one real Sentinel-2 image behind each demo plot of the home page map. No account needed.
 
     pip install -r scripts/requirements-maps.txt      # rasterio: this script only, never the app
-    python -m scripts.fetch_satellite                 # both plots
+    python -m scripts.fetch_satellite                 # both plots, the recent scene behind the map
     python -m scripts.fetch_satellite --plot P-042
+    python -m scripts.fetch_satellite --before        # also the 2020 scene, then the Satellite Lens image
+    python -m scripts.fetch_satellite --lens          # only rebuild the Lens image from the two JPEGs
 
 For each plot it asks the public STAC catalogue Earth Search for Sentinel-2 L2A scenes of
 2025-2026 over a 1.4 x 1.4 km box around the plot, with less than 20 % cloud over the scene,
@@ -18,6 +20,14 @@ the plot, north up, on an SVG of 960 x 640. The image has exactly 960 x 640 pixe
 frame, so pixel (i, j) sits under SVG point (i + 0.5, j + 0.5) and every 30 m cell the page
 draws lands on the pixels under it. Credit, printed with the image: "Contains modified
 Copernicus Sentinel data <year>" (Copernicus Sentinel data are free and open).
+
+--before asks for the BEFORE scene the same way: the least cloudy clean frame of the 2019-2020
+dry season (December to March, before the EU cut-off of 31/12/2020), same frame, same pixel
+grid, written as <plot>_2020.jpg and .json. Then it composes the image the Satellite Lens shows
+Nemotron Vision (app/lens): before | after side by side, at most 1024 px wide, the same 3 x 3
+grid on each half with A1-C3 written small in the corner of each cell, as <plot>_lens.jpg and
+.json (both scenes, the layout). One image of two dates: on the recent scene alone a clearing
+of 2021 has grown back and there is nothing left to see (first real test, 22/10).
 """
 import argparse
 import hashlib
@@ -36,6 +46,14 @@ STAC_API = "https://earth-search.aws.element84.com/v1"
 COLLECTION = "sentinel-2-l2a"
 DATES = "2025-01-01T00:00:00Z/2026-12-31T23:59:59Z"
 MAX_SCENE_CLOUD = 20  # eo:cloud_cover, percent of the whole scene
+# The BEFORE scene: the 2019-2020 dry season, before the cut-off. Harmattan haze makes whole
+# scenes look cloudier than the frame is, so the scene filter is looser; the SCL of the frame decides.
+BEFORE = {"dates": "2019-12-01T00:00:00Z/2020-03-31T23:59:59Z", "max_cloud": 50, "suffix": "_2020",
+          "label": "the 2019-2020 dry season"}
+AFTER = {"dates": DATES, "max_cloud": MAX_SCENE_CLOUD, "suffix": "", "label": "2025-2026"}
+LENS_HALF_PX = (504, 336)  # each date in the Lens image: 3:2 like the frame
+LENS_GAP_PX = 16  # between the two dates: 504 + 16 + 504 = 1024, the width the model reads well
+INK = (14, 26, 20)  # #0E1A14, the visual system's ink: the gap and the label boxes
 SEARCH_SIDE_M = 1400.0  # the box the catalogue is searched on: 1.4 x 1.4 km around the plot
 WINDOW_M = (1200.0, 800.0)  # width, height of the map frame (app/web/maps.py, WINDOW_M)
 MAP_PX = (960, 640)  # width, height of the map's SVG (app/web/static/app.js, MAP_W x MAP_H)
@@ -82,18 +100,20 @@ def pixel_transform(box: dict[str, float]) -> tuple[float, float, float, float, 
 
 # ---- which scene ------------------------------------------------------------------------------------
 
-def search_body(lat: float, lon: float, limit: int = 100) -> dict[str, Any]:
-    return {"collections": [COLLECTION], "bbox": search_bbox(lat, lon), "datetime": DATES,
-            "query": {"eo:cloud_cover": {"lt": MAX_SCENE_CLOUD}},
+def search_body(lat: float, lon: float, limit: int = 100, season: Optional[dict] = None) -> dict[str, Any]:
+    season = season or AFTER
+    return {"collections": [COLLECTION], "bbox": search_bbox(lat, lon), "datetime": season["dates"],
+            "query": {"eo:cloud_cover": {"lt": season["max_cloud"]}},
             "sortby": [{"field": "properties.eo:cloud_cover", "direction": "asc"}], "limit": limit}
 
 
-def search(lat: float, lon: float, session: Any = None) -> list[dict]:
+def search(lat: float, lon: float, session: Any = None, season: Optional[dict] = None) -> list[dict]:
     """Every matching scene, following the catalogue's "next" links, least cloudy first."""
     import requests
 
+    season = season or AFTER
     session = session or requests.Session()
-    url, body, items = f"{STAC_API}/search", search_body(lat, lon), []
+    url, body, items = f"{STAC_API}/search", search_body(lat, lon, season=season), []
     while url:
         response = session.post(url, json=body, timeout=TIMEOUT_S)
         if response.status_code != 200:
@@ -102,12 +122,12 @@ def search(lat: float, lon: float, session: Any = None) -> list[dict]:
         items += page.get("features", [])
         following = next((link for link in page.get("links", []) if link.get("rel") == "next"), None)
         url, body = (following["href"], following.get("body", body)) if following else (None, None)
-    return ordered(items)
+    return ordered(items, season["max_cloud"])
 
 
-def ordered(items: list[dict]) -> list[dict]:
+def ordered(items: list[dict], max_cloud: float = MAX_SCENE_CLOUD) -> list[dict]:
     """Least cloudy scene first, then the most recent; the catalogue's order is not trusted."""
-    kept = [i for i in items if (i.get("properties", {}).get("eo:cloud_cover") or 0) < MAX_SCENE_CLOUD]
+    kept = [i for i in items if (i.get("properties", {}).get("eo:cloud_cover") or 0) < max_cloud]
     by_date = sorted(kept, key=lambda i: i["properties"]["datetime"], reverse=True)
     return sorted(by_date, key=lambda i: i["properties"]["eo:cloud_cover"])
 
@@ -130,7 +150,7 @@ def rgb_hrefs(item: dict) -> tuple[str, list[str]]:
     raise SatelliteError(f"{item.get('id')}: no visual asset and no red/green/blue bands")
 
 
-def pick(items: list[dict], scl_of: Any) -> tuple[dict, Optional[float]]:
+def pick(items: list[dict], scl_of: Any, season: Optional[dict] = None) -> tuple[dict, Optional[float]]:
     """The first scene with a clean frame; else the least bad of the first MAX_CANDIDATES."""
     best: tuple[Optional[dict], float] = (None, 2.0)
     for item in items[:MAX_CANDIDATES]:
@@ -144,7 +164,9 @@ def pick(items: list[dict], scl_of: Any) -> tuple[dict, Optional[float]]:
         if score < best[1]:
             best = (item, score)
     if best[0] is None:
-        raise SatelliteError("no Sentinel-2 L2A scene of 2025-2026 under 20 % cloud covers this frame")
+        season = season or AFTER
+        raise SatelliteError(f"no Sentinel-2 L2A scene of {season['label']} under {season['max_cloud']} % cloud "
+                             "covers this frame")
     item = best[0]
     return item, (None if "scl" not in item.get("assets", {}) else best[1])
 
@@ -217,10 +239,12 @@ def credit(item: dict) -> str:
 
 
 def description(plot_id: str, item: dict, box: dict, asset: str, hrefs: list[str], fraction: Optional[float],
-                data: bytes, quality: int) -> dict[str, Any]:
+                data: bytes, quality: int, season: Optional[dict] = None) -> dict[str, Any]:
     properties = item["properties"]
+    season = season or AFTER
     return {
         "plot_id": plot_id,
+        "role": "before" if season is BEFORE else "after",
         "scene_id": item["id"],
         "datetime": properties["datetime"],
         "date": properties["datetime"][:10],
@@ -232,7 +256,8 @@ def description(plot_id: str, item: dict, box: dict, asset: str, hrefs: list[str
         "pixel_deg": [pixel_transform(box)[0], -pixel_transform(box)[4]],
         "asset": asset,
         "sources": hrefs,
-        "catalogue": {"stac_api": STAC_API, "collection": COLLECTION, "search": search_body(*PLOTS[plot_id])},
+        "catalogue": {"stac_api": STAC_API, "collection": COLLECTION,
+                      "search": search_body(*PLOTS[plot_id], season=season)},
         "licence": credit(item),
         "licence_terms": "Copernicus Sentinel data: free, full and open access (Copernicus data policy, "
                          "Commission Delegated Regulation (EU) No 1159/2013)",
@@ -244,12 +269,13 @@ def description(plot_id: str, item: dict, box: dict, asset: str, hrefs: list[str
     }
 
 
-def fetch(plot_id: str, out_dir: Path = MAPS_DIR) -> dict[str, Any]:
+def fetch(plot_id: str, out_dir: Path = MAPS_DIR, season: Optional[dict] = None) -> dict[str, Any]:
+    season = season or AFTER
     lat, lon = PLOTS[plot_id]
     box = frame(lat, lon)
-    items = search(lat, lon)
-    print(f"{plot_id}: {len(items)} scene(s) of 2025-2026 under {MAX_SCENE_CLOUD} % cloud")
-    item, fraction = pick(items, lambda href: read_on_frame(href, box, nearest=True)[0])
+    items = search(lat, lon, season=season)
+    print(f"{plot_id}: {len(items)} scene(s) of {season['label']} under {season['max_cloud']} % cloud")
+    item, fraction = pick(items, lambda href: read_on_frame(href, box, nearest=True)[0], season)
     asset, hrefs = rgb_hrefs(item)
     if asset == "visual":
         rgb = read_on_frame(hrefs[0], box, bands=[1, 2, 3])
@@ -258,22 +284,139 @@ def fetch(plot_id: str, out_dir: Path = MAPS_DIR) -> dict[str, Any]:
 
         rgb = stretch(np.concatenate([read_on_frame(href, box, bands=[1]) for href in hrefs]))
     data, quality = jpeg(rgb)
-    info = description(plot_id, item, box, asset, hrefs, fraction, data, quality)
+    info = description(plot_id, item, box, asset, hrefs, fraction, data, quality, season)
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / f"{plot_id}.jpg").write_bytes(data)
-    (out_dir / f"{plot_id}.json").write_text(json.dumps(info, indent=2) + "\n", encoding="utf-8", newline="\n")
+    name = f"{plot_id}{season['suffix']}"
+    (out_dir / f"{name}.jpg").write_bytes(data)
+    (out_dir / f"{name}.json").write_text(json.dumps(info, indent=2) + "\n", encoding="utf-8", newline="\n")
     print(f"{plot_id}: {item['id']} of {info['date']}, scene cloud {info['cloud_cover_scene_percent']} %, "
           f"frame {'not checked (no SCL)' if fraction is None else f'{fraction:.1%} bad pixels'}, "
           f"{len(data) / 1000:.0f} KB, {info['licence']}")
     return info
 
 
+# ---- the Satellite Lens image: before | after, one grid, labels in the corners ---------------------------
+
+# 5 x 7 glyphs, drawn pixel by pixel: the six characters the grid needs, no font file.
+GLYPHS = {
+    "A": (".###.", "#...#", "#...#", "#####", "#...#", "#...#", "#...#"),
+    "B": ("####.", "#...#", "#...#", "####.", "#...#", "#...#", "####."),
+    "C": (".####", "#....", "#....", "#....", "#....", "#....", ".####"),
+    "1": ("..#..", ".##..", "..#..", "..#..", "..#..", "..#..", ".###."),
+    "2": (".###.", "#...#", "....#", "...#.", "..#..", ".#...", "#####"),
+    "3": ("####.", "....#", "....#", ".###.", "....#", "....#", "####."),
+}
+LABEL_SCALE = 2  # each glyph pixel is 2 x 2: a 10 x 14 px character, small in a 168 x 112 px cell
+LABEL_PAD = 2
+GRID_LINE = (231, 238, 233)  # the visual system's light text colour, 1 px
+
+
+def label_box(text: str) -> Any:
+    """A small ink box with the text in light pixels: (3, h, w) uint8."""
+    import numpy as np
+
+    width = len(text) * 5 * LABEL_SCALE + (len(text) - 1) * LABEL_SCALE + 2 * LABEL_PAD
+    height = 7 * LABEL_SCALE + 2 * LABEL_PAD
+    box = np.zeros((3, height, width), dtype="uint8")
+    box[:] = np.array(INK, dtype="uint8")[:, None, None]
+    for index, char in enumerate(text):
+        left = LABEL_PAD + index * 6 * LABEL_SCALE
+        for row, line in enumerate(GLYPHS[char]):
+            for col, mark in enumerate(line):
+                if mark == "#":
+                    y, x = LABEL_PAD + row * LABEL_SCALE, left + col * LABEL_SCALE
+                    box[:, y:y + LABEL_SCALE, x:x + LABEL_SCALE] = np.array(GRID_LINE, dtype="uint8")[:, None, None]
+    return box
+
+
+def with_grid(half: Any) -> Any:
+    """One date: a 1 px 3 x 3 grid, and the cell's name in its top-left corner (A1 top-left, C3 bottom-right)."""
+    import numpy as np
+
+    out = half.copy()
+    _, height, width = out.shape
+    line = np.array(GRID_LINE, dtype="uint8")[:, None]
+    for k in (1, 2):
+        out[:, :, round(k * width / 3)] = line
+        out[:, round(k * height / 3), :] = line
+    for r, row in enumerate("123"):
+        for c, column in enumerate("ABC"):
+            box = label_box(f"{column}{row}")
+            y, x = round(r * height / 3) + 2, round(c * width / 3) + 2
+            out[:, y:y + box.shape[1], x:x + box.shape[2]] = box
+    return out
+
+
+def compose(before: Any, after: Any) -> Any:
+    """before | after, each LENS_HALF_PX with its grid, an ink gap between: (3, 336, 1024) uint8."""
+    import numpy as np
+
+    width, height = LENS_HALF_PX
+    for name, half in (("before", before), ("after", after)):
+        if half.shape != (3, height, width):
+            raise SatelliteError(f"the {name} half is {half.shape}, expected (3, {height}, {width})")
+    gap = np.zeros((3, height, LENS_GAP_PX), dtype="uint8")
+    gap[:] = np.array(INK, dtype="uint8")[:, None, None]
+    return np.concatenate([with_grid(before), gap, with_grid(after)], axis=2)
+
+
+def read_half(path: Path) -> Any:
+    """A 960 x 640 frame JPEG, averaged down to LENS_HALF_PX: same frame, so the grids line up."""
+    import rasterio
+    from rasterio.enums import Resampling
+
+    width, height = LENS_HALF_PX
+    with rasterio.Env(), rasterio.open(path) as src:
+        return src.read([1, 2, 3], out_shape=(3, height, width), resampling=Resampling.average)
+
+
+def lens_image(plot_id: str, out_dir: Path = MAPS_DIR) -> dict[str, Any]:
+    """<plot>_lens.jpg and .json from <plot>_2020.jpg and <plot>.jpg (both fetched by this script)."""
+    scenes = {}
+    for role, suffix in (("before", BEFORE["suffix"]), ("after", AFTER["suffix"])):
+        image, meta = out_dir / f"{plot_id}{suffix}.jpg", out_dir / f"{plot_id}{suffix}.json"
+        if not (image.is_file() and meta.is_file()):
+            raise SatelliteError(f"{image.name} is missing: run python -m scripts.fetch_satellite"
+                                 f"{' --before' if role == 'before' else ''} --plot {plot_id}")
+        scenes[role] = (image, json.loads(meta.read_text(encoding="utf-8")))
+    data, quality = jpeg(compose(read_half(scenes["before"][0]), read_half(scenes["after"][0])))
+    width, height = LENS_HALF_PX
+    info = {
+        "plot_id": plot_id,
+        "before": {k: scenes["before"][1].get(k) for k in ("scene_id", "date", "licence", "jpg_sha256")},
+        "after": {k: scenes["after"][1].get(k) for k in ("scene_id", "date", "licence", "jpg_sha256")},
+        "frame": scenes["after"][1]["frame"],
+        "layout": {"pixels": [2 * width + LENS_GAP_PX, height], "half": [width, height], "gap": LENS_GAP_PX,
+                   "left": "before", "right": "after",
+                   "grid": "3 x 3 on each half: columns A-C west to east, rows 1-3 north to south",
+                   "labels": "cell name, small, in the top-left corner of each cell"},
+        "jpeg_quality": quality,
+        "jpg_bytes": len(data),
+        "jpg_sha256": hashlib.sha256(data).hexdigest(),
+        "made_by": "scripts/fetch_satellite.py",
+        "made_on": datetime.now(timezone.utc).date().isoformat(),
+    }
+    (out_dir / f"{plot_id}_lens.jpg").write_bytes(data)
+    (out_dir / f"{plot_id}_lens.json").write_text(json.dumps(info, indent=2) + "\n", encoding="utf-8", newline="\n")
+    print(f"{plot_id}: Lens image {info['layout']['pixels'][0]} x {height} px, {info['before']['date']} | "
+          f"{info['after']['date']}, {len(data) / 1000:.0f} KB")
+    return info
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--plot", choices=sorted(PLOTS), action="append", help="one plot (default: both)")
-    for plot_id in parser.parse_args(argv).plot or list(PLOTS):
+    parser.add_argument("--before", action="store_true", help="also fetch the 2020 scene, then build the Lens image")
+    parser.add_argument("--lens", action="store_true", help="only build the Lens image from the two JPEGs")
+    args = parser.parse_args(argv)
+    for plot_id in args.plot or list(PLOTS):
         try:
-            fetch(plot_id)
+            if args.before:
+                fetch(plot_id, season=BEFORE)  # the recent scene is already there: --before adds 2020 only
+            elif not args.lens:
+                fetch(plot_id)
+            if args.before or args.lens:
+                lens_image(plot_id)
         except SatelliteError as error:
             print(f"{plot_id}: error: {error}", file=sys.stderr)
             return 2

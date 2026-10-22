@@ -48,16 +48,37 @@ def gate_with(fake, log):
     return ModelGate("lens-test", env=MODEL_ENV, client_factory=lambda provider: fake, log=log)
 
 
+def with_before(tmp_path, plot_id="P-042"):
+    """A scenes folder holding the real recent scene plus a 2020 scene and a Lens image (copies, for the test)."""
+    import shutil
+    real = lens.SCENES_DIR
+    for name in (f"{plot_id}.jpg", f"{plot_id}.json"):
+        shutil.copy(real / name, tmp_path / name)
+    before = json.loads((real / f"{plot_id}.json").read_text(encoding="utf-8"))
+    before.update(scene_id="S2A_TEST_20200115", date="2020-01-15", datetime="2020-01-15T10:59:00Z")
+    (tmp_path / f"{plot_id}_2020.json").write_text(json.dumps(before), encoding="utf-8")
+    shutil.copy(real / f"{plot_id}.jpg", tmp_path / f"{plot_id}_2020.jpg")
+    composite = b"\xff\xd8\xff\xe0 test composite of two dates"
+    (tmp_path / f"{plot_id}_lens.jpg").write_bytes(composite)
+    (tmp_path / f"{plot_id}_lens.json").write_text(json.dumps({"jpg_sha256": "test"}), encoding="utf-8")
+    return lens.scene_for(plot_id, directory=tmp_path), composite
+
+
 # ---- the code's judgement, cell by cell ----------------------------------------------------------
 
 @pytest.mark.parametrize("label, lost, status", [
-    ("recent_clearing", True, lens.CONFIRMED), ("recent_clearing", False, lens.REJECTED),
-    ("intact_forest", True, lens.MISSED), ("plantation", False, lens.CONFIRMED),
-    ("bare_soil", True, lens.MISSED), ("cannot_see", True, lens.MISSED), ("cannot_see", False, lens.NO_CLAIM),
-    (None, False, lens.NO_CLAIM),
+    ("forest_lost", True, lens.CONFIRMED), ("forest_lost", False, lens.REJECTED),
+    ("forest_kept", True, lens.MISSED), ("no_forest_in_2020", True, lens.MISSED),
+    ("forest_kept", False, lens.CONFIRMED), ("no_forest_in_2020", False, lens.CONFIRMED),
+    ("cannot_see", True, lens.NOT_SEEN), ("cannot_see", False, lens.NOT_SEEN), (None, True, lens.NOT_SEEN),
 ])
 def test_each_cell_is_judged_against_the_maps(label, lost, status):
-    assert lens.judge(label, lost) == status
+    assert lens.judge(label, lost) == status  # "I cannot see" is never "I missed"
+
+
+def test_the_score_leaves_unseen_cells_out():
+    statuses = [lens.CONFIRMED] * 4 + [lens.MISSED] * 2 + [lens.REJECTED] + [lens.NOT_SEEN] * 2
+    assert lens.score([{"status": st} for st in statuses]) == {"right": 4, "seen": 7, "missed": 2, "wrong": 1, "of": 9}
 
 
 def test_the_grid_tiles_the_frame_and_reads_the_real_cells():
@@ -72,55 +93,74 @@ def test_the_grid_tiles_the_frame_and_reads_the_real_cells():
 
 # ---- the model looks, the code checks ------------------------------------------------------------
 
-def test_the_model_sees_the_bare_image_and_every_claim_is_checked_and_traced():
-    scene = lens.scene_for("P-042")
+def test_the_model_sees_one_image_of_both_dates_and_every_claim_is_checked_and_traced(tmp_path):
+    scene, composite = with_before(tmp_path)
     measured = lens.maps_by_cell(scene.frame)
-    # The model calls every cell a clearing: right where the maps lost forest, wrong elsewhere.
-    fake = FakeVision(answer(["recent_clearing"] * 9))
+    # The model says forest was lost everywhere: right where the maps lost forest, wrong elsewhere.
+    fake = FakeVision(answer(["forest_lost"] * 9))
     lines, log = traced()
     out = lens.look(scene, "lens-test", gate=gate_with(fake, log), log=log)
 
     (request,) = fake.calls
-    user = request["messages"][1]["content"]
-    image = next(part for part in user if part["type"] == "image_url")["image_url"]["url"]
-    assert image.startswith("data:image/jpeg;base64,")
+    system, user = request["messages"][0]["content"], request["messages"][1]["content"]
+    images = [part["image_url"]["url"] for part in user if part["type"] == "image_url"]
     import base64
-    assert base64.b64decode(image.split(",", 1)[1]) == scene.image.read_bytes()  # the image as it is, no mark on it
-    assert request["model"] == ASKED and request["timeout"] == lens.TIMEOUT_S
+    assert len(images) == 1 and base64.b64decode(images[0].split(",", 1)[1]) == composite  # one image: before | after
+    assert "LEFT half" in system and "2020-01-15" in system and scene.meta["date"] in system
+    assert request["model"] == ASKED and request["timeout"] == lens.TIMEOUT_S and request["max_tokens"] == 2500
     assert request["extra_body"]["chat_template_kwargs"]["enable_thinking"] is False
 
     lost = [c for c in lens.CELLS if measured[c]["lost"]]
     assert [c["status"] for c in out["cells"]] == [lens.CONFIRMED if c in lost else lens.REJECTED for c in lens.CELLS]
-    assert out["score"] == {"ai_confirmed": len(lost), "code_corrected": 9 - len(lost), "of": 9}
+    assert out["score"] == {"right": len(lost), "seen": 9, "missed": 0, "wrong": 9 - len(lost), "of": 9}
+    assert out["images"]["before"].endswith("P-042_2020.jpg") and out["images"]["composite"].endswith("P-042_lens.jpg")
     checks = [line for line in lines if line["action"] == "check_vision_claim"]
     assert len(checks) == 9 and all(line["agent_name"] == "Evaluator" and line["provider"] == "nvidia" for line in checks)
     assert all(line["model"] == ANSWERED and ASKED in line["input_summary"] for line in checks)
+    assert {line["status"] for line in checks} == {"confirmed", "rejected"}
 
 
-def test_a_cell_the_model_left_out_is_no_claim_or_missed():
-    scene = lens.scene_for("P-041")
-    nine = json.loads(answer(["intact_forest"] * 9))
-    nine["cells"][4] = {"cell": "A1", "label": "plantation", "confidence": 0.5}  # B2 named nowhere, A1 twice
+def test_nine_cannot_see_count_neither_for_nor_against(tmp_path):
+    scene, _ = with_before(tmp_path)
+    out = lens.look(scene, "lens-test", gate=gate_with(FakeVision(answer(["cannot_see"] * 9)), traced()[1]), log=traced()[1])
+    assert all(c["status"] == lens.NOT_SEEN for c in out["cells"])
+    assert out["score"] == {"right": 0, "seen": 0, "missed": 0, "wrong": 0, "of": 9}  # not "AI 0/9, corrected 7"
+
+
+def test_a_cell_the_model_left_out_is_not_seen(tmp_path):
+    scene, _ = with_before(tmp_path, "P-041")
+    nine = json.loads(answer(["forest_kept"] * 9))
+    nine["cells"][4] = {"cell": "A1", "label": "no_forest_in_2020", "confidence": 0.5}  # B2 named nowhere, A1 twice
     out = lens.look(scene, "lens-test", gate=gate_with(FakeVision(json.dumps(nine)), traced()[1]), log=traced()[1])
     b2 = next(c for c in out["cells"] if c["cell"] == "B2")
-    assert b2["label"] is None and b2["status"] == lens.MISSED  # 0.54 ha lost after 2020 there, the model said nothing
-    assert next(c for c in out["cells"] if c["cell"] == "A1")["label"] == "intact_forest"  # first answer counts
+    assert b2["label"] is None and b2["status"] == lens.NOT_SEEN and b2["lost"]  # a loss there, but no answer
+    assert next(c for c in out["cells"] if c["cell"] == "A1")["label"] == "forest_kept"  # first answer counts
 
 
-def test_an_answer_that_is_not_the_schema_falls_back_to_the_code_grid():
-    fake = FakeVision("I think it is forest.", '{"cells": []}')
-    out = lens.look(lens.scene_for("P-042"), "lens-test", gate=gate_with(fake, traced()[1]), log=traced()[1])
-    assert out["ai"] is False and out["score"] is None and all(c["status"] is None for c in out["cells"])
+def test_without_the_2020_scene_the_model_is_not_asked():
+    fake = FakeVision()  # no answer at all: a call would fail the test
+    lines, log = traced()
+    out = lens.look(lens.scene_for("P-042"), "lens-test", gate=gate_with(fake, log), log=log)
+    assert fake.calls == [] and out["ai"] is False and out["message"] == lens.NEEDS_BEFORE
     assert all("loss_after_2020_ha" in c for c in out["cells"])  # the code's grid still stands
 
 
-def test_sample_mode_calls_no_model_and_says_so():
+def test_an_answer_that_is_not_the_schema_falls_back_to_the_code_grid(tmp_path):
+    scene, _ = with_before(tmp_path)
+    fake = FakeVision("I think it is forest.", '{"cells": []}')
+    out = lens.look(scene, "lens-test", gate=gate_with(fake, traced()[1]), log=traced()[1])
+    assert out["ai"] is False and out["score"] is None and all(c["status"] is None for c in out["cells"])
+    assert out["message"].startswith("no model answer")
+
+
+def test_sample_mode_calls_no_model_and_says_so(tmp_path):
     def no_client(provider):
         raise AssertionError("no client in sample mode")
 
+    scene, _ = with_before(tmp_path)
     lines, log = traced()
     gate = ModelGate("lens-test", env={**MODEL_ENV, "SAMPLE_MODE": "true"}, client_factory=no_client, log=log)
-    out = lens.look(lens.scene_for("P-042"), "lens-test", gate=gate, log=log)
+    out = lens.look(scene, "lens-test", gate=gate, log=log)
     assert out["ai"] is False and out["message"] == lens.NEEDS_MODEL
     assert [line["action"] for line in lines] == ["fallback_rules", "check_vision_claim"]
 
@@ -132,16 +172,18 @@ def test_no_scene_outside_the_frames():
 
 # ---- the verdict is the rules', whatever the lens says -------------------------------------------
 
-def test_the_lens_never_moves_a_verdict():
+def test_the_lens_never_moves_a_verdict(tmp_path):
     ring = [[float(x), float(y)] for x, y in (p.split() for p in geo.square_wkt(5.7300, -6.5220, 10.0)[9:-2].split(", "))]
     plot = {"type": "Feature", "properties": {"plot_id": "P-900"}, "geometry": {"type": "Polygon", "coordinates": [ring]}}
     client = TestClient(app)
     before = client.post("/run", json={"run_id": "lens-verdict", "input": {"claim": "100% deforestation-free since 2021.",
                                                                           "plot": plot}, "options": {"case": 1}}).json()
     assert before["verdict"] == "CONTRADICTED"
-    # The model swears the whole scene is intact forest; the lens runs on the same run.
+    # The model swears the forest is all still there; the lens runs on the same run.
     lines, log = traced()
-    lens.look(lens.scene_for("P-042"), "lens-verdict", gate=gate_with(FakeVision(answer(["intact_forest"] * 9)), log), log=log)
+    scene, _ = with_before(tmp_path)
+    looked = lens.look(scene, "lens-verdict", gate=gate_with(FakeVision(answer(["forest_kept"] * 9)), log), log=log)
+    assert looked["ai"] and looked["score"]["missed"] > 0  # the model really answered, and was wrong
     after = client.get("/runs/lens-verdict").json()
     assert (after["verdict"], after["verdict_sha256"]) == (before["verdict"], before["verdict_sha256"])
     assert orchestrator.RUNS["lens-verdict"].output["verdict"] == "CONTRADICTED"
@@ -177,3 +219,41 @@ def test_the_lens_route_runs_in_the_background_and_says_what_it_lacks(monkeypatc
     assert job["status"] == "done" and job["result"]["message"] == lens.NEEDS_MODEL
     assert [c["cell"] for c in job["result"]["cells"]] == list(lens.CELLS)
     assert client.get("/api/lens/nope").status_code == 404
+
+
+def test_one_vision_call_at_a_time_and_a_missing_answer_is_asked_again(monkeypatch):
+    import threading
+    from app.web import lens as web_lens
+
+    running, most, calls = [0], [0], []
+    guard = threading.Lock()
+
+    def slow_look(scene, run_id):
+        with guard:
+            running[0] += 1
+            most[0] = max(most[0], running[0])
+        time.sleep(0.2)
+        with guard:
+            running[0] -= 1
+        calls.append(scene.plot_id)
+        return {"ai": False, "message": "no model answer (no model provider answered)", "plot_id": scene.plot_id}
+
+    monkeypatch.setenv("SAMPLE_MODE", "false")
+    monkeypatch.setattr(web_lens.lens, "look", slow_look)
+    monkeypatch.setattr(web_lens, "JOBS", {})
+    client = TestClient(app)
+
+    def finish(key):
+        for _ in range(100):
+            job = client.get(f"/api/lens/{key}").json()
+            if job["status"] == "done":
+                return job
+            time.sleep(0.05)
+        raise AssertionError("the lens did not finish")
+
+    first = client.post("/api/lens", json={"plot": "P-042"}).json()
+    second = client.post("/api/lens", json={"plot": "P-041"}).json()
+    finish(first["key"]), finish(second["key"])
+    assert most[0] == 1  # never two calls to the provider at once
+    finish(client.post("/api/lens", json={"plot": "P-042"}).json()["key"])
+    assert calls.count("P-042") == 2  # no answer is not cached: asking again asks again

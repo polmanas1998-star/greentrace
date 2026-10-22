@@ -225,3 +225,44 @@ def test_the_description_carries_the_credit_the_frame_and_the_hash():
     assert (info["scene_id"], info["date"], info["cloud_cover_scene_percent"]) == ("S2B_29NQG_20251220_0_L2A",
                                                                                   "2025-12-20", 0.4)
     json.dumps(info)  # written as is
+
+
+# ---- the 2020 scene and the Satellite Lens image ----------------------------------------------------------
+
+def test_the_before_scene_is_asked_in_the_2019_2020_dry_season_before_the_cut_off():
+    body = sat.search_body(*sat.PLOTS["P-042"], season=sat.BEFORE)
+    start, end = body["datetime"].split("/")
+    assert start.startswith("2019-12-01") and end.startswith("2020-03-31") and end[:10] <= "2020-12-31"
+    assert body["bbox"] == sat.search_bbox(*sat.PLOTS["P-042"])  # same place as the recent scene
+    assert sat.search_body(*sat.PLOTS["P-042"])["datetime"] == sat.DATES  # the recent scene is unchanged
+
+
+def test_the_lens_image_is_before_then_after_1024_px_with_one_grid_and_small_labels():
+    np = pytest.importorskip("numpy")
+    width, height = sat.LENS_HALF_PX
+    before = np.full((3, height, width), 40, dtype="uint8")
+    after = np.full((3, height, width), 200, dtype="uint8")
+    image = sat.compose(before, after)
+    assert image.shape == (3, height, 2 * width + sat.LENS_GAP_PX) and image.shape[2] <= 1024
+    assert (image[:, height // 2 + 20, 60] == 40).all() and (image[:, height // 2 + 20, -60] == 200).all()  # left 2020
+    assert (image[:, 200, width + 4] == sat.INK).all()  # the gap between the dates
+    line = np.array(sat.GRID_LINE)
+    for left in (0, width + sat.LENS_GAP_PX):  # the same grid on both halves
+        assert (image[:, 300, left + round(width / 3)] == line).all() and (image[:, round(height / 3), left + 300] == line).all()
+    label = sat.label_box("C3")
+    assert label.shape[1] <= 20 and label.shape[2] <= 30  # small: a corner, not the cell
+    c3 = image[:, round(2 * height / 3) + 2:round(2 * height / 3) + 2 + label.shape[1],
+               round(2 * width / 3) + 2:round(2 * width / 3) + 2 + label.shape[2]]
+    assert (c3 == label).all()  # the cell name sits in its top-left corner
+
+
+def test_a_half_of_the_wrong_size_is_refused():
+    np = pytest.importorskip("numpy")
+    width, height = sat.LENS_HALF_PX
+    with pytest.raises(sat.SatelliteError):
+        sat.compose(np.zeros((3, 640, 960), dtype="uint8"), np.zeros((3, height, width), dtype="uint8"))
+
+
+def test_the_lens_image_needs_both_scenes_and_says_which_command_to_run(tmp_path):
+    with pytest.raises(sat.SatelliteError, match="--before"):
+        sat.lens_image("P-042", out_dir=tmp_path)
