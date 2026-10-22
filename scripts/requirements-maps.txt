@@ -1,2 +1,2 @@
-# Only for python -m scripts.fetch_reference_maps (reads the GeoTIFF tiles). The app never needs it.
+# Only for python -m scripts.fetch_reference_maps and python -m scripts.fetch_satellite (GeoTIFF and COG reading). The app never needs it.
 rasterio==1.4.4
