@@ -17,6 +17,7 @@ def run_case(
     log_dir: Optional[Path] = None,
     stream: Optional[TextIO] = None,
     memory_engine: Any = None,
+    hmem: Any = None,
 ) -> dict[str, Any]:
     if not isinstance(case, dict):
         raise ValueError("input must be a JSON object")
@@ -24,5 +25,5 @@ def run_case(
     return orchestrator.investigate(
         case, run_id,
         log=lambda record: trace(record, log_dir=log_dir, stream=stream),
-        memory_engine=memory_engine, log_dir=log_dir, stream=stream,
+        memory_engine=memory_engine, log_dir=log_dir, stream=stream, hmem=hmem,
     )

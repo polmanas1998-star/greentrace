@@ -14,3 +14,6 @@ data/build/
 
 # raw map tiles (GeoTIFF, ~120 MB each): fetched by scripts/fetch_reference_maps.py, never committed
 data/raw/
+
+# H-MEM notes between investigations (app/memory/hmem.py): local, erasable, never committed
+data/memory/

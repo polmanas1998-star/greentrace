@@ -21,8 +21,8 @@ RECEIPT_OF = "01_contradicted.json"
 
 
 def sample_env() -> dict[str, str]:
-    """Sample mode whatever .env says: run.py's load_dotenv never overrides a variable already set."""
-    return {**os.environ, "SAMPLE_MODE": "true", "PYTHONIOENCODING": "utf-8"}
+    """Sample mode whatever .env says (load_dotenv never overrides a variable already set), and no memory."""
+    return {**os.environ, "SAMPLE_MODE": "true", "PYTHONIOENCODING": "utf-8", "HMEM_URL": ""}
 
 
 def run(example: Path) -> str:

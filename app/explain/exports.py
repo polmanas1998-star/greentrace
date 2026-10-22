@@ -215,6 +215,13 @@ def evidence_markdown(output: dict[str, Any]) -> str:
                   f"{len(export['excluded'])} left out:"]
         lines += [f"- {e['plot']}: {e['reason']}" for e in export["excluded"]]
     fingerprints = output.get("fingerprints", {})
+    if output.get("seen_before"):
+        lines += ["", "## Seen before", "",
+                  "From GreenTrace's memory (H-MEM): earlier runs, for information only. The verdict above is "
+                  "recomputed from today's data; nothing below is evidence.", ""]
+        lines += [f"- {s['supplier_id']}: {s['verdict_then']} by {s['because_then']} on run `{s['run_id']}` "
+                  f"({s['date']}); today: {s['verdict_now'] or 'no finding'}. {s['changed'][0].upper()}"
+                  f"{s['changed'][1:]}." for s in output["seen_before"]]
     lines += ["", "## Fingerprints", "", f"- verdict_sha256: `{output.get('verdict_sha256')}`"]
     lines += [f"- {key}: `{value}`" for key, value in fingerprints.items()]
     return "\n".join(lines) + "\n"
