@@ -4,12 +4,14 @@ import pytest
 
 from app.queries import TEMPLATES, DataGate, SourceUnavailable, SQLiteEngine, ZetarisEngine, render
 from app.world.cases import build_case
-from app.world.store import to_sqlite
+from app.world.store import attach_reference, to_sqlite
 
 
 def gate_for(case_number, lines=None):
     world = build_case(case_number)
-    engine = SQLiteEngine(to_sqlite(world), tuple(world["meta"]["unavailable_sources"]))
+    connection = to_sqlite(world)
+    attach_reference(connection)
+    engine = SQLiteEngine(connection, tuple(world["meta"]["unavailable_sources"]))
     return DataGate(engine, run_id="test-run", log=(lines.append if lines is not None else lambda _: None))
 
 
@@ -124,6 +126,7 @@ def test_zetaris_and_sqlite_give_the_same_rows():
                  ("Q5", dict(plot_id="P-014")),
                  ("Q6", dict(company_id="chocodurable", year_from=2021, year_to=2025)),
                  ("Q7", dict(company_id="chocodurable")),
-                 ("Q8", dict(name="Agnibi")), ("Q9", dict(alert_id="A-221")), ("Q0", {})]
+                 ("Q8", dict(name="Agnibi")), ("Q9", dict(alert_id="A-221")), ("Q0", {}),
+                 ("Q10", dict(lat_min=5.72807, lat_max=5.73193, lon_min=-6.523926, lon_max=-6.520074))]
     for query_id, params in questions:
         assert live.ask("Investigator", query_id, **params).rows == sample.ask("Investigator", query_id, **params).rows, query_id

@@ -54,7 +54,7 @@ def eudr_geojson(evidence: Evidence, decision: dict[str, Any]) -> dict[str, Any]
     first_rows = {}
     for plot in evidence.plots:
         first_rows.setdefault(plot["plot_id"], plot)
-    features = [_feature(first_rows[plot_id]) for plot_id in delivering
+    features = [_feature(first_rows[plot_id], plot_id in evidence.reference) for plot_id in delivering
                 if plot_id in first_rows and plot_id not in reasons]
     excluded = [{"plot": plot_id, "reason": "; ".join(dict.fromkeys(reasons[plot_id]))}
                 for plot_id in delivering if plot_id in reasons]
@@ -64,14 +64,15 @@ def eudr_geojson(evidence: Evidence, decision: dict[str, Any]) -> dict[str, Any]
     }
 
 
-def _feature(plot: dict) -> dict[str, Any]:
+def _feature(plot: dict, measured: bool = False) -> dict[str, Any]:
     if plot["polygon_wkt"]:
         geometry = _rounded(mapping(wkt.loads(plot["polygon_wkt"])))
     else:
         geometry = {"type": "Point", "coordinates": [round(plot["lon"], DECIMALS), round(plot["lat"], DECIMALS)]}
     return {"type": "Feature", "geometry": geometry,
             "properties": {"plot_id": plot["plot_id"], "supplier_id": plot["supplier_id"],
-                           "area_ha": plot["area_ha"], "status": NO_ISSUE, "checked": CHECKS}}
+                           "area_ha": plot["area_ha"], "status": NO_ISSUE,
+                           "checked": CHECKS + (", reference maps (forest 2020, loss by year)" if measured else "")}}
 
 
 def _rounded(value: Any) -> Any:
@@ -153,7 +154,7 @@ def _letter(supplier_id: str, name: str, year: int, points: list[str], requests:
         "",
         *[f"- {point[0].upper() + point[1:]}." for point in points],
         "",
-        "These points come from public satellite alerts and from our own registry. They may have a simple "
+        "These points come from public satellite data and from our own registry. They may have a simple "
         "explanation, and we would like to understand them with you.",
     ]
     if requests:

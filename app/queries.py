@@ -42,9 +42,13 @@ TEMPLATES = {
            "WHERE name = {name} ORDER BY supplier_id"),
     "Q9": ("SELECT alert_id, alert_date, confidence, system FROM {t}alerts "
            "WHERE alert_id = {alert_id}"),
+    "Q10": ("SELECT lat, lon, forest_fraction_2020, loss_year FROM {t}reference_cells "
+            "WHERE lat BETWEEN {lat_min} AND {lat_max} AND lon BETWEEN {lon_min} AND {lon_max} "
+            "ORDER BY lat DESC, lon"),
 }
 SOURCE_OF = {"Q0": "registry", "Q1": "documents", "Q2": "registry", "Q3": "registry", "Q4": "alerts",
-             "Q5": "registry", "Q6": "registry", "Q7": "registry", "Q8": "registry", "Q9": "alerts"}
+             "Q5": "registry", "Q6": "registry", "Q7": "registry", "Q8": "registry", "Q9": "alerts",
+             "Q10": "reference_maps"}
 
 _SAFE_TEXT = re.compile(r"^[\w .,-]{1,80}$")
 
@@ -84,7 +88,7 @@ class Answer:
 # ---- the two engines ----------------------------------------------------------------
 
 class SQLiteEngine:
-    """Sample mode: the synthetic world in memory. Mirrors a source that is down."""
+    """Sample mode: the synthetic world in memory, the reference cells attached. Mirrors a source that is down."""
     name, prefix = "sqlite", ""
 
     def __init__(self, connection: sqlite3.Connection, unavailable: tuple[str, ...] = ()):
@@ -93,7 +97,12 @@ class SQLiteEngine:
     def run(self, query_id: str, sql: str) -> list[dict[str, Any]]:
         if SOURCE_OF[query_id] in self.unavailable:
             raise SourceUnavailable(f"source '{SOURCE_OF[query_id]}' did not answer")
-        return [dict(row) for row in self.connection.execute(sql)]
+        try:
+            return [dict(row) for row in self.connection.execute(sql)]
+        except sqlite3.OperationalError as error:
+            if "no such table" not in str(error):
+                raise
+            raise SourceUnavailable(f"source '{SOURCE_OF[query_id]}' is not loaded: {error}") from error
 
     def data_quality(self) -> list[dict[str, Any]]:
         return dq_invalid_records(self.connection)

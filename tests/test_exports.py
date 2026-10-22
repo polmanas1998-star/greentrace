@@ -103,7 +103,8 @@ def test_findings_csv_opens_as_a_table():
     assert [r["row"] for r in rows] == ["part"] * 4 + ["finding"]
     finding = rows[-1]
     assert (finding["verdict"], finding["sources"], finding["refutations"]) == (
-        "CONTRADICTED", "alert:A-221; plot:P-014", "R3 rejected; R4 rejected; R5 rejected")
+        "CONTRADICTED", "alert:A-221; plot:P-014",
+        "R3 rejected; R1 rejected; R4 rejected; R5 rejected; R6 rejected; R8 rejected")
 
 
 def test_evidence_file_carries_the_flip_and_the_fingerprints():

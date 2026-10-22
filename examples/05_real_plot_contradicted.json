@@ -1,0 +1,42 @@
+{
+  "input": {
+    "claim": "100% of our cocoa comes from deforestation-free farms since 2021.",
+    "plot": {
+      "type": "Feature",
+      "properties": {
+        "plot_id": "P-042",
+        "note": "10 ha square centred on 5.7300 N, 6.5220 W, near Soubre: real JRC GFC2020 and Hansen/UMD cells"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -6.523427,
+              5.72857
+            ],
+            [
+              -6.520573,
+              5.72857
+            ],
+            [
+              -6.520573,
+              5.73143
+            ],
+            [
+              -6.523427,
+              5.73143
+            ],
+            [
+              -6.523427,
+              5.72857
+            ]
+          ]
+        ]
+      }
+    }
+  },
+  "options": {
+    "case": 1
+  }
+}
