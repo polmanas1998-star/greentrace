@@ -8,12 +8,15 @@ no clock, no network, same input same output.
 
 Rules, in the kit's order:
   1  a source is unavailable, or a datum is invalid (outside Cote d'Ivoire,
-     missing polygon above 4 ha)                                         UNVERIFIABLE
+     missing polygon above 4 ha), or no reference map covers a measured plot UNVERIFIABLE
   2  direct evidence that held: a confirmed alert inside a polygon that kept
-     delivering after it, after 31/12/2020, or the company's own admission   CONTRADICTED
+     delivering after it, after 31/12/2020, the company's own admission, or
+     forest lost inside a measured plot after 2020 while it delivered (at least
+     0.5 ha or 10 % of the plot, on land the EU map counted as forest in 2020) CONTRADICTED
   3  untraced volume, impossible yield, plot declared twice, unconfirmed alert,
      alert near a point-declared plot, sources in conflict, claim narrower than
-     announced, no independent source at all                             UNVERIFIABLE
+     announced, no independent source at all, forest lost below that threshold,
+     tree cover lost on land the EU map did not count as forest           UNVERIFIABLE
   4  none of the above                                                   PROVEN
 A part is CONTRADICTED as soon as one rule-2 finding holds: a defect on one plot
 does not hide a contradiction proven on another. The promise is CONTRADICTED if one
@@ -22,15 +25,18 @@ part is, otherwise UNVERIFIABLE if one part is, otherwise PROVEN.
 from dataclasses import dataclass, field
 from typing import Optional
 
-from app.checks import geometry, registry
+from app.checks import geometry, landcover, registry
 
-RULES_VERSION = "2026-10-22.1"
+RULES_VERSION = "2026-10-22.2"
 
 PROVEN, CONTRADICTED, UNVERIFIABLE = "PROVEN", "CONTRADICTED", "UNVERIFIABLE"
 CUTOFF = "2020-12-31"
 FIRST_YEAR_AFTER_CUTOFF = 2021
 CONFIRMED = {"high", "highest"}
 PARTS = ("coverage", "no_deforestation", "plausibility", "scope")
+MAP_MIN_HA, MAP_MIN_SHARE = 0.5, 0.10  # kit v7: forest lost inside a plot that contradicts the claim
+TREE_COVER_NOT_FOREST = ("tree cover was lost, but the EU 2020 map did not count this land as forest: "
+                         "confirm in the field")
 
 
 @dataclass(frozen=True)
@@ -50,6 +56,7 @@ class Evidence:
     alerts: Optional[list[dict]]             # None: the alert source did not answer
     dq_issues: list[dict] = field(default_factory=list)
     extracted: Extracted = Extracted()
+    reference: dict = field(default_factory=dict)  # plot_id -> Q10 cells around it (None: the maps did not answer)
 
 
 @dataclass(frozen=True)
@@ -125,6 +132,11 @@ def _no_deforestation(e: Evidence) -> list[Finding]:
                              f"{admission['section']} paragraph {admission['paragraph_no']})",
                              (f"doc:{admission['doc']}:{admission['section']}:{admission['paragraph_no']}",)))
 
+    for plot in checkable:
+        if plot["plot_id"] in e.reference:
+            finding = map_check(plot, e.reference[plot["plot_id"]], delivered[plot["plot_id"]])
+            found += [finding] if finding else []
+
     if e.alerts is None:
         found.append(Finding("no_deforestation", 1, UNVERIFIABLE, "source_unavailable",
                              "the alert source did not answer", ("source:alerts",)))
@@ -159,6 +171,45 @@ def _no_deforestation(e: Evidence) -> list[Finding]:
 
     found += _conflicting_mentions(e, confirmed_suppliers)
     return found
+
+
+def map_check(plot: dict, cells: Optional[list[dict]], delivered_in: set[int]) -> Optional[Finding]:
+    """What the reference maps say about one delivering plot (kit v7); None when they show no loss after 2020.
+
+    Only forest lost after the cut-off and no later than the plot's last delivery can
+    contradict the claim. The Evaluator calls this too, on the cells of its own Q10 (R9).
+    """
+    plot_id = plot["plot_id"]
+    refs = (f"plot:{plot_id}", f"cells:{plot_id}")
+    if cells is None:
+        return Finding("no_deforestation", 1, UNVERIFIABLE, "no_reference_data",
+                       f"{plot_id}: the reference maps did not answer", refs)
+    measured = landcover.measure(plot, cells)
+    if not measured["covered"]:
+        return Finding("no_deforestation", 1, UNVERIFIABLE, "no_reference_data", f"{plot_id}: {measured['reason']}",
+                       refs)
+    after = {int(y): ha for y, ha in measured["forest_loss_ha_by_year"].items() if int(y) > landcover.CUTOFF_YEAR}
+    while_delivering = {y: ha for y, ha in after.items() if y <= max(delivered_in, default=0)}
+    lost, threshold = sum(while_delivering.values()), min(MAP_MIN_HA, MAP_MIN_SHARE * plot["area_ha"])
+    if lost >= threshold:
+        return Finding("no_deforestation", 2, CONTRADICTED, "forest_loss_in_delivering_plot",
+                       f"{lost:.2f} ha that the EU map counted as forest in 2020 were lost inside {plot_id} in "
+                       f"{_years(while_delivering)} (Hansen/UMD), while it kept delivering "
+                       f"(threshold {threshold:.2f} ha: 0.5 ha or 10 % of the plot)", refs)
+    if after:
+        return Finding("no_deforestation", 3, UNVERIFIABLE, "forest_loss_below_threshold",
+                       f"{sum(after.values()):.2f} ha of 2020 forest lost inside {plot_id} in {_years(after)}, "
+                       f"below 0.5 ha and 10 % of the plot while it delivered: confirm in the field", refs)
+    cover = {int(y): ha for y, ha in measured["loss_ha_by_year"].items() if int(y) > landcover.CUTOFF_YEAR}
+    if cover:
+        return Finding("no_deforestation", 3, UNVERIFIABLE, "tree_cover_loss_outside_2020_forest",
+                       f"{plot_id}: {sum(cover.values()):.2f} ha of tree cover lost in {_years(cover)}; "
+                       f"{TREE_COVER_NOT_FOREST}", refs)
+    return None
+
+
+def _years(hectares: dict[int, float]) -> str:
+    return ", ".join(str(year) for year in sorted(hectares))
 
 
 def _conflicting_mentions(e: Evidence, already_contradicted: set[str]) -> list[Finding]:

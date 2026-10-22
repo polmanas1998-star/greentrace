@@ -4,7 +4,8 @@
 
 Uses only GreenTrace's own code and dependencies: no model, no database, no network. It
 recomputes every hash, finds every quote word for word in the paragraph it cites,
-rebuilds the evidence from the rows, applies app/rules.py and replays the flip.
+rebuilds the evidence from the rows (and the plot the analyst drew, from its GeoJSON),
+applies app/rules.py, which measures the reference cells of Q10 itself, and replays the flip.
 
   VALID      exit 0: the verdict follows from the rows in the receipt
   TAMPERED   exit 1: what differs, and the verdict the rules give on the data as found
@@ -24,6 +25,7 @@ from app.explain.flip import compute_flip
 from app.orchestrator import apply_change
 from app.receipt import RECEIPT_VERSION, decision_for, evidence_answers, rules_sha256, verdict_seal
 from app.rules import Extracted
+from app.world.drawn import plot_from_geojson
 
 LABELS = ("alert_id", "plot_id", "delivery_id", "supplier_id", "doc_id", "rule")
 
@@ -34,12 +36,18 @@ def check(receipt: dict[str, Any]) -> dict[str, Any]:
     if receipt["rules_sha256"] != rules_sha256():
         problems.append("rules: this checkout's app/rules.py is not the one the receipt was made with")
 
+    declared = receipt.get("declared_plot")
+    plot = plot_from_geojson(declared["input"]) if declared else None
+    if declared and plot != declared["row"]:
+        problems.append("declared_plot: the row does not follow from the GeoJSON drawn")
+
     extracted = receipt["extracted"]
     evidence = evidence_from_answers(
         evidence_answers(receipt["sources"]),
         Extracted(scope=extracted["scope"], admissions=tuple(extracted["admissions"]),
                   mentions=tuple(extracted["mentions"])),
         receipt["company_id"],
+        plot,
     )
     for change in receipt["what_if"]:
         kind, _, key = change["entity"].partition(":")
@@ -74,6 +82,8 @@ def _integrity(receipt: dict) -> list[str]:
 
 
 def _label(row: dict) -> str:
+    if "loss_year" in row:
+        return f" (cell {row['lat']}, {row['lon']})"
     key = next((k for k in LABELS if k in row), None)
     return f" ({key.split('_')[0]} {row[key]})" if key else ""
 

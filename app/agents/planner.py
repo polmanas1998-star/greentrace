@@ -3,7 +3,8 @@
 Rule fallback = a fixed catalogue per claim type (kit, section 4). On purpose the
 first plan does not test whether a plot was still delivering when an alert fell:
 the Evaluator always asks (refutation R3), so the loop back to the Planner is real
-and shows in the trace, with or without a model.
+and shows in the trace, with or without a model. A plot drawn by the analyst adds H6:
+the reference maps are read inside its outline (Q10).
 """
 from app.agents.context import RunContext
 
@@ -22,14 +23,19 @@ CATALOGUE = {
          "queries": ["Q1"]},
     ],
 }
+DRAWN_PLOT = {"id": "H6", "part": "no_deforestation",
+              "statement": "no forest the EU map saw in 2020 was lost inside the drawn plot while it delivered",
+              "queries": ["Q10"]}
 REVISIONS = {
     "R3": {"id": "H5", "part": "no_deforestation",
-           "statement": "the plot was still delivering in the year of the alert", "queries": ["Q5"]},
+           "statement": "the plot was still delivering in the year of the alert, or of the loss", "queries": ["Q5"]},
 }
 
 
 def plan(ctx: RunContext, claim_types: list[str]) -> list[dict]:
     hypotheses = [h for t in claim_types for h in CATALOGUE.get(t, [])]
+    if ctx.notes.get("declared_plot"):
+        hypotheses.append(DRAWN_PLOT)
     ctx.step("Planner", "plan_hypotheses", f"claim parts: {', '.join(claim_types)}",
              "; ".join(f"{h['id']} {h['statement']}" for h in hypotheses), target="Investigator",
              status="degraded" if ctx.degraded else "success")

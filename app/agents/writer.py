@@ -16,6 +16,9 @@ UNTESTED = {
     "confirmed_alert_in_delivering_plot": "No field visit of {plot}; a satellite alert can be a false detection.",
     "alert_near_point_plot": "{plot} has no polygon: its real outline may or may not include the alert.",
     "sources_in_conflict": "The NGO account has not been checked on the ground.",
+    "forest_loss_in_delivering_plot": "No field visit of {plot}; 30 m satellite maps can misread a few cells.",
+    "forest_loss_below_threshold": "No field visit of {plot}; the loss is too small for the maps to decide.",
+    "tree_cover_loss_outside_2020_forest": "No field visit of {plot}; the EU 2020 map may have missed forest there.",
 }
 ACTIONS = {
     "confirmed_alert_in_delivering_plot": "Ask {supplier} for a field report on {plot}, and hold its deliveries.",
@@ -30,10 +33,19 @@ ACTIONS = {
     "company_admission": "Read the annex with the company and exclude the plots it names.",
     "no_independent_source": "Get alert data covering the supply area before relying on the claim.",
     "source_unavailable": "Run the check again when the alert source answers.",
+    "forest_loss_in_delivering_plot": "Ask {supplier} for a field report on {plot}, and hold its deliveries.",
+    "forest_loss_below_threshold": "Ask {supplier} for a field report on {plot}.",
+    "tree_cover_loss_outside_2020_forest": "Ask {supplier} for a field report on {plot}.",
+    "no_reference_data": "Load reference maps that cover {plot} before relying on the claim.",
 }
 LIMITATIONS = [
     "Synthetic company and alerts, placed on real places. A satellite alert is not legal proof.",
     "The verdict is computed by fixed rules from the rows listed; a human must review it before any decision.",
+]
+DRAWN_LIMITATIONS = [
+    "Plot {plot} was drawn by the analyst and declared for {supplier}: it is not a row of the registry.",
+    "Reference maps: forest in 2020 from the EU JRC GFC2020 v4, tree cover loss by year from "
+    "Hansen/UMD/Google/USGS/NASA (GFC v1.12), on 30 m cells around Soubre.",
 ]
 
 
@@ -48,7 +60,7 @@ def write(ctx: RunContext, decision: dict, cards: list[dict], reviews: dict[str,
         "findings": findings,
         "untested_factors": _filled(UNTESTED, cards),
         "recommended_actions": _filled(ACTIONS, cards),
-        "limitations": LIMITATIONS,
+        "limitations": LIMITATIONS + _drawn_limitations(ctx),
         "human_review": "Required before any decision.",
     }
     _review(report)
@@ -83,6 +95,13 @@ def _filled(templates: dict[str, str], cards: list[dict]) -> list[str]:
             if line not in lines:
                 lines.append(line)
     return lines
+
+
+def _drawn_limitations(ctx: RunContext) -> list[str]:
+    plot = ctx.notes.get("declared_plot")
+    if not plot:
+        return []
+    return [line.format(plot=plot["plot_id"], supplier=plot["supplier_id"]) for line in DRAWN_LIMITATIONS]
 
 
 def _review(report: dict) -> None:

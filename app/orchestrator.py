@@ -10,7 +10,8 @@ facts built on it, the cards are rebuilt from the changed evidence, and only the
 that changed go back to the Evaluator.
 
 Data: "sample" runs on the synthetic world in SQLite (SAMPLE_MODE=true, no network);
-"live" runs on Zetaris through the semantic layer. Same agents, same rules.
+"live" runs on Zetaris through the semantic layer. Same agents, same rules. Both read the
+real reference maps (Q10) inside a plot the analyst draws (input.plot).
 """
 import os
 import re
@@ -31,8 +32,9 @@ from app.memory.world_model import WorldModel
 from app.queries import DataGate, SQLiteEngine, ZetarisEngine
 from app.receipt import decision_for, verdict_seal
 from app.rules import RULES_VERSION, Evidence
+from app.world import drawn
 from app.world.cases import build_case
-from app.world.store import to_sqlite
+from app.world.store import attach_reference, to_sqlite
 
 RULES_FILE = Path(__file__).resolve().parent / "rules.py"
 _RUN_ID = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
@@ -54,6 +56,7 @@ class Investigation:
     output: dict = field(default_factory=dict)
     changes: list[dict] = field(default_factory=list)  # what_if changes, replayed by verify.py
     log_dir: Optional[Path] = None
+    input_plot: Optional[dict] = None  # the GeoJSON the analyst drew, kept for the receipt
 
 
 RUNS: "OrderedDict[str, Investigation]" = OrderedDict()
@@ -68,12 +71,15 @@ def sample_mode(options: dict) -> bool:
 def investigate(request: dict, run_id: str, *, log, memory_engine=None, zetaris=None,
                 log_dir: Optional[Path] = None, stream=None) -> dict[str, Any]:
     started = time.perf_counter()
-    claim, company_id, options = _read_request(request)
+    claim, company_id, options, input_plot = _read_request(request)
+    declared = drawn.plot_from_geojson(input_plot) if input_plot is not None else None
     sample = sample_mode(options)
 
     if sample:
         world = build_case(int(options.get("case", DEFAULT_SAMPLE_CASE)))
-        engine = SQLiteEngine(to_sqlite(world), tuple(world["meta"]["unavailable_sources"]))
+        connection = to_sqlite(world)
+        attach_reference(connection)
+        engine = SQLiteEngine(connection, tuple(world["meta"]["unavailable_sources"]))
     else:
         from app.adapters.zetaris import Zetaris
         engine = ZetarisEngine(zetaris or Zetaris.from_env())
@@ -91,6 +97,11 @@ def investigate(request: dict, run_id: str, *, log, memory_engine=None, zetaris=
     ctx.step("Pipeline", "receive_case", f"claim on {company_id}",
              f"data {'sample' if sample else 'live'}; model chain {' > '.join(models.chain)}",
              target="Extractor", status="success")
+    if declared:
+        ctx.notes["declared_plot"] = declared
+        ctx.step("Pipeline", "receive_plot", f"input.plot ({'polygon' if declared['polygon_wkt'] else 'point'})",
+                 f"{declared['plot_id']}, {declared['area_ha']} ha at {declared['lat']}, {declared['lon']}, declared "
+                 f"by the analyst for {declared['supplier_id']}", target="Planner", status="success")
 
     parsed, extracted = extractor.extract(ctx, claim)
     if not parsed["types"]:
@@ -98,7 +109,7 @@ def investigate(request: dict, run_id: str, *, log, memory_engine=None, zetaris=
 
     hypotheses = planner.plan(ctx, parsed["types"])
     run = Investigation(ctx, request, sample, hypotheses, investigator.gather(ctx, hypotheses, extracted),
-                        log_dir=log_dir)
+                        log_dir=log_dir, input_plot=input_plot)
     run.cards = investigator.write_cards(ctx, run.evidence)
     _review(run, run.cards)
     run.output = _conclude(run, started)
@@ -229,7 +240,7 @@ def _written(ctx: RunContext, node_id: str) -> bool:
 
 # ---- request and output ---------------------------------------------------------------------
 
-def _read_request(request: dict) -> tuple[str, str, dict]:
+def _read_request(request: dict) -> tuple[str, str, dict, Optional[dict]]:
     body = request.get("input", request)
     claim = body.get("claim")
     if not isinstance(claim, str) or not claim.strip():
@@ -239,7 +250,7 @@ def _read_request(request: dict) -> tuple[str, str, dict]:
     options = {} if options is None else options
     if not isinstance(options, dict):
         raise ValueError("options must be an object")
-    return claim.strip()[:1000], company_id, options
+    return claim.strip()[:1000], company_id, options, body.get("plot")
 
 
 def _output(run_id, sample, request, ctx, started, *, report=None, decision=None, too_vague=False) -> dict:
