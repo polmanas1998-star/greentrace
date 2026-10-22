@@ -6,6 +6,8 @@ GreenTrace checks a company's "deforestation-free" promise against the evidence,
 PROVEN, CONTRADICTED or UNVERIFIABLE, and shows why, down to the database row. Every verdict ships
 with a receipt that one command re-derives offline.
 
+**Try it online:** https://greentrace-0qd7.onrender.com (sample mode: synthetic company, real forest maps, no key, no model call; the first visit after a quiet spell takes about 50 s to wake the free instance).
+
 ## The problem
 
 The EU Deforestation Regulation (EUDR, Regulation (EU) 2023/1115) applies to large and medium

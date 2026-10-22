@@ -68,4 +68,4 @@ Most of the code was written with Claude Code (one local session and two web ses
 
 - Repository: https://github.com/polmanas1998-star/greentrace
 - Demo video: [to fill in]
-- Live demo: [to fill in if hosted; see `deploy/huggingface/`]
+- Live demo: https://greentrace-0qd7.onrender.com (sample mode, no key; Render free tier, the first visit after 15 idle minutes takes about 50 s to wake up)
