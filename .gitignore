@@ -11,3 +11,6 @@ logs/*.jsonl
 
 # rebuilt by python -m scripts.build_data
 data/build/
+
+# raw map tiles (GeoTIFF, ~120 MB each): fetched by scripts/fetch_reference_maps.py, never committed
+data/raw/
