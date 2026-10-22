@@ -3,6 +3,7 @@
   "tagline": "Checks a deforestation-free claim against the evidence and explains why, down to the row; every verdict ships with a receipt re-derived offline.",
   "hackathon": "Open Agent Hackathon 2026",
   "track": "The Agent That Can Explain Why",
+  "license": "Apache-2.0",
   "team": {
     "type": "solo",
     "members": [
