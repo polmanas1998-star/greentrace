@@ -88,6 +88,27 @@
       </div>
       <dl class="map-numbers" id="map-numbers"></dl>
       <div class="map-foot" id="map-foot"></div>
+      <section class="lens" id="lens" aria-labelledby="lens-title">
+        <div class="lens-head">
+          <div class="stack-8">
+            <h2 class="h-card" id="lens-title">Satellite lens</h2>
+            <p class="small muted" id="lens-intro">Nemotron Vision reads the Sentinel-2 scene in a 3 x 3 grid; the code
+              checks every cell against Hansen loss after 2020. The verdict stays the rules'.</p>
+          </div>
+          <div class="lens-actions">
+            <button class="btn" type="button" id="lens-toggle" aria-pressed="true" hidden>Grid on the map</button>
+            <button class="btn" type="button" id="lens-run">Ask the AI lens</button>
+          </div>
+        </div>
+        <p class="lens-status" id="lens-status" aria-live="polite" hidden></p>
+        <div class="lens-score" id="lens-score" hidden></div>
+        <table class="lens-table" id="lens-table" hidden>
+          <caption class="sr-only">The model's label and the code's check, cell by cell</caption>
+          <thead><tr><th scope="col">Cell</th><th scope="col">The model says</th><th scope="col">Hansen after 2020</th><th scope="col">Code</th></tr></thead>
+          <tbody id="lens-rows"></tbody>
+        </table>
+        <p class="sub" id="lens-foot" hidden></p>
+      </section>
     </section>
   </div>
 

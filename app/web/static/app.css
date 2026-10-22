@@ -175,6 +175,21 @@ main:has(> #view-home:not([hidden])) { padding-top: 64px; }
 .map-scale-bar { display: block; height: 8px; border: 2px solid var(--text); border-top: 0; }
 .map-north { top: 16px; right: 16px; display: flex; flex-direction: column; align-items: center; padding: 4px 8px; font-size: 12px; line-height: 1.2; }
 .map-north path { fill: var(--text); }
+.lens-grid { position: absolute; inset: 0; z-index: 1; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); pointer-events: none; }
+.lens-cell { position: relative; border: 1px solid rgba(231, 238, 233, 0.35); display: flex; flex-direction: column; justify-content: space-between; padding: 8px; min-width: 0; }
+.lens-cell[data-status] { border: 2px solid var(--lens-color); }
+.lens-cell .lens-id { align-self: flex-start; font-family: var(--mono); font-size: 12px; color: var(--text); background: var(--deep); padding: 0 4px; border-radius: 6px; }
+.lens-cell .lens-said { align-self: flex-start; font-size: 12px; font-weight: 600; color: var(--lens-color, var(--text)); background: var(--deep); padding: 2px 8px; border-radius: 6px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-status="CONFIRMED"] { --lens-color: var(--signal); }
+[data-status="REJECTED"] { --lens-color: #F2555A; }
+[data-status="MISSED BY AI"] { --lens-color: var(--loss-text); }
+[data-status="NO CLAIM"] { --lens-color: var(--text-3); }
+[data-status="LOSS"] { --lens-color: var(--loss-text); }
+.map.drawing .lens-grid { display: none; }
+.lens-cell { gap: 4px; }
+.lens-cell:nth-child(-n+3) { justify-content: flex-end; }   /* top row: clear of the plot switch and north */
+.lens-cell:nth-child(n+7) { justify-content: flex-start; }  /* bottom row: clear of the scale and imagery */
+.btn[aria-pressed="true"] { background: var(--raised); border-color: var(--signal); }
 .map.drawing > svg { cursor: crosshair; touch-action: manipulation; }
 .map.drawing { box-shadow: inset 0 0 0 2px var(--signal); }
 .map.has-plot .m-outline, .map.has-plot .m-halo, .map.has-plot .m-vertex { opacity: 0.4; }
@@ -184,6 +199,19 @@ main:has(> #view-home:not([hidden])) { padding-top: 64px; }
 .d-corner { fill: var(--deep); stroke: var(--signal); stroke-width: 2; }
 .map-imagery { position: absolute; right: 16px; bottom: 16px; z-index: 1; display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border-radius: 10px; background: var(--deep); border: 1px solid var(--line); font-size: 12px; color: var(--text-2); }
 .map-imagery input { min-height: 0; padding: 0; width: 96px; accent-color: var(--signal); }
+.lens { border-top: 1px solid var(--line); padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+.lens-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px 16px; }
+.lens-head .stack-8 { flex: 1 1 280px; }
+.lens-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.lens-status { margin: 0; font-size: 14px; color: var(--text); padding: 8px 12px; border-radius: 10px; background: var(--raised); }
+.lens-score { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; }
+.lens-score b { font-family: var(--mono); font-size: 24px; font-weight: 500; }
+.lens-score span { font-size: 14px; color: var(--text-2); }
+.lens-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.lens-table th { text-align: left; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); padding: 8px; border-bottom: 1px solid var(--line); }
+.lens-table td { padding: 8px; border-bottom: 1px solid var(--raised); color: var(--text-2); }
+.lens-table td:first-child { font-family: var(--mono); font-size: 12px; color: var(--text); }
+.lens-table .lens-verdict { font-size: 12px; font-weight: 700; letter-spacing: 0.02em; color: var(--lens-color); white-space: nowrap; }
 .map-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 16px; padding: 12px 20px; border-top: 1px solid var(--line); background: var(--raised); }
 .map-tools-status { margin: 0; flex: 1 1 240px; font-size: 14px; color: var(--text); }
 .map-tools-actions { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -429,6 +457,9 @@ main:has(> #view-live:not([hidden])), main:has(> #view-file:not([hidden])) { pad
   .tl-year { font-size: 12px; writing-mode: vertical-rl; transform: rotate(180deg); justify-self: center; align-self: center; }
   .tl-chart { gap: 2px; height: 224px; }
   .map-tools-actions .btn { flex: 1 1 auto; }
+  .lens-cell { padding: 4px; }
+  .lens-cell .lens-said { display: none; }
+  .lens-table th:nth-child(3), .lens-table td:nth-child(3) { display: none; }
   .file-foot > :last-child { margin-left: 0; }
 }
 @media (min-width: 761px) and (max-width: 1100px) {

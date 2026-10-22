@@ -28,7 +28,8 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
 
   const state = { setup: null, run: null, filter: "all", maps: {}, mapPlot: null, bench: null, geo: null,
     // the judge's plot: corners drawn on the map (editable), or an uploaded GeoJSON that falls outside the frame
-    draw: { active: false, points: [], feature: null, source: null, measure: null, problem: null, timer: null, asked: 0 } };
+    draw: { active: false, points: [], feature: null, source: null, measure: null, problem: null, timer: null, asked: 0 },
+    lens: {} };  // the Satellite Lens result of each scene, kept for this page
   const $ = (id) => document.getElementById(id);
   const SVG = "http://www.w3.org/2000/svg";
 
@@ -177,6 +178,11 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
       class: "btn", type: "button", title: `Case ${example.case}: ${example.change}. Sample mode, rules alone.`,
       text: example.label, onclick: () => startRun($("claim").value, { sample_mode: true, case: example.case }, example.case),
     })));
+    if (setup.default_mode === "sample") {
+      $("lens-run").textContent = "Show the code's grid";
+      $("lens-intro").textContent = "Sample mode: the AI lens needs a model, so no image is sent. The code's 3 x 3 grid " +
+        "of Hansen loss after 2020 is shown on the Sentinel-2 scene; with a model, Nemotron Vision labels each cell and the code checks it.";
+    }
     if (!setup.plot_input) {  // the pipeline cannot read a plot: say so on the buttons rather than fail silently
       for (const id of ["plot-upload", "plot-draw"]) { $(id).disabled = true; $(id).append(" ", h("span", { class: "soon", text: "coming" })); }
     }
@@ -328,6 +334,7 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
         "Measured offline by app/checks/landcover.py from 30 m cells; not an input of the demo run." +
         (data.image ? " Imagery: Sentinel-2, contains modified Copernicus Sentinel data." : "") }));
     renderDrawing();
+    renderLens();
   }
 
   function renderNumbers(m, whose) {
@@ -610,6 +617,85 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     }
     plotChanged();
     if (d.feature) measurePlot();  // outside the frame: no local checks to wait for, the server says
+  }
+
+  // ---- the Satellite Lens: the model looks at the scene, the code checks each cell ---------------
+
+  const SAID = { recent_clearing: "recent clearing", plantation: "plantation", bare_soil: "bare soil",
+    intact_forest: "intact forest", cannot_see: "cannot see" };
+
+  function lensStatus(text) {
+    $("lens-status").hidden = !text;
+    $("lens-status").textContent = text || "";
+  }
+
+  async function runLens() {
+    const button = $("lens-run");
+    const d = state.draw;
+    // An uploaded plot outside the frames is asked about by its own place; otherwise the scene on screen.
+    const ask = d.feature && d.measure ? { lat: d.measure.plot.lat, lon: d.measure.plot.lon } : { plot: state.mapPlot };
+    const sample = state.setup && state.setup.default_mode === "sample";
+    button.setAttribute("aria-busy", "true");
+    lensStatus(sample ? "Reading the Hansen cells under the grid…" : "Sending the scene to Nemotron Vision…");
+    try {
+      let job = await postJSON("/api/lens", ask);
+      if (job.status === "no_scene") {
+        lensStatus(`${capital(job.message)}: no Sentinel-2 frame covers this plot.`);
+        return;
+      }
+      const started = Date.now();
+      while (job.status === "running") {
+        if (!sample) lensStatus(`Nemotron Vision is looking at the scene · ${Math.round((Date.now() - started) / 1000)} s (90 s at most, then one retry).`);
+        await new Promise((resolve) => setTimeout(resolve, sample ? 250 : 1000));
+        job = await getJSON(`/api/lens/${encodeURIComponent(job.key)}`);
+      }
+      if (job.status === "failed") {
+        lensStatus(`The lens stopped: ${job.error}`);
+        return;
+      }
+      state.lens[job.result.plot_id] = job.result;
+      if (job.result.plot_id !== state.mapPlot) await loadMap(job.result.plot_id);
+      lensStatus("");
+      renderLens();
+    } catch (error) {
+      lensStatus(`The lens could not run: ${error.message}`);
+    } finally {
+      button.removeAttribute("aria-busy");
+    }
+  }
+
+  function renderLens() {
+    const result = state.lens[state.mapPlot];
+    const old = $("map").querySelector(".lens-grid");
+    if (old) old.remove();
+    for (const id of ["lens-score", "lens-table", "lens-foot", "lens-toggle"]) $(id).hidden = !result;
+    if (!result) return;
+    const ai = result.ai;
+    const lost = result.cells.filter((c) => c.lost).length;
+    const show = $("lens-toggle").getAttribute("aria-pressed") === "true";
+    if (show) {
+      $("map").append(h("div", { class: "lens-grid", "aria-hidden": "true" }, result.cells.map((c) => {
+        const status = ai ? c.status : c.lost ? "LOSS" : null;
+        return h("div", { class: "lens-cell", "data-status": status },
+          h("span", { class: "lens-id", text: c.cell }),
+          h("span", { class: "lens-said", text: ai ? `${c.status}${c.label ? ` · ${SAID[c.label]}` : ""}`
+            : c.lost ? `${c.loss_after_2020_ha.toFixed(2)} ha lost` : "no loss" }));
+      })));
+    }
+    $("lens-score").replaceChildren(...(ai
+      ? [h("b", { text: `AI ${result.score.ai_confirmed}/${result.score.of} · code corrected ${result.score.code_corrected}` }),
+        h("span", { text: `answered by ${result.model} through ${result.provider}, asked ${result.requested_model}` })]
+      : [h("b", { text: "Code grid" }),
+        h("span", { text: `${capital(result.message)}. ${lost} of 9 cells lost ${result.loss_from_ha} ha or more after 2020 on the Hansen map.` })]));
+    $("lens-rows").replaceChildren(...result.cells.map((c) => h("tr", { "data-status": ai ? c.status : c.lost ? "LOSS" : null },
+      h("td", { text: c.cell }),
+      h("td", { text: ai ? (c.label ? `${SAID[c.label]} · ${c.confidence.toFixed(2)}` : "no answer") : "not asked" }),
+      h("td", { class: "mono", text: `${c.loss_after_2020_ha.toFixed(2)} ha` }),
+      h("td", {}, h("span", { class: "lens-verdict", text: ai ? c.status : c.lost ? "LOSS AFTER 2020" : "no loss" })))));
+    const sc = result.scene || {};
+    $("lens-foot").textContent = `Scene ${sc.scene_id || "?"}, ${sc.date || "?"} · ${sc.licence || ""} · a cell counts as lost from ` +
+      `${result.loss_from_ha} ha of Hansen loss after 2020 · trace logs/${result.run_id}.jsonl` +
+      (ai ? "" : " · no model answer is ever replayed from a file");
   }
 
   // ---- a run: its trace lines, then its output -------------------------------------------------
@@ -1411,6 +1497,12 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     $("letters-close").addEventListener("click", () => $("letters").close());
     $("bench-run").addEventListener("click", runBench);
     $("plot-draw").addEventListener("click", () => setDrawing(!state.draw.active));
+    $("lens-run").addEventListener("click", runLens);
+    $("lens-toggle").addEventListener("click", () => {
+      const on = $("lens-toggle").getAttribute("aria-pressed") !== "true";
+      $("lens-toggle").setAttribute("aria-pressed", String(on));
+      renderLens();
+    });
     $("plot-upload").addEventListener("click", () => $("plot-file").click());
     $("plot-file").addEventListener("change", (event) => {
       const [file] = event.target.files;
