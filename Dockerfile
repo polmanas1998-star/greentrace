@@ -2,9 +2,12 @@
 # server (Node 24, meterless/server.ts). Sample mode by default: no key, no network.
 #
 #   docker build -t greentrace .
-#   docker run --rm -p 8000:8000 greentrace          # then http://localhost:8000/health
+#   docker run --rm -p 8000:8000 greentrace          # then http://localhost:8000
+#
+# Three stages: Node dependencies, Python dependencies, then a final image that only copies
+# what runs (no npm, no pip cache, no test tools, no raw map tiles).
 
-# ---- Node 24: the World Model server's dependencies, installed from the lock file ----------
+# ---- 1. the World Model server's dependencies, from the lock file (tsx only, no vitest) ----------
 FROM node:24-slim AS world-model
 WORKDIR /meterless
 COPY meterless/package.json meterless/package-lock.json ./
@@ -13,30 +16,40 @@ COPY meterless/server.ts meterless/LICENSE meterless/UPSTREAM.sha256 ./
 COPY meterless/reference/src ./reference/src
 COPY meterless/reference/package.json meterless/reference/tsconfig.json ./reference/
 
-# ---- the app ---------------------------------------------------------------------------------
+# ---- 2. the Python dependencies in a virtual environment, and the reference cells indexed --------
+FROM python:3.11-slim AS python-build
+WORKDIR /app
+COPY requirements.txt .
+RUN grep -v '^pytest' requirements.txt > runtime.txt \
+    && python -m venv /opt/venv \
+    && /opt/venv/bin/pip install --no-cache-dir --disable-pip-version-check -r runtime.txt \
+    && /opt/venv/bin/pip uninstall --yes --quiet pip setuptools  # not needed to run, 28 MB
+COPY app ./app
+COPY data ./data
+RUN /opt/venv/bin/python -c "from app.world.store import reference_db; print(reference_db())"
+
+# ---- 3. what runs ------------------------------------------------------------------------------------
 FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
+    PATH=/opt/venv/bin:$PATH \
     SAMPLE_MODE=true \
     PORT=8000 \
     WORLD_MODEL_URL=http://127.0.0.1:8787
 
+RUN useradd --create-home greentrace
 COPY --from=world-model /usr/local/bin/node /usr/local/bin/node
+COPY --from=python-build /opt/venv /opt/venv
 
 WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY --from=world-model /meterless ./meterless
-COPY app ./app
-COPY data ./data
-COPY examples ./examples
-COPY scripts ./scripts
-COPY run.py verify.py docker-start.sh ./
-# The reference cells, indexed once here so the first run does not wait for them.
-RUN python -c "from app.world.store import reference_db; print(reference_db())" \
-    && mkdir -p logs && useradd --create-home greentrace && chown -R greentrace /app
+COPY --chown=greentrace --from=world-model /meterless ./meterless
+COPY --chown=greentrace --from=python-build /app/data ./data
+COPY --chown=greentrace app ./app
+COPY --chown=greentrace examples ./examples
+COPY --chown=greentrace scripts ./scripts
+COPY --chown=greentrace run.py verify.py docker-start.sh ./
+RUN mkdir logs && chown greentrace logs
 USER greentrace
 
 EXPOSE 8000
