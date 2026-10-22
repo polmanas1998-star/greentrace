@@ -1,3 +1,4 @@
+from pathlib import Path
 """The interface (app/web): the page, the live trace as Server-Sent Events, and "try to fool it" through the API."""
 import json
 import re
@@ -165,7 +166,9 @@ def test_the_map_is_measured_from_the_committed_cells(client):
     assert m["outline_ha"] == pytest.approx(10.0, abs=0.01) and m["main_loss_year"] == 2021
     w = data["window"]
     assert all(w["lat_min"] <= lat <= w["lat_max"] and w["lon_min"] <= lon <= w["lon_max"] for lat, lon, _, _ in data["cells"])
-    assert len(data["plot"]["vertices"]) == 4 and data["image"] is None
+    assert len(data["plot"]["vertices"]) == 4
+    shipped = (Path(__file__).resolve().parents[1] / "app/web/static/maps/P-042.jpg").exists()
+    assert data["image"] == ("/static/maps/P-042.jpg" if shipped else None)  # real scene once fetched
 
     honest = client.get("/api/plot-map", params={"plot": "P-041"}).json()["measure"]
     assert honest["forest_2020_ha"] == 0 and honest["loss_after_2020_ha"] == 0
