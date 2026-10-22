@@ -8,6 +8,12 @@ cell names written small in the corners. It says, cell by cell, whether forest s
 in the recent image, in strict JSON. On the recent scene alone a clearing of 2021 has grown back:
 the first real test (22/10) gave nine "cannot see".
 
+Since the second real test (22/10: "forest_kept" for all nine cells at 512 px per date) the lens
+asks one question per cell first: the cell cropped at both dates and enlarged (bicubic only, by
+scripts/fetch_satellite.py: <plot>_lens_A1.jpg ... _C3.jpg), one request at a time. If a cell gets
+no answer (timeout, rate limit, invalid JSON), the whole grid falls back to the one-image method
+above, and the result says so.
+
 The code then reads the Hansen/UMD cells of data/reference_cells.csv.gz inside each grid cell and
 decides, cell by cell:
   CONFIRMED     the model and the maps agree (forest lost after 2020, or not)
@@ -22,6 +28,7 @@ date cannot show a change.
 """
 import hashlib
 import json
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Optional
@@ -39,12 +46,39 @@ UNSEEN = "cannot_see"
 LOSS_FROM_HA = 0.5  # Hansen loss after 2020 in a grid cell from which the code calls it a loss
 AFTER_YEAR = landcover.CUTOFF_YEAR  # loss strictly after 2020
 TIMEOUT_S = 90.0  # one vision call; one retry at most, as every model call (app/adapters/llm.py)
+CELL_PAUSE_S = 1.0  # between two cell questions: nine requests in a row met NVIDIA's rate limit on 22/10
 MAX_TOKENS = 2500  # the spec's floor: with 700 the reasoning ate the whole answer (probe of 21/10)
 NEEDS_MODEL = "AI lens needs a model"
 NEEDS_SCENE = "lens needs a scene for this area"
 NEEDS_BEFORE = "lens needs the 2020 scene: python -m scripts.fetch_satellite --before"
 CONFIRMED, REJECTED, MISSED, NOT_SEEN = "CONFIRMED", "REJECTED", "MISSED BY AI", "NOT SEEN"
 TRACE_STATUS = {CONFIRMED: "confirmed", REJECTED: "rejected", MISSED: "missed", NOT_SEEN: "not_seen"}
+
+
+LOOK_FOR = (
+    "What to compare: closed forest canopy looks dark green with a rough, irregular, clumpy texture; a clearing, "
+    "a young crop or bare soil looks lighter and smoother, often with straight edges or geometric shapes."
+)
+
+
+def cell_prompt(cell: str, before_date: str, after_date: str) -> str:
+    return (
+        f"The image shows one ground cell, {cell}, about 400 m wide and 267 m high, north up, in the cocoa belt of "
+        "Cote d'Ivoire, twice: LEFT, Sentinel-2 true colour of " + before_date + ", before the EU cut-off of "
+        "31 December 2020; RIGHT, the same cell on " + after_date + ". Each side is enlarged from about 10 m per "
+        "pixel, so it is soft: judge shapes and tones, not details. " + LOOK_FOR + " Answer for the whole cell: "
+        "forest_lost (closed forest on the left has been replaced on the right by lighter, smoother ground), "
+        "forest_kept (closed forest on the left is still closed forest on the right), no_forest_in_2020 (the left "
+        "shows no closed forest), or cannot_see (cloud, haze, or too blurred to judge on either side). "
+        "Give a confidence from 0 to 1."
+    )
+
+
+CELL_SCHEMA = {
+    "type": "object", "required": ["label", "confidence"], "additionalProperties": False,
+    "properties": {"label": {"type": "string", "enum": list(LABELS)},
+                   "confidence": {"type": "number", "minimum": 0, "maximum": 1}},
+}
 
 
 def prompt(before_date: str, after_date: str) -> str:
@@ -76,8 +110,10 @@ class Scene:
     meta: dict
     before: Optional[Path] = None      # the 2020 scene, when fetched
     before_meta: Optional[dict] = None
-    composite: Optional[Path] = None   # before | after with the grid: what the model sees
+    composite: Optional[Path] = None   # before | after with the grid: the one-image method
     composite_meta: Optional[dict] = None
+    cells: Optional[dict] = None       # cell -> the pair image of that cell: the method asked first
+    cells_meta: Optional[dict] = None
 
     @property
     def frame(self) -> dict:
@@ -87,7 +123,8 @@ class Scene:
     def fingerprint(self) -> str:
         """Plot and both dates: the same images of the same place give the same key."""
         parts = [self.plot_id, self.meta.get("jpg_sha256") or hashlib.sha256(self.image.read_bytes()).hexdigest(),
-                 (self.composite_meta or {}).get("jpg_sha256") or "no-2020-scene"]
+                 (self.composite_meta or {}).get("jpg_sha256") or "no-2020-scene",
+                 hashlib.sha256(json.dumps(self.cells_meta or {}, sort_keys=True).encode()).hexdigest()]
         return hashlib.sha256("|".join(parts).encode()).hexdigest()
 
 
@@ -107,8 +144,20 @@ def scenes(directory: Path = SCENES_DIR) -> dict[str, Scene]:
             continue
         before, before_meta = _read(directory, f"{plot_id}_2020")
         composite, composite_meta = _read(directory, f"{plot_id}_lens") if before else (None, None)
-        found[plot_id] = Scene(plot_id, image, meta, before, before_meta, composite, composite_meta)
+        cells, cells_meta = _cells(directory, plot_id) if before else (None, None)
+        found[plot_id] = Scene(plot_id, image, meta, before, before_meta, composite, composite_meta, cells, cells_meta)
     return found
+
+
+def _cells(directory: Path, plot_id: str) -> tuple[Optional[dict], Optional[dict]]:
+    """The nine cell pairs, only when every one of them is there."""
+    meta_file = directory / f"{plot_id}_lens_cells.json"
+    if not meta_file.is_file():
+        return None, None
+    pairs = {cell: directory / f"{plot_id}_lens_{cell}.jpg" for cell in CELLS}
+    if not all(path.is_file() for path in pairs.values()):
+        return None, None
+    return pairs, json.loads(meta_file.read_text(encoding="utf-8"))
 
 
 def scene_for(plot_id: Optional[str] = None, lat: Optional[float] = None, lon: Optional[float] = None,
@@ -177,20 +226,36 @@ def score(cells: list[dict]) -> dict[str, int]:
 
 
 def look(scene: Scene, run_id: str, *, gate: Optional[Any] = None, log: Optional[Callable[[dict], Any]] = None,
-         cells_file: Path = landcover.CELLS_FILE) -> dict[str, Any]:
-    """Ask the model about the scene (unless there is no model), then check every cell by code."""
+         cells_file: Path = landcover.CELLS_FILE, gate_factory: Optional[Callable[[], Any]] = None,
+         method: str = "cells", sleep: Callable[[float], None] = time.sleep) -> dict[str, Any]:
+    """Ask the model about the scene (unless there is no model), then check every cell by code.
+
+    method "cells": one question per cell pair, then the one-image grid if a cell gets no answer;
+    method "grid": the one-image grid only (scripts/lens_probe.py compares the two).
+    """
     log = log or (lambda record: trace(record))
-    gate = gate or ModelGate(run_id, log=log)
+    new_gate = gate_factory or ((lambda: gate) if gate is not None else (lambda: ModelGate(run_id, log=log)))
     measured = maps_by_cell(scene.frame, cells_file)
-    if scene.composite is not None:
-        answer, info = gate.complete_json(
-            "Evaluator", prompt(scene.before_meta["date"], scene.meta["date"]), [], SCHEMA,
-            images=[scene.composite.read_bytes()], timeout_s=TIMEOUT_S, max_tokens=MAX_TOKENS)
-        missing = None if answer is not None else NEEDS_MODEL if gate.sample_mode else (
-            f"no model answer ({info.get('reason') or 'see the trace'})")
-    else:  # one date cannot show a change: the model is not asked
-        answer, missing = None, NEEDS_MODEL if gate.sample_mode else NEEDS_BEFORE
+    first = new_gate()
+    answer, info, infos, used, fallback, missing = None, {}, {}, None, None, None
+    if first.sample_mode or (scene.cells is None and scene.composite is None):
+        missing = NEEDS_MODEL if first.sample_mode else NEEDS_BEFORE  # no call: no model, or one date only
         info = {"provider": "rules", "model": None, "requested_model": None, "reason": missing}
+    else:
+        if method == "cells" and scene.cells is not None:
+            answer, infos, fallback = _ask_cells(scene, first, sleep)
+            used = "cells" if answer is not None else None
+            info = infos[CELLS[-1]] if answer is not None else {}
+        if answer is None and scene.composite is not None:
+            gate_now = first if used is None and fallback is None else new_gate()
+            answer, info = gate_now.complete_json(
+                "Evaluator", prompt(scene.before_meta["date"], scene.meta["date"]), [], SCHEMA,
+                images=[scene.composite.read_bytes()], timeout_s=TIMEOUT_S, max_tokens=MAX_TOKENS)
+            used = "grid" if answer is not None else None
+            infos = {}
+        if answer is None:
+            missing = f"no model answer ({info.get('reason') or fallback or 'see the trace'})"
+            info = info or {"provider": "rules", "model": None, "requested_model": None}
     said = {}
     if answer is not None:
         for item in answer["cells"]:
@@ -204,7 +269,7 @@ def look(scene: Scene, run_id: str, *, gate: Optional[Any] = None, log: Optional
         cells.append({"cell": name, "label": claim["label"] if claim else None,
                       "confidence": claim["confidence"] if claim else None, "status": status, **truth})
         if ai:
-            _line(log, run_id, info, name, claim, truth, status)
+            _line(log, run_id, infos.get(name, info), name, claim, truth, status, method=used)
     if not ai:
         _line(log, run_id, info, None, None, None, None, missing)
     pick = ("scene_id", "date", "licence")
@@ -215,7 +280,7 @@ def look(scene: Scene, run_id: str, *, gate: Optional[Any] = None, log: Optional
                    "before": f"/static/maps/{scene.before.name}" if scene.before else None,
                    "composite": f"/static/maps/{scene.composite.name}" if scene.composite else None},
         "frame": scene.frame, "fingerprint": scene.fingerprint, "run_id": run_id,
-        "ai": ai, "message": None if ai else missing,
+        "ai": ai, "message": None if ai else missing, "method": used, "fallback": fallback if used == "grid" else None,
         "provider": info["provider"], "model": info["model"], "requested_model": info.get("requested_model"),
         "reason": info.get("reason"),
         "loss_from_ha": LOSS_FROM_HA, "cells": cells,
@@ -223,13 +288,29 @@ def look(scene: Scene, run_id: str, *, gate: Optional[Any] = None, log: Optional
     }
 
 
-def _line(log, run_id, info, name, claim, truth, status, missing=None) -> None:
+def _ask_cells(scene: Scene, gate: Any, sleep: Callable[[float], None]) -> tuple[Optional[dict], dict, Optional[str]]:
+    """One question per cell pair, one at a time; the first cell without an answer stops it and says why."""
+    answers, infos = [], {}
+    for index, cell in enumerate(CELLS):
+        if index:
+            sleep(CELL_PAUSE_S)
+        said, info = gate.complete_json(
+            "Evaluator", cell_prompt(cell, scene.before_meta["date"], scene.meta["date"]), [], CELL_SCHEMA,
+            images=[scene.cells[cell].read_bytes()], timeout_s=TIMEOUT_S, max_tokens=MAX_TOKENS)
+        if said is None:
+            return None, infos, f"cell {cell}: {info.get('reason') or 'no answer'}; fell back to the one-image grid"
+        answers.append({"cell": cell, **said})
+        infos[cell] = info
+    return {"cells": answers}, infos, None
+
+
+def _line(log, run_id, info, name, claim, truth, status, missing=None, method=None) -> None:
     if name is None:
         summary_in, summary_out = "9 grid cells, before | after", f"{missing}: the code's grid stands alone"
         status_field, confidence = "degraded", None
     else:
         said = f"{claim['label']} ({claim['confidence']:.2f})" if claim else "no answer"
-        summary_in = f"{name}: the model says {said}; asked {info.get('requested_model')}"
+        summary_in = f"{name}: the model says {said} ({method} method); asked {info.get('requested_model')}"
         summary_out = (f"{status}: Hansen {truth['loss_after_2020_ha']:.2f} ha lost after 2020 in {name} "
                        f"(threshold {LOSS_FROM_HA} ha); answered by {info['model']}")
         status_field, confidence = TRACE_STATUS[status], claim["confidence"] if claim else None

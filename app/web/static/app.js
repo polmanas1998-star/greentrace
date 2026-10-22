@@ -702,8 +702,9 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
         h("span", { "data-status": st }, h("i", { class: "swatch lens-swatch" }), text))));
     $("lens-score").replaceChildren(...(ai
       ? [h("b", { text: `AI right ${result.score.right} / seen ${result.score.seen} · missed ${result.score.missed} · wrong ${result.score.wrong}` }),
-        h("span", { text: `answered by ${result.model} through ${result.provider}, asked ${result.requested_model}; ` +
-          `${result.score.of - result.score.seen} cell(s) it could not see count neither way` })]
+        h("span", { text: `${result.method === "cells" ? "one question per cell, its 2020 | today pair enlarged" : "one image of the whole grid"}` +
+          `${result.fallback ? ` (${result.fallback})` : ""}; answered by ${result.model} through ${result.provider}, ` +
+          `asked ${result.requested_model}; ${result.score.of - result.score.seen} cell(s) it could not see count neither way` })]
       : [h("b", { text: "Code grid" }),
         h("span", { text: `${capital(result.message)}. ${lost} of 9 cells lost ${result.loss_from_ha} ha or more after 2020 on the Hansen map.` })]));
     $("lens-rows").replaceChildren(...result.cells.map((c) => h("tr", { "data-status": status(c) },
