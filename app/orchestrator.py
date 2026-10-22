@@ -24,6 +24,7 @@ from app.adapters.llm import ModelGate
 from app.agents import evaluator, extractor, investigator, planner, writer
 from app.agents.context import RunContext
 from app.canonical import sha256_of
+from app.explain import exports
 from app.explain.flip import compute_flip
 from app.memory.world_model import Source, entity_id
 from app.memory.world_model import WorldModel
@@ -176,6 +177,12 @@ def _conclude(run: Investigation, started: float) -> dict[str, Any]:
     report["flip"] = flip["sentence"]
     report["flip_tried"] = flip["tried"]
     report["blocked_cards"] = [r["card"] for r in run.reviews.values() if r["decision"] == evaluator.BLOCK]
+    report["eudr_export"] = exports.eudr_geojson(run.evidence, decision)
+    report["supplier_letters"] = exports.supplier_letters(run.evidence, report)
+    ctx.step("Writer", "export_files", "plot file and supplier letters, no model",
+             f"{len(report['eudr_export']['plots_no_issue_found']['features'])} delivering plot(s) with no issue "
+             f"found, {len(report['eudr_export']['excluded'])} left out; "
+             f"{len(report['supplier_letters'])} supplier letter draft(s)", status="success")
     return _output(ctx.run_id, run.sample, run.request, ctx, started, report=report, decision=decision)
 
 
