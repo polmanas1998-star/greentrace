@@ -166,15 +166,18 @@ def _conflicting_mentions(e: Evidence, already_contradicted: set[str]) -> list[F
     delivering = registry.delivering_suppliers(e.deliveries, since=FIRST_YEAR_AFTER_CUTOFF)
     found = []
     for mention in e.extracted.mentions:
-        if not mention.get("supplier_name") or (mention.get("year") or 0) < FIRST_YEAR_AFTER_CUTOFF:
+        named_by = mention.get("supplier_id") or mention.get("supplier_name")
+        if not named_by or (mention.get("year") or 0) < FIRST_YEAR_AFTER_CUTOFF:
             continue
-        matches = [s for s in e.suppliers if s["name"] == mention["supplier_name"]
+        matches = [s for s in e.suppliers
+                   if (s["supplier_id"] == mention["supplier_id"] if mention.get("supplier_id")
+                       else s["name"] == mention["supplier_name"])
                    and mention.get("cooperative_group") in (None, s["cooperative_group"])]
         named = sorted(s["supplier_id"] for s in matches if s["supplier_id"] in delivering)
         if named and not set(named) & already_contradicted:
             found.append(Finding("no_deforestation", 3, UNVERIFIABLE, "sources_in_conflict",
                                  f"{mention['doc']} paragraph {mention['paragraph_no']} reports clearing by "
-                                 f"{mention['supplier_name']} in {mention['year']}; no confirmed alert backs it",
+                                 f"{named_by} in {mention['year']}; no confirmed alert backs it",
                                  tuple(f"supplier:{s}" for s in named)
                                  + (f"doc:{mention['doc']}:main:{mention['paragraph_no']}",)))
     return found

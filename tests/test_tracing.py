@@ -52,11 +52,15 @@ def test_unsafe_run_id_refused(tmp_path, run_id):
         trace(record(run_id=run_id), log_dir=tmp_path, stream=io.StringIO())
 
 
-def test_run_case_writes_one_complete_line(tmp_path):
-    result = run_case({"claim": "x"}, log_dir=tmp_path, stream=io.StringIO())
+def test_every_line_of_a_real_run_is_complete(tmp_path):
+    from app.memory.fallback import MemoryEngine
+
+    result = run_case({"input": {"claim": "100% of our cocoa is deforestation-free since 2021."},
+                       "options": {"sample_mode": True, "case": 2}},
+                      log_dir=tmp_path, stream=io.StringIO(), memory_engine=MemoryEngine())
     lines = (tmp_path / f"{result['run_id']}.jsonl").read_text(encoding="utf-8").splitlines()
-    assert len(lines) == 1
-    assert set(json.loads(lines[0])) == set(FIELDS)
+    assert len(lines) > 20
+    assert all(set(json.loads(line)) == set(FIELDS) for line in lines)
 
 
 def test_run_case_refuses_non_object(tmp_path):
