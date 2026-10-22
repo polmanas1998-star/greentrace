@@ -8,7 +8,9 @@ covers, and a cell's area follows its latitude. The plot is its polygon, or the 
 its area around its point, as in app/checks/geometry.py.
 
 Measures only: the verdict stays in app/rules.py. A plot that is not entirely covered by
-the cells gives "no reference data for this area", never zero.
+the cells gives "no reference data for this area", never zero. Loss is given twice by
+year: on every cell, and on the cells the EU map counted as forest in 2020 (the only
+loss the EUDR's cut-off is about).
 """
 import gzip
 import json
@@ -33,6 +35,8 @@ CUTOFF_YEAR = 2020
 NO_DATA = "no reference data for this area"
 DISK_SEGMENTS = 64  # a point-declared plot is a disk drawn with 4 x 64 segments
 DECIMALS = 6
+UNCOVERED = {"covered": False, "reason": NO_DATA, "forest_2020_ha": None, "loss_ha_by_year": None,
+             "forest_loss_ha_by_year": None, "loss_after_2020_ha": None, "cells": []}
 
 
 def cell_area_ha(lat: float) -> float:
@@ -69,7 +73,7 @@ def measure(plot: dict, cells: Iterable[dict]) -> dict[str, Any]:
     top, left = cell_index(north, west)
     bottom, right = cell_index(south, east)
 
-    used, forest, after, by_year = [], 0.0, 0.0, {}
+    used, forest, after, by_year, on_forest = [], 0.0, 0.0, {}, {}
     for row in range(top, bottom + 1):
         for col in range(left, right + 1):
             square = cell_box(row, col)
@@ -78,28 +82,33 @@ def measure(plot: dict, cells: Iterable[dict]) -> dict[str, Any]:
                 continue
             cell = by_index.get((row, col))
             if cell is None:  # part of the plot falls where the maps were not loaded
-                return {"covered": False, "reason": NO_DATA, "forest_2020_ha": None, "loss_ha_by_year": None,
-                        "loss_after_2020_ha": None, "cells": []}
+                return dict(UNCOVERED)
             area = overlap * cell_area_ha(cell["lat"])
             forest += area * cell["forest_fraction_2020"]
             year = cell["loss_year"]
             if year:
                 by_year[year] = by_year.get(year, 0.0) + area
-                if year > CUTOFF_YEAR and cell["forest_fraction_2020"] >= FOREST_FROM:
-                    after += area
+                if cell["forest_fraction_2020"] >= FOREST_FROM:
+                    on_forest[year] = on_forest.get(year, 0.0) + area
+                    if year > CUTOFF_YEAR:
+                        after += area
             used.append({"lat": cell["lat"], "lon": cell["lon"], "overlap": round(overlap, DECIMALS)})
 
     if not used:  # a plot with no area at all
-        return {"covered": False, "reason": NO_DATA, "forest_2020_ha": None, "loss_ha_by_year": None,
-                "loss_after_2020_ha": None, "cells": []}
+        return dict(UNCOVERED)
     return {
         "covered": True,
         "reason": None,
         "forest_2020_ha": round(forest, 4),
-        "loss_ha_by_year": {str(year): round(ha, 4) for year, ha in sorted(by_year.items())},  # JSON keys
+        "loss_ha_by_year": _by_year(by_year),
+        "forest_loss_ha_by_year": _by_year(on_forest),
         "loss_after_2020_ha": round(after, 4),
         "cells": sorted(used, key=lambda c: (-c["lat"], c["lon"])),
     }
+
+
+def _by_year(hectares: dict[int, float]) -> dict[str, float]:
+    return {str(year): round(ha, 4) for year, ha in sorted(hectares.items())}  # string keys: JSON
 
 
 COLUMNS = "lat,lon,forest_fraction_2020,loss_year"

@@ -7,3 +7,12 @@ environment template and .gitignore). Project code starts at kickoff.
 
 Setup: `pip install -r requirements.txt`, copy `.env.example` to `.env`, fill in the keys, then
 `python smoke_test.py` (three PASS lines expected, with Zetaris running).
+
+## Run
+
+Sample mode (no key, no network): `docker build -t greentrace .` then `docker run --rm -p 8000:8000 greentrace`
+(the API on port 8000, the Meterless World Model server beside it inside the container).
+Live: start Zetaris, copy `.env.example` to `.env` and fill it, load the data from the host with
+`python -m scripts.load_zetaris`, then `docker run --rm -p 8000:8000 --env-file .env -e SAMPLE_MODE=false greentrace`
+(in `.env`, write `host.docker.internal` instead of `localhost` in `ZETARIS_REST_URL`; on Linux also add
+`--add-host=host.docker.internal:host-gateway`).

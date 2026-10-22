@@ -44,4 +44,11 @@ CREATE TABLE report_paragraphs (
   section varchar(10),
   paragraph_no int,
   paragraph_text varchar(4000)
+);
+CREATE TABLE reference_cells (
+  cell_key varchar(30) NOT NULL PRIMARY KEY,
+  lat double,
+  lon double,
+  forest_fraction_2020 double,
+  loss_year int
 )

@@ -13,7 +13,8 @@ by the part of it inside the cell) and the year Hansen saw tree cover lost (0: n
 tiles always give the same bytes.
 
 5.7053 N, 6.5560 W is the dam lake on the Sassandra: the "loss" there is flooding, never use it
-as an example of deforestation.
+as an example of deforestation. The meta file also keeps what the maps measure inside the two demo
+plots (squares on their points: no exact outline was recorded), so every number shown is a measure.
 """
 import argparse
 import gzip
@@ -30,7 +31,7 @@ import requests
 from rasterio.warp import Resampling, reproject
 from rasterio.windows import from_bounds
 
-from app.checks.landcover import CELL_DEG, CELLS_FILE, GRID_ORIGIN, META_FILE
+from app.checks.landcover import CELL_DEG, CELLS_FILE, GRID_ORIGIN, META_FILE, measure, plot_box, read_cells
 from app.world import geo
 
 RAW_DIR = CELLS_FILE.parent / "raw"
@@ -40,7 +41,9 @@ MUST_CONTAIN = {
     "demo plot P-041 and 2.5 km around it": (5.7052, -6.7244, 2500.0, 2500.0),
     "video window, 2.4 x 1.4 km": (5.7247, -6.5395, 700.0, 1200.0),
     "dam lake (flooding, not deforestation)": (5.70533, -6.55601, 0.0, 0.0),
+    "demo plot P-042": (5.7300, -6.5220, 200.0, 200.0),
 }
+DEMO_PLOTS = {"P-041": (5.7052, -6.7244, 10.6), "P-042": (5.7300, -6.5220, 10.0)}  # centre lat, lon; ha
 FRACTION_DECIMALS = 3  # the forest threshold is 0.5: a thousandth is plenty
 TIMEOUT_S = 120
 
@@ -219,6 +222,18 @@ def meta(extent: dict, data: bytes, rows: int, tiles: dict[str, Path]) -> dict:
     }
 
 
+def demo_measures(cells_file: Path = CELLS_FILE) -> dict:
+    """What the maps measure inside each demo plot, a square of its area centred on its point."""
+    found = {}
+    for name, (lat, lon, area) in DEMO_PLOTS.items():
+        plot = {"polygon_wkt": geo.square_wkt(lat, lon, area)}
+        result = measure(plot, read_cells(*plot_box(plot), path=cells_file))
+        found[name] = {"centre_lat_lon": [lat, lon], "area_ha": area, "polygon_wkt": plot["polygon_wkt"],
+                       **{key: result[key] for key in ("forest_2020_ha", "loss_after_2020_ha", "loss_ha_by_year",
+                                                       "forest_loss_ha_by_year")}}
+    return found
+
+
 def build(raw_dir: Path = RAW_DIR, extent: dict = EXTENT) -> tuple[bytes, dict]:
     check_extent(extent)
     tiles = {key: download(source, raw_dir) for key, source in SOURCES.items()}
@@ -243,6 +258,7 @@ def main(argv: list[str]) -> int:
         print(f"{'same bytes' if same else 'DIFFERENT'}: committed {committed[:12]}, rebuilt {info['sha256'][:12]}")
         return 0 if same else 1
     CELLS_FILE.write_bytes(data)
+    info["measured"] = demo_measures(CELLS_FILE)
     META_FILE.write_text(json.dumps(info, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
     print(f"wrote {CELLS_FILE.name}: {info['rows']} cells, {info['bytes'] / 1e6:.2f} MB, sha256 {info['sha256'][:12]}")
     return 0
