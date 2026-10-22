@@ -65,7 +65,8 @@ def _add_paragraph(world: dict, doc_id: str, section: str, text: str) -> None:
     numbers = [r["paragraph_no"] for r in world["report_paragraphs"]
                if r["doc_id"] == doc_id and r["section"] == section]
     world["report_paragraphs"].append(
-        {"doc_id": doc_id, "section": section, "paragraph_no": max(numbers, default=0) + 1, "text": text}
+        {"doc_id": doc_id, "section": section, "paragraph_no": max(numbers, default=0) + 1,
+         "paragraph_text": text}
     )
 
 
@@ -163,7 +164,7 @@ def _lat_lon_swapped(world: dict) -> None:
 
 
 def _certified_scope(world: dict) -> None:
-    _paragraph(world, RSE_DOC, "main", 2)["text"] = (
+    _paragraph(world, RSE_DOC, "main", 2)["paragraph_text"] = (
         "Since twenty twenty-one, 100% of our certified cocoa comes from deforestation-free "
         "farms. Not one hectare of forest has been cleared to grow it."
     )

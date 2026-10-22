@@ -53,6 +53,6 @@ CREATE TABLE report_paragraphs (
     doc_id       TEXT NOT NULL,
     section      TEXT NOT NULL CHECK (section IN ('main', 'annex')),
     paragraph_no INTEGER NOT NULL,
-    text         TEXT NOT NULL,
+    paragraph_text TEXT NOT NULL,  -- not "text": a reserved word in Zetaris DDL
     PRIMARY KEY (doc_id, section, paragraph_no)
 );

@@ -97,8 +97,8 @@ def test_ngo_base_names_no_supplier_and_no_plot(base):
     names = {s["name"] for s in base["suppliers"]}
     for r in base["report_paragraphs"]:
         if r["doc_id"] == "ngo_2025":
-            assert not any(name in r["text"] for name in names)
-            assert not re.search(r"P-\d|plot number", r["text"], re.IGNORECASE)
+            assert not any(name in r["paragraph_text"] for name in names)
+            assert not re.search(r"P-\d|plot number", r["paragraph_text"], re.IGNORECASE)
 
 
 def test_company_total_matches_fiscal_year(base):

@@ -60,11 +60,7 @@ NGO_MAIN = [
 
 
 def base_paragraphs() -> list[dict]:
-    rows = []
-    for number, text in enumerate(RSE_MAIN, start=1):
-        rows.append({"doc_id": RSE_DOC, "section": "main", "paragraph_no": number, "text": text})
-    for number, text in enumerate(RSE_ANNEX, start=1):
-        rows.append({"doc_id": RSE_DOC, "section": "annex", "paragraph_no": number, "text": text})
-    for number, text in enumerate(NGO_MAIN, start=1):
-        rows.append({"doc_id": NGO_DOC, "section": "main", "paragraph_no": number, "text": text})
-    return rows
+    sections = [(RSE_DOC, "main", RSE_MAIN), (RSE_DOC, "annex", RSE_ANNEX), (NGO_DOC, "main", NGO_MAIN)]
+    return [{"doc_id": doc, "section": section, "paragraph_no": number, "paragraph_text": text}
+            for doc, section, texts in sections
+            for number, text in enumerate(texts, start=1)]
