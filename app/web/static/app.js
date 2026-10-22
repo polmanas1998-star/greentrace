@@ -149,7 +149,8 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     const run = state.run;
     let text = "";
     if ((view === "live" || view === "file") && run && run.mode) {
-      text = `${capital(run.mode)} mode` + (run.degraded ? " · degraded: rules only, no model" : "");
+      text = `${capital(run.mode)} mode` + (run.degraded ? " · degraded" : "");
+      badge.title = run.degraded ? "Degraded: no model answered, the agents used their rule fallbacks" : "";
     } else if (state.setup) {
       text = state.setup.default_mode === "sample" ? "Sample mode · no network" : "Live mode";
     }
@@ -168,7 +169,7 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     }
     const setup = state.setup;
     $("demo-sub").textContent = setup.default_mode === "sample"
-      ? `Cocoa importer · synthetic supply chain, case ${setup.demo_case}`
+      ? `Synthetic supply chain · case ${setup.demo_case}`
       : "Cocoa importer · data through Zetaris";
     $("examples").replaceChildren(...setup.examples.map((example) => h("button", {
       class: "btn", type: "button", title: `Case ${example.case}: ${example.change}. Sample mode, rules alone.`,
@@ -220,12 +221,21 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     for (const button of $("map-switch").querySelectorAll("button")) {
       button.setAttribute("aria-pressed", String(button.dataset.plot === plotId));
     }
+    if (!state.maps[plotId]) {
+      $("map").setAttribute("aria-busy", "true");
+      $("map-coords").textContent = "";
+      $("map-numbers").replaceChildren(...["Outline", "Year of loss · Hansen", "Lost after 2020 · on EU forest"].map((label) =>
+        h("div", {}, h("dt", { text: label }), h("dd", { class: "pending", text: "…" }))));
+      $("map-foot").replaceChildren(h("span", { text: `Reading the 30 m cells around ${plotId} from data/reference_cells.csv.gz…` }));
+    }
     try {
       state.maps[plotId] = state.maps[plotId] || await getJSON(`/api/plot-map?plot=${encodeURIComponent(plotId)}`);
     } catch (error) {
-      $("map-foot").replaceChildren(h("p", { class: "error", text: `No map: ${error.message}` }));
+      $("map").removeAttribute("aria-busy");
+      $("map-foot").replaceChildren(h("p", { class: "error", text: `The map could not be read: ${error.message}` }));
       return;
     }
+    $("map").removeAttribute("aria-busy");
     if (state.mapPlot === plotId) renderMap(state.maps[plotId]);
   }
 
@@ -875,6 +885,7 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     const value = control.type === "number" ? Number(raw) : raw;
     const button = $("fool-form").querySelector("button[type=submit]");
     button.setAttribute("aria-busy", "true");
+    button.textContent = "Re-running…";
     try {
       const out = await postJSON(`/runs/${encodeURIComponent(run.id)}/what_if`, { entity, field, value });
       if (run !== state.run) return;
@@ -889,6 +900,7 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
       error.hidden = false;
     } finally {
       button.removeAttribute("aria-busy");
+      button.textContent = "Re-run what depends on it";
     }
   }
 
@@ -924,12 +936,16 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
 
   async function loadFiles() {
     const list = $("file-list");
+    list.setAttribute("aria-busy", "true");
+    list.replaceChildren(h("li", { class: "none", text: "Reading the runs this server keeps…" }));
     let runs;
     try {
       runs = await getJSON("/ui/runs");
     } catch (error) {
       list.replaceChildren(h("li", { class: "error", text: `Could not list the runs: ${error.message}` }));
       return;
+    } finally {
+      list.removeAttribute("aria-busy");
     }
     if (!runs.length) {
       list.replaceChildren(h("li", { class: "none" }, "No run yet in this server's memory. ", h("a", { href: "#/", text: "Check a claim" }), "."));

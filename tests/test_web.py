@@ -196,3 +196,24 @@ def test_evidence_files_lists_the_runs_kept(client):
     events(client, run_id)
     listed = {r["run_id"]: r for r in client.get("/ui/runs").json()}
     assert listed[run_id]["claim"] == CLAIM and listed[run_id]["verdict"] == "CONTRADICTED"
+
+
+def test_the_map_route_defaults_to_p042_and_draws_only_real_cells(client):
+    default = client.get("/api/plot-map").json()
+    assert default["plot"]["id"] == "P-042" and default["measure"]["covered"]
+    grid = default["grid"]
+    # Every cell drawn is EU forest in 2020 or carries a Hansen loss year, as the file says.
+    assert all(forest >= grid["forest_from"] or 2001 <= year <= 2024 for _, _, forest, year in default["cells"])
+    assert client.get("/api/plot-map", params={"plot": "x" * 40}).status_code == 422
+
+
+def test_the_visual_rules_hold_in_the_stylesheet():
+    css = (STATIC / "app.css").read_text(encoding="utf-8")
+    assert "gradient(" not in css and "backdrop-filter" not in css  # no gradient, no glass
+    assert "infinite" not in css  # no permanent animation
+    motion = css.split("@media (prefers-reduced-motion: no-preference)", 1)
+    assert len(motion) == 2 and "animation" not in motion[0]  # motion only for people who did not turn it off
+    sizes = {int(n) for n in re.findall(r"font-size:\s*(\d+)px", css)}
+    assert sizes <= {12, 14, 15, 16, 20, 24, 40, 64}, sizes  # 15: the trace rows, the system's one exception
+    radii = {int(n) for n in re.findall(r"border-radius:\s*(\d+)px", css)}
+    assert radii <= {6, 10, 16, 20, 999}, radii  # 999: the status pill of mockup 3
