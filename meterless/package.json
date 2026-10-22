@@ -1,0 +1,19 @@
+{
+  "name": "greentrace-world-model",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Runs the unmodified Meterless World Model reference (./reference) as GreenTrace's local World Model server.",
+  "license": "Apache-2.0",
+  "scripts": {
+    "start": "tsx server.ts",
+    "conformance": "tsx conformance/runner.ts",
+    "test:reference": "vitest run --root reference"
+  },
+  "dependencies": {
+    "tsx": "4.23.15"
+  },
+  "devDependencies": {
+    "vitest": "3.2.7"
+  }
+}
