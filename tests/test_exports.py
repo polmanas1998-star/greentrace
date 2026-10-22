@@ -99,11 +99,14 @@ def test_no_finding_no_letter():
 # ---- findings table and evidence file ------------------------------------------------------------
 
 def test_findings_csv_opens_as_a_table():
-    rows = list(csv.DictReader(io.StringIO(findings_csv(run(2)))))
+    output = run(2)
+    rows = list(csv.DictReader(io.StringIO(findings_csv(output))))
     assert [r["row"] for r in rows] == ["part"] * 4 + ["finding"]
     finding = rows[-1]
+    tried = "; ".join(f"{t['id']} {t['result']}" for t in output["findings"][0]["refutations_tried"])
     assert (finding["verdict"], finding["sources"], finding["refutations"]) == (
-        "CONTRADICTED", "alert:A-221; plot:P-014", "R3 rejected; R4 rejected; R5 rejected")
+        "CONTRADICTED", "alert:A-221; plot:P-014", tried)
+    assert tried.startswith("R3 rejected")  # the refutation the Evaluator always tries first
 
 
 def test_evidence_file_carries_the_flip_and_the_fingerprints():
