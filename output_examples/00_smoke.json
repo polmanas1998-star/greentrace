@@ -1,5 +1,5 @@
 {
-  "run_id": "fa79487159444ad6",
+  "run_id": "65f22845e2c449bc",
   "status": "success",
   "mode": "sample",
   "degraded": true,
@@ -1474,8 +1474,8 @@
     "input_sha256": "176a8acab860f5fb9a12faa2b7223eeaac6d33992efdc5bf4e7af7bd1b319cbc",
     "data_sha256": "8cfad32bd910d2dc64f337934ed4eb4a907349cb658cebcc96e39bd46573ddfe",
     "rules_version": "2026-10-23.1",
-    "rules_sha256": "20e72cd320c9b6aac97edfbbcf677a1a1afc9fd02f3469ad326dcddc4c7c8f49"
+    "rules_sha256": "2e415a9dae4fde5f5600d9ccce34929f44cebaace57ba57ece2e156a2946b38e"
   },
-  "log_file": "logs/fa79487159444ad6.jsonl",
+  "log_file": "logs/65f22845e2c449bc.jsonl",
   "execution_time_seconds": 0.06
 }

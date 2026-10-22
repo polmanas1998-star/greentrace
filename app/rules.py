@@ -16,7 +16,8 @@ Rules, in the kit's order:
   3  untraced volume, impossible yield, plot declared twice, unconfirmed alert,
      alert near a point-declared plot, sources in conflict, claim narrower than
      announced, no independent source at all, forest lost below that threshold,
-     tree cover lost on land the EU map did not count as forest           UNVERIFIABLE
+     tree cover lost on land the EU map did not count as forest, or where no
+     EU 2020 forest map exists                                            UNVERIFIABLE
   4  none of the above                                                   PROVEN
 A part is CONTRADICTED as soon as one rule-2 finding holds: a defect on one plot
 does not hide a contradiction proven on another. The promise is CONTRADICTED if one
@@ -37,6 +38,7 @@ PARTS = ("coverage", "no_deforestation", "plausibility", "scope")
 MAP_MIN_HA, MAP_MIN_SHARE = 0.5, 0.10  # kit v7: forest lost inside a plot that contradicts the claim
 TREE_COVER_NOT_FOREST = ("tree cover was lost, but the EU 2020 map did not count this land as forest: "
                          "confirm in the field")
+NO_EU_FOREST_MAP = "EU 2020 forest map not available here: loss shown is tree cover, not EU forest"
 
 
 @dataclass(frozen=True)
@@ -188,6 +190,13 @@ def map_check(plot: dict, cells: Optional[list[dict]], delivered_in: set[int]) -
     if not measured["covered"]:
         return Finding("no_deforestation", 1, UNVERIFIABLE, "no_reference_data", f"{plot_id}: {measured['reason']}",
                        refs)
+    if not measured["forest_map"]:  # tree cover loss only: it can never prove that forest was cleared
+        cover = {int(y): ha for y, ha in measured["loss_ha_by_year"].items() if int(y) > landcover.CUTOFF_YEAR}
+        if not cover:
+            return None
+        return Finding("no_deforestation", 3, UNVERIFIABLE, "tree_cover_loss_no_eu_forest_map",
+                       f"{plot_id}: {sum(cover.values()):.2f} ha of tree cover lost in {_years(cover)} "
+                       f"(Hansen/UMD); {NO_EU_FOREST_MAP}", refs)
     after = {int(y): ha for y, ha in measured["forest_loss_ha_by_year"].items() if int(y) > landcover.CUTOFF_YEAR}
     while_delivering = {y: ha for y, ha in after.items() if y <= max(delivered_in, default=0)}
     lost, threshold = sum(while_delivering.values()), min(MAP_MIN_HA, MAP_MIN_SHARE * plot["area_ha"])

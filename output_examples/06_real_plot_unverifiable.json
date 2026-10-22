@@ -1448,8 +1448,8 @@
     "input_sha256": "8482ead63d9cbbe0c5303bcb06a973190b35006fe86e691ab60e83a72edd5889",
     "data_sha256": "c51a4b0faa8464dde1089e3d6ef924d7ab07cfb4036ca1c976fd456e205018a9",
     "rules_version": "2026-10-23.1",
-    "rules_sha256": "20e72cd320c9b6aac97edfbbcf677a1a1afc9fd02f3469ad326dcddc4c7c8f49"
+    "rules_sha256": "2e415a9dae4fde5f5600d9ccce34929f44cebaace57ba57ece2e156a2946b38e"
   },
   "log_file": "logs/example-06.jsonl",
-  "execution_time_seconds": 0.05
+  "execution_time_seconds": 0.06
 }

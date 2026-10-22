@@ -18,6 +18,7 @@ from fastapi import APIRouter, Body, HTTPException, Query, Response
 from fastapi.responses import FileResponse
 
 from app import citizen, orchestrator, plotcheck, plotfile, timelapse
+from app.checks import gfw
 from app.explain.suppliers import rank
 from app.pipeline import new_run_id, run_case
 from app.queries import SQLiteEngine, ZetarisEngine
@@ -81,7 +82,9 @@ def map_engine(sample: bool) -> SQLiteEngine | ZetarisEngine:
 def check_plots(body: Any = Body(...)) -> dict[str, Any]:
     geojson = body.get("geojson") if isinstance(body, dict) and "geojson" in body else body
     try:
-        return plotcheck.check(geojson, f"plots-{new_run_id()}", map_engine(orchestrator.sample_mode({})))
+        sample = orchestrator.sample_mode({})
+        return plotcheck.check(geojson, f"plots-{new_run_id()}", map_engine(sample),
+                               remote=None if sample else gfw.Tiles())
     except plotfile.FileRefused as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 

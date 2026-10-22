@@ -28,8 +28,8 @@ from shapely.geometry import mapping
 
 from app import plotfile
 from app.canonical import sha256_of
-from app.checks import landcover
-from app.queries import DataGate, SourceUnavailable
+from app.checks import gfw, landcover
+from app.queries import Answer, DataGate, SourceUnavailable
 from app.receipt import RECEIPT_VERSION, ZIP_DATE, rules_sha256
 from app.rules import CONTRADICTED, RULES_VERSION, UNVERIFIABLE, check_plot
 from app.tracing import LOG_DIR, now_utc, trace
@@ -56,9 +56,10 @@ class Batch:
 BATCHES: "OrderedDict[str, Batch]" = OrderedDict()
 
 
-def check(geojson: Any, batch_id: str, engine: Any, *, year: Optional[int] = None,
+def check(geojson: Any, batch_id: str, engine: Any, *, year: Optional[int] = None, remote: Optional[gfw.Tiles] = None,
           log: Optional[Callable[[dict], Any]] = None, log_dir: Optional[Path] = None) -> dict[str, Any]:
-    """Read the file, check every plot, keep the batch for its exports. engine: SQLiteEngine or ZetarisEngine."""
+    """Read the file, check every plot, keep the batch for its exports. engine: SQLiteEngine or ZetarisEngine;
+    remote: Global Forest Watch tiles for the plots the reference cells do not cover (live mode only)."""
     plots, errors, warnings = plotfile.read(geojson)
     year = year or datetime.now(timezone.utc).year
     log = log or (lambda record: trace(record, log_dir=log_dir))
@@ -77,7 +78,10 @@ def check(geojson: Any, batch_id: str, engine: Any, *, year: Optional[int] = Non
                 cells, source = answer.rows, len(gate.answers) - 1
             except SourceUnavailable:
                 pass  # no answer: rule 1 says the maps did not answer
-        result = _result(plot, cells, source, year)
+            if remote is not None and (cells is None or not landcover.measure(plot, cells)["covered"]):
+                cells, source = _read_gfw(remote, plot, gate, batch_id, log)
+        result = _result(plot, cells, source, year, gate.answers[source] if source is not None else None,
+                         remote is None)
         batch.results.append(result)
         _step(log, batch_id, "check_plot", f"{plot['plot_id']} ({plot['shape']}, {plot['area_ha']} ha)",
               f"{result['verdict']}: {result['sentence']}")
@@ -91,25 +95,53 @@ def check(geojson: Any, batch_id: str, engine: Any, *, year: Optional[int] = Non
     return batch.output
 
 
-def _result(plot: dict, cells: Optional[list[dict]], source: Optional[int], year: int) -> dict[str, Any]:
+def _read_gfw(remote: gfw.Tiles, plot: dict, gate: DataGate, batch_id: str,
+              log: Callable[[dict], Any]) -> tuple[Optional[list[dict]], Optional[int]]:
+    """Outside the reference cells: the loss year from the public GFW tiles, kept as one more answer."""
+    try:
+        reading = remote.cells(*landcover.plot_box(plot))
+    except gfw.GfwUnavailable as error:
+        _step(log, batch_id, "read_gfw_tiles", plot["plot_id"], f"unavailable: {error}", status="degraded")
+        return None, None
+    tiles = ", ".join(f"{t['z']}/{t['x']}/{t['y']}" for t in reading.tiles)
+    gate.answers.append(Answer("GFW", f"{gfw.SOURCE}: {remote.url.split('?')[0]} tiles {tiles}", reading.cells,
+                               "Investigator"))
+    _step(log, batch_id, "read_gfw_tiles", plot["plot_id"],
+          f"{len(reading.cells)} cells from {len(reading.tiles)} tile(s) ({sum(t['cached'] for t in reading.tiles)} "
+          f"from the cache); no EU 2020 forest map here", provider="gfw")
+    return reading.cells, len(gate.answers) - 1
+
+
+def _result(plot: dict, cells: Optional[list[dict]], source: Optional[int], year: int, answer: Optional[Answer],
+            sample: bool) -> dict[str, Any]:
     findings = check_plot(plot, cells, {year})
     finding = findings[0] if findings else None
     measured = landcover.measure(plot, cells) if cells is not None and plot["area_ha"] is not None else None
     verdict = finding.verdict if finding else NO_ISSUE
     if finding:
         sentence = finding.detail[0].upper() + finding.detail[1:] + "."
+    elif not measured["forest_map"]:
+        sentence = (f"No tree cover loss after 2020 inside {plot['plot_id']} on the Hansen/UMD map "
+                    f"(read from Global Forest Watch; no EU 2020 forest map here).")
     else:
         sentence = (f"No forest loss after 2020 inside {plot['plot_id']} on the reference maps "
                     f"({measured['forest_2020_ha']:g} ha of EU 2020 forest inside the outline).")
+    note = None
+    if finding and finding.code == "no_reference_data" and sample:
+        note = ("Sample mode reads only the committed maps around Soubre, Cote d'Ivoire, with no network call; "
+                "live mode reads the Hansen/UMD loss anywhere from Global Forest Watch tiles.")
+    maps = (gfw.SOURCE if answer is not None and answer.query_id == "GFW" else SOURCES)
     return {
         "plot_id": plot["plot_id"], "supplier": plot["supplier_id"], "shape": plot["shape"],
         "area_ha": plot["area_ha"], "centre": [plot["lat"], plot["lon"]],
         "verdict": verdict, "rule": finding.rule if finding else 4, "code": finding.code if finding else None,
         "sentence": sentence,
         "measure": None if measured is None else {
-            k: measured[k] for k in ("covered", "reason", "forest_2020_ha", "loss_after_2020_ha",
-                                     "loss_ha_by_year", "forest_loss_ha_by_year")} | {"cells": len(measured["cells"])},
-        "evidence": {"query": "Q10", "answer": source, "maps": SOURCES} if source is not None else None,
+            k: measured.get(k) for k in ("covered", "reason", "forest_map", "forest_2020_ha", "loss_after_2020_ha",
+                                         "loss_ha_by_year", "forest_loss_ha_by_year")}
+        | {"cells": len(measured["cells"])},
+        "evidence": {"query": answer.query_id, "answer": source, "maps": maps} if answer is not None else None,
+        "note": note,
         "properties": plot["properties"],
     }
 
@@ -259,7 +291,7 @@ def _plain(value: Any) -> Any:
 
 
 def _step(log: Callable[[dict], Any], batch_id: str, action: str, given: str, said: str,
-          agent: str = "Investigator") -> None:
+          agent: str = "Investigator", status: str = "success", provider: str = "code") -> None:
     log({"timestamp": now_utc(), "run_id": batch_id, "agent_name": agent, "action": action,
          "input_summary": given[:300], "output_summary": said[:300], "target_agent": None, "confidence": None,
-         "retry_count": 0, "status": "success", "provider": "code", "model": None, "rows": None})
+         "retry_count": 0, "status": status, "provider": provider, "model": None, "rows": None})

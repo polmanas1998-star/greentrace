@@ -8,7 +8,7 @@
  "input_sha256": "60b05db9477e1497bb5132906b7818bba23c2e10a49b65e2bd8571a07fccd638",
  "data_sha256": "8cfad32bd910d2dc64f337934ed4eb4a907349cb658cebcc96e39bd46573ddfe",
  "rules_version": "2026-10-23.1",
- "rules_sha256": "20e72cd320c9b6aac97edfbbcf677a1a1afc9fd02f3469ad326dcddc4c7c8f49",
+ "rules_sha256": "2e415a9dae4fde5f5600d9ccce34929f44cebaace57ba57ece2e156a2946b38e",
  "sources": [
   {
    "index": 0,
