@@ -189,7 +189,7 @@ proposes; `app/rules.py` decides, and `verify.py` re-derives every verdict witho
 - The build kit (plan, specifications, 21 trap cases) and the interface mockups in `design/`
   (commit `5b33f41`), written before 22 October 2026.
 - The pitch deck and the presentation video.
-- The technical probes of 21 October 2026 (documented in `docs/specs/`).
+- The technical probes of 21 October 2026 (documented in `docs/specs/satellite_lens.md`).
 - The official `smoke_test.py` of the Participant Setup Guide, and commit `5e37dee` (17 October 2026:
   smoke test, environment template, `.gitignore`). All project code was written from 22 October 2026.
 
@@ -200,4 +200,11 @@ proposes; `app/rules.py` decides, and `verify.py` re-derives every verdict witho
 - Sentinel-2 backgrounds (`python -m scripts.fetch_satellite`, public Earth Search catalogue): "Contains
   modified Copernicus Sentinel data 2026" (P-042, scene of 2026-03-12) and "Contains modified Copernicus
   Sentinel data 2025" (P-041, scene of 2025-02-05). Copernicus Sentinel data are free and open.
-- Meterless World Model reference: Apache-2.0 (`meterless/LICENSE`).
+- Meterless World Model and H-MEM references: Apache-2.0, copyright Meterless (`meterless/LICENSE`,
+  `meterless/hmem/LICENSE`).
+
+## License
+
+GreenTrace is released under the Apache License 2.0 (`LICENSE`), the licence of the Meterless
+references it embeds. The folders `meterless/reference`, `meterless/conformance` and `meterless/hmem`
+keep Meterless's copyright; the data keep the licences listed above.
