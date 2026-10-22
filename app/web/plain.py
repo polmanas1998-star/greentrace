@@ -228,3 +228,37 @@ def _join(items: list[str]) -> str:
 
 def _unique(items) -> list[str]:
     return list(dict.fromkeys(items))
+
+
+# ---- one plot of the analyst's own file (POST /api/check-plots) ----------------------------------------
+
+def plot_sentence(result: dict) -> str:
+    """The verdict of one plot of a plot check, in plain words, from its code and its measure."""
+    m = result.get("measure") or {}
+    code = result.get("code")
+    after = {int(y): ha for y, ha in (m.get("loss_ha_by_year") or {}).items() if int(y) > 2020}
+    forest_after = {int(y): ha for y, ha in (m.get("forest_loss_ha_by_year") or {}).items() if int(y) > 2020}
+    if code == "forest_loss_in_delivering_plot":
+        return (f"Forest was cut here after 2020: {_ha(m['loss_after_2020_ha'])} of the land the EU map counted as "
+                f"forest in 2020 was lost inside this plot, in {_join([str(y) for y in sorted(forest_after)])}.")
+    if code == "forest_loss_below_threshold":
+        return (f"Some forest was lost here after 2020 ({_ha(sum(forest_after.values()))}, in "
+                f"{_join([str(y) for y in sorted(forest_after)])}), less than the rules count as deforestation: "
+                "check it on the ground.")
+    if code == "tree_cover_loss_outside_2020_forest":
+        return (f"Trees were lost here after 2020 ({_ha(sum(after.values()))}, in {_join([str(y) for y in sorted(after)])}), "
+                "on land the EU map did not count as forest in 2020: check it on the ground.")
+    if code == "no_reference_data":
+        reason = m.get("reason") or "the reference maps did not answer"
+        return f"This place cannot be checked yet: {reason}."
+    if code == "polygon_missing":
+        return (f"Only a point was given for this {result['area_ha']:g} ha plot: the EUDR asks for its outline "
+                "above 4 ha, so what lies inside cannot be measured.")
+    if code == "area_missing":
+        return "Only a point with no area was given, so the plot cannot be measured: add its outline or its area."
+    if result.get("verdict") == "NO_ISSUE":
+        if m.get("forest_2020_ha"):
+            return (f"No issue found: the {_ha(m['forest_2020_ha'])} of forest the EU map counted here in 2020 "
+                    "show no loss after 2020.")
+        return "No issue found: the EU map counted no forest here in 2020, and no trees were lost after 2020."
+    return result.get("sentence") or ""

@@ -1,0 +1,274 @@
+{
+ "type": "FeatureCollection",
+ "name": "GreenTrace example plots: real places near Soubre, Cote d'Ivoire; ids and suppliers are examples",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "plot_id": "P-042",
+    "supplier": "Example cooperative A"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -6.523427,
+       5.72857
+      ],
+      [
+       -6.520573,
+       5.72857
+      ],
+      [
+       -6.520573,
+       5.73143
+      ],
+      [
+       -6.523427,
+       5.73143
+      ],
+      [
+       -6.523427,
+       5.72857
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "plot_id": "P-041",
+    "supplier": "Example cooperative B"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -6.72587,
+       5.703728
+      ],
+      [
+       -6.72293,
+       5.703728
+      ],
+      [
+       -6.72293,
+       5.706672
+      ],
+      [
+       -6.72587,
+       5.706672
+      ],
+      [
+       -6.72587,
+       5.703728
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "plot_id": "P-113",
+    "supplier": "Example cooperative A"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -6.560903,
+       5.689096
+      ],
+      [
+       -6.559097,
+       5.689096
+      ],
+      [
+       -6.559097,
+       5.690904
+      ],
+      [
+       -6.560903,
+       5.690904
+      ],
+      [
+       -6.560903,
+       5.689096
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "plot_id": "P-126",
+    "supplier": "Example cooperative C"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -6.600903,
+       5.749096
+      ],
+      [
+       -6.599097,
+       5.749096
+      ],
+      [
+       -6.599097,
+       5.750904
+      ],
+      [
+       -6.600903,
+       5.750904
+      ],
+      [
+       -6.600903,
+       5.749096
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "plot_id": "P-101",
+    "supplier": "Example cooperative B"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -6.760903,
+       5.659096
+      ],
+      [
+       -6.759097,
+       5.659096
+      ],
+      [
+       -6.759097,
+       5.660904
+      ],
+      [
+       -6.760903,
+       5.660904
+      ],
+      [
+       -6.760903,
+       5.659096
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "plot_id": "P-118",
+    "supplier": "Example cooperative C"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -6.600782,
+       5.719217
+      ],
+      [
+       -6.599218,
+       5.719217
+      ],
+      [
+       -6.599218,
+       5.720783
+      ],
+      [
+       -6.600782,
+       5.720783
+      ],
+      [
+       -6.600782,
+       5.719217
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "plot_id": "P-131",
+    "supplier": "Example cooperative C",
+    "area_ha": 6.0
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -6.64,
+     5.74
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "plot_id": "P-132",
+    "supplier": "Example cooperative B",
+    "area_ha": 2.5
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -6.69,
+     5.67
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "plot_id": "P-150",
+    "supplier": "Example cooperative A"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -6.600783,
+       6.799217
+      ],
+      [
+       -6.599217,
+       6.799217
+      ],
+      [
+       -6.599217,
+       6.800783
+      ],
+      [
+       -6.600783,
+       6.800783
+      ],
+      [
+       -6.600783,
+       6.799217
+      ]
+     ]
+    ]
+   }
+  }
+ ]
+}

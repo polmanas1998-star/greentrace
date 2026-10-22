@@ -21,7 +21,7 @@
       <span>GreenTrace</span>
     </a>
     <nav class="tabs" aria-label="Main">
-      <a id="tab-check" href="#/">Check a claim</a>
+      <a id="tab-check" href="#/">Check plots</a>
       <a id="tab-files" href="#/files">Evidence files</a>
       <a id="tab-bench" href="#/bench">Reliability tests</a>
     </nav>
@@ -34,55 +34,52 @@
 
 <main id="main" tabindex="-1">
 
-  <!-- Check a claim (mockup 2_accueil) -->
+  <!-- Check plots: the analyst's own plot file (mockup 2_accueil, made a product) -->
   <div class="view home" id="view-home" hidden>
     <section class="home-main" aria-labelledby="home-title">
       <div class="stack-16">
         <span class="eyebrow eyebrow-signal">EU Deforestation Regulation · from 30 December 2026</span>
-        <h1 id="home-title" class="display">Check a deforestation-free claim.</h1>
-        <p class="lead lead-narrow" id="home-what">GreenTrace checks a company's “deforestation-free” promise against
-          satellite maps, delivery records and its own reports, and shows you the evidence.</p>
+        <h1 id="home-title" class="h-hero">Check your suppliers' plots against the EU forest map, before 30 December 2026.</h1>
+        <p class="lead lead-narrow" id="home-what">Upload the GeoJSON of your production plots, the file the EUDR already
+          asks for. GreenTrace measures every plot on the EU 2020 forest map and the satellite loss maps, gives each one a
+          verdict by fixed rules, and the evidence to file.</p>
       </div>
 
+      <div class="drop" id="drop">
+        <button class="btn btn-go btn-56" type="button" id="plots-upload">Upload your plots (GeoJSON)</button>
+        <input type="file" id="plots-file" accept=".geojson,.json,application/geo+json,application/json" hidden>
+        <p class="drop-hint">or drop the file here · a FeatureCollection of Polygon or Point, up to 500 plots;
+          your own properties are kept</p>
+      </div>
+      <p class="plot-status" id="drop-status" role="status" aria-live="polite" hidden></p>
+
+      <div class="home-more">
+        <button class="link-btn" type="button" id="plot-draw" aria-pressed="false" aria-controls="map">or draw one on the map</button>
+        <span aria-hidden="true">·</span>
+        <button class="link-btn" type="button" id="load-example">Load example data</button>
+        <span aria-hidden="true">·</span>
+        <button class="link-btn" type="button" id="tour-start">Take the tour <span class="hint">60 s</span></button>
+      </div>
+
+      <details class="tech promise" id="promise">
+        <summary><span>Your supplier's promise</span><span class="sub">optional: the agents check it with your plots</span></summary>
+        <label class="label" for="claim">Paste the promise, or the paragraph of the supplier's report that makes it</label>
+        <textarea id="claim" name="claim" rows="3" maxlength="1000"></textarea>
+        <p class="small muted" id="promise-note">When you ask “Why?” on a plot, the five agents check this promise against
+          that plot. Left empty, they check: “<span id="default-claim"></span>”</p>
+      </details>
+
       <ol class="how" aria-label="How it works">
-        <li><span class="how-n" aria-hidden="true">1</span><b>Paste a promise</b><span>a company's or a supplier's claim</span></li>
-        <li><span class="how-n" aria-hidden="true">2</span><b>Five AI agents check it</b><span>against maps, deliveries and reports</span></li>
-        <li><span class="how-n" aria-hidden="true">3</span><b>A verdict you can verify</b><span>every finding names its source</span></li>
+        <li><span class="how-n" aria-hidden="true">1</span><b>Upload your plots</b><span>the EUDR geolocation file, any country</span></li>
+        <li><span class="how-n" aria-hidden="true">2</span><b>Every plot is measured</b><span>on the EU 2020 forest map and the loss maps</span></li>
+        <li><span class="how-n" aria-hidden="true">3</span><b>A verdict you can verify</b><span>per plot, with its cells, its sources and a receipt</span></li>
       </ol>
 
       <dl class="verdict-key" aria-label="What the three verdicts mean">
-        <div><dt><span class="tag tag-PROVEN">PROVEN</span></dt><dd>the evidence backs the promise</dd></div>
-        <div><dt><span class="tag tag-CONTRADICTED">CONTRADICTED</span></dt><dd>the evidence shows it is false</dd></div>
+        <div><dt><span class="tag tag-NO_ISSUE">NO ISSUE FOUND</span></dt><dd>no forest lost after 2020 inside the plot</dd></div>
+        <div><dt><span class="tag tag-CONTRADICTED">CONTRADICTED</span></dt><dd>the evidence shows forest was lost after 2020</dd></div>
         <div><dt><span class="tag tag-UNVERIFIABLE">UNVERIFIABLE</span></dt><dd>the evidence is missing, and GreenTrace says which</dd></div>
       </dl>
-
-      <div class="home-actions">
-        <button class="demo" type="button" id="run-demo">
-          Run the demo case
-          <span id="demo-sub">Cocoa importer · synthetic supply chain</span>
-        </button>
-        <button class="btn btn-48" type="button" id="tour-start">Take the tour <span class="hint">60 s</span></button>
-      </div>
-
-      <form class="panel claim-form" id="claim-form">
-        <div class="stack-8">
-          <label class="label" for="claim">Or paste your supplier's claim</label>
-          <textarea id="claim" name="claim" rows="3" maxlength="1000" required>100% of our cocoa comes from deforestation-free farms since 2021.</textarea>
-        </div>
-        <div class="plots-row" id="plot-slot">
-          <span class="label">Plots</span>
-          <button class="btn btn-dashed" type="button" id="plot-upload">Upload GeoJSON</button>
-          <input type="file" id="plot-file" accept=".geojson,.json,application/geo+json,application/json" hidden>
-          <button class="btn" type="button" id="plot-draw" aria-pressed="false" aria-controls="map">Draw on the map</button>
-          <span class="hint" id="plot-note">Optional</span>
-        </div>
-        <p class="plot-status" id="plot-status" aria-live="polite" hidden></p>
-        <div class="claim-end">
-          <div class="examples" id="examples" role="group" aria-label="Examples, run on the sample world"></div>
-          <button class="btn btn-go" type="submit" id="claim-submit">Check this claim</button>
-        </div>
-        <p class="error" id="claim-error" role="alert" hidden></p>
-      </form>
     </section>
 
     <section class="panel map-card" aria-labelledby="map-title">
@@ -125,6 +122,141 @@
         <p class="sub" id="lens-foot" hidden></p>
       </section>
     </section>
+  </div>
+
+  <!-- The results of a plot check: every plot, sorted by risk -->
+  <div class="view" id="view-check" hidden>
+    <div class="run-bar">
+      <div class="run-claim">
+        <h1 class="run-title" id="check-title"></h1>
+        <span class="sub" id="check-sub"></span>
+      </div>
+      <div class="run-bar-end exports" id="check-exports" role="group" aria-label="Exports">
+        <a class="btn" id="export-geojson" href="#" download>Plots with no issue · GeoJSON</a>
+        <a class="btn" id="export-csv" href="#" download>Findings · CSV</a>
+        <a class="btn btn-go" id="export-package" href="#" download>Audit package</a>
+      </div>
+    </div>
+
+    <section class="plain-box" aria-labelledby="check-plain-title">
+      <div class="plain-main">
+        <h2 class="eyebrow eyebrow-signal" id="check-plain-title">In plain words</h2>
+        <p class="plain-text" id="check-plain"></p>
+      </div>
+      <dl class="counts" id="check-counts"></dl>
+    </section>
+    <div class="callout" id="check-refused" hidden></div>
+
+    <div class="check-grid">
+      <section class="panel plots-panel" aria-labelledby="plots-title">
+        <div class="panel-head">
+          <h2 class="h-card" id="plots-title">Your plots, by risk</h2>
+          <span class="sub">Click a plot for its evidence file.</span>
+        </div>
+        <div class="table-wrap">
+          <table class="plots-table" id="plots-table">
+            <caption class="sr-only">Every plot of the file, the riskiest first</caption>
+            <thead><tr><th scope="col">#</th><th scope="col">Plot</th><th scope="col">Verdict</th>
+              <th scope="col">In plain words</th><th scope="col" class="num">Area</th><th scope="col" class="num">Lost after 2020</th></tr></thead>
+            <tbody id="plots-rows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <div class="check-side">
+        <section class="panel batch-map-card" id="batch-map-card" aria-labelledby="batch-map-title">
+          <div class="panel-head">
+            <h2 class="h-card" id="batch-map-title">On the map</h2>
+            <span class="sub" id="batch-map-sub"></span>
+          </div>
+          <div class="batch-map" id="batch-map"></div>
+          <div class="legend batch-legend">
+            <span><i class="swatch sw-v-CONTRADICTED"></i>Contradicted</span>
+            <span><i class="swatch sw-v-UNVERIFIABLE"></i>Unverifiable</span>
+            <span><i class="swatch sw-v-NO_ISSUE"></i>No issue found</span>
+          </div>
+        </section>
+
+        <section class="panel suppliers-card" aria-labelledby="suppliers-title">
+          <div class="panel-head">
+            <h2 class="h-card" id="suppliers-title">Your suppliers, to check first</h2>
+          </div>
+          <ol class="supplier-list" id="supplier-list"></ol>
+        </section>
+      </div>
+    </div>
+
+    <details class="tech" id="check-tech">
+      <summary><span>Technical details</span><span class="sub">seal, rules, sources, receipt</span></summary>
+      <div class="tech-body" id="check-tech-body"></div>
+    </details>
+  </div>
+
+  <!-- One plot of a plot check: its evidence file -->
+  <div class="view" id="view-plot" hidden>
+    <div class="run-bar">
+      <div class="run-claim">
+        <a class="back" id="plot-back" href="#">← All plots of this check</a>
+        <h1 class="run-title" id="plot-title"></h1>
+        <span class="sub" id="plot-sub"></span>
+      </div>
+      <nav class="plot-nav" aria-label="Other plots">
+        <a class="btn" id="plot-prev" href="#">Previous</a>
+        <a class="btn" id="plot-next" href="#">Next</a>
+      </nav>
+    </div>
+
+    <section class="verdict" aria-labelledby="plot-verdict-word">
+      <div class="verdict-main">
+        <span class="verdict-label" id="plot-verdict-label">Verdict</span>
+        <h2 class="verdict-word" id="plot-verdict-word"></h2>
+        <div class="plain-file" id="plot-plain-box">
+          <h3 class="eyebrow eyebrow-signal">In plain words</h3>
+          <p class="plain-text" id="plot-plain"></p>
+        </div>
+        <p class="file-summary" id="plot-rules-words"></p>
+      </div>
+      <div class="verdict-actions">
+        <a class="btn btn-48" id="plot-receipt" href="#" download>Download the receipt</a>
+        <a class="btn btn-48" id="plot-package" href="#" download>Audit package</a>
+      </div>
+    </section>
+
+    <div class="file-grid">
+      <section class="file-main" aria-label="The evidence">
+        <section class="where" aria-labelledby="plot-map-title">
+          <div class="timeline-head">
+            <h3 class="h-card" id="plot-map-title">What the maps show inside the plot</h3>
+            <span class="sub" id="plot-map-sub"></span>
+          </div>
+          <div class="where-map" id="plot-map"></div>
+          <div class="legend" id="plot-map-legend"></div>
+          <p class="small muted" id="plot-map-note"></p>
+        </section>
+        <div class="timelines" id="plot-timeline"></div>
+        <details class="tech" id="plot-tech">
+          <summary><span>Technical details</span><span class="sub" id="plot-tech-sub">rule, code, query, cells</span></summary>
+          <div class="tech-body" id="plot-tech-body"></div>
+        </details>
+      </section>
+
+      <aside class="file-side">
+        <section class="flip why" id="why" aria-labelledby="why-title">
+          <h2 class="eyebrow eyebrow-signal" id="why-title">Why? Ask the five agents</h2>
+          <p class="flip-sentence why-sentence">They re-check this plot from the data, try to break the finding, and write
+            an evidence file you can question.</p>
+          <p class="small muted" id="why-claim"></p>
+          <button class="btn btn-go btn-48" type="button" id="why-run">Ask the agents why</button>
+          <p class="small muted" id="why-note"></p>
+          <p class="error" id="why-error" role="alert" hidden></p>
+        </section>
+        <section class="panel card" aria-labelledby="plot-fool-title">
+          <h2 class="h-card" id="plot-fool-title">Try to fool it</h2>
+          <p class="small muted">In the agents' evidence file, change one fact (the date of an alert, the area of a plot)
+            and see what is checked again, and whether the verdict changes.</p>
+        </section>
+      </aside>
+    </div>
   </div>
 
   <!-- Live trace (mockup 3_enquete_en_direct) -->
@@ -311,8 +443,8 @@
   <div class="view page" id="view-files" hidden>
     <div class="stack-16">
       <span class="eyebrow">Evidence files</span>
-      <h1 class="h-section">Every run this server keeps.</h1>
-      <p class="lead">Runs are kept in memory, the last 50; their trace stays in logs/ on the server.</p>
+      <h1 class="h-section">Every check this server keeps.</h1>
+      <p class="lead">Your plot checks first, then the agents' runs. Both are kept in memory, the last 50; their trace stays in logs/ on the server.</p>
     </div>
     <ol class="file-list" id="file-list"></ol>
   </div>

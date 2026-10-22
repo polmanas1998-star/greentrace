@@ -1,8 +1,8 @@
-/* GreenTrace interface: check a claim, live trace, evidence files, reliability tests.
+/* GreenTrace interface: check your plots, their results and evidence files, the agents' live trace, reliability tests.
 Plain JS, no build step, no network but this server.
 
-Everything shown comes from the server: /ui/setup, /api/plot-map, the trace lines (GET /runs/{id}/events),
-the run's output, /ui/runs and /ui/bench/{case}. Text from a run is always set with textContent, never parsed
+Everything shown comes from the server: /ui/setup, /api/plot-map, POST /api/check-plots and /ui/check-plots/...,
+the trace lines (GET /runs/{id}/events), the run's output, /ui/runs and /ui/bench/{case}. Text from a run is always set with textContent, never parsed
 as HTML: the reports a run reads can hold anything (trap case 19 hides an instruction in an NGO text). */
 (() => {
   "use strict";
@@ -44,6 +44,7 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     // the judge's plot: corners drawn on the map (editable), or an uploaded GeoJSON that falls outside the frame
     draw: { active: false, points: [], feature: null, source: null, measure: null, problem: null, timer: null, asked: 0 },
     lens: {},  // the Satellite Lens result of each scene, kept for this page
+    batch: null, plotId: null,  // the plot check on screen: { id, output, view, details, meta }, and its plot
     where: null,  // the farm and alert behind the verdict of the evidence file on screen
     tour: null };  // the guided tour, while it is open: { step, runId }
   const $ = (id) => document.getElementById(id);
@@ -74,7 +75,8 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     return node;
   }
 
-  const verdictTag = (verdict) => h("span", { class: `tag tag-${verdict}`, text: verdict });
+  const VERDICT_WORDS = { NO_ISSUE: "NO ISSUE FOUND" };  // a plot check's verdict when no rule found anything
+  const verdictTag = (verdict) => h("span", { class: `tag tag-${verdict}`, text: VERDICT_WORDS[verdict] || verdict });
   const chip = (text, kind) => h("span", { class: "chip" + (kind ? ` chip-${kind}` : ""), text });
   const words = (code) => String(code).replace(/_/g, " ");
   const plural = (n, one, many) => `${n} ${n === 1 ? one : many || one + "s"}`;
@@ -104,10 +106,12 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
   });
 
   // ---- routing ---------------------------------------------------------------------------------
-  // #/ check a claim · #/runs/<id> live trace · #/runs/<id>/file evidence file · #/files · #/bench
+  // #/ check plots · #/check/<batch> its results · #/check/<batch>/<plot> one plot's file
+  // #/runs/<id> the agents' live trace · #/runs/<id>/file their evidence file · #/files · #/bench
 
-  const VIEWS = ["home", "live", "file", "files", "bench", "missing"];
-  const TAB_OF = { home: "check", live: "check", file: "files", files: "files", bench: "bench" };
+  const VIEWS = ["home", "check", "plot", "live", "file", "files", "bench", "missing"];
+  const TAB_OF = { home: "check", check: "check", plot: "check", live: "check", file: "files", files: "files", bench: "bench" };
+  const checkHref = (batchId, plotId) => `#/check/${encodeURIComponent(batchId)}` + (plotId ? `/${encodeURIComponent(plotId)}` : "");
 
   function currentView() {
     return VIEWS.find((name) => !$(`view-${name}`).hidden) || "home";
@@ -134,6 +138,7 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     if (view === "file") drawWhere();
     const verdict = run && run.output && run.output.verdict;
     document.title = {
+      check: "Your plots · GreenTrace", plot: state.plotId ? `${state.plotId} · GreenTrace` : "Plot · GreenTrace",
       file: verdict ? `${capital(verdict.toLowerCase())} · Evidence file · GreenTrace` : "Evidence file · GreenTrace",
       live: "Live trace · GreenTrace", files: "Evidence files · GreenTrace", bench: "Reliability tests · GreenTrace",
     }[view] || "GreenTrace";
@@ -141,7 +146,9 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
 
   function route(initial) {
     const [first, id, sub] = location.hash.replace(/^#\/?/, "").split("/");
-    if (first === "runs" && id) {
+    if (first === "check" && id) {
+      openBatch(decodeURIComponent(id), sub ? decodeURIComponent(sub) : null);
+    } else if (first === "runs" && id) {
       openRun(decodeURIComponent(id));
       const run = state.run;
       if (sub === "file") {
@@ -162,9 +169,10 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
       $("main").focus({ preventScroll: true });
       window.scrollTo(0, 0);
     }
-    if (state.tour && state.tour.runId) {
-      const view = currentView();
-      if ((view !== "live" && view !== "file") || !state.run || state.run.id !== state.tour.runId) closeTour();
+    if (state.tour) {
+      const [kind, id] = location.hash.replace(/^#\/?/, "").split("/");
+      const ours = kind === undefined || kind === "" || (kind === "check" && decodeURIComponent(id) === state.tour.batchId);
+      if (!ours) closeTour();
       else tourRefresh(true);
     }
   }
@@ -189,25 +197,18 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     try {
       state.setup = await getJSON("/ui/setup");
     } catch (error) {
-      $("demo-sub").textContent = `Could not read /ui/setup (${error.message})`;
+      dropStatus(`Could not read /ui/setup (${error.message})`, true);
       return;
     }
     const setup = state.setup;
-    $("demo-sub").textContent = setup.default_mode === "sample"
-      ? `Synthetic supply chain · case ${setup.demo_case}`
-      : "Cocoa importer · data through Zetaris";
-    $("examples").replaceChildren(...setup.examples.map((example) => h("button", {
-      class: "btn", type: "button", title: `Case ${example.case}: ${example.change}. Sample mode, rules alone.`,
-      text: example.label, onclick: () => startRun($("claim").value, { sample_mode: true, case: example.case }, example.case),
-    })));
+    $("default-claim").textContent = setup.default_claim;
+    const promise = recall("promise");
+    if (promise) { $("claim").value = promise; $("promise").open = true; }
     if (setup.default_mode === "sample") {
       $("lens-run").textContent = "Show the code's grid";
       $("lens-intro").textContent = "Sample mode: the AI lens needs a model, so no image is sent. The code's 3 x 3 grid " +
         "of Hansen loss after 2020 is shown on the Sentinel-2 scenes; with a model, Nemotron Vision compares 2020 and today " +
         "cell by cell and the code checks each answer.";
-    }
-    if (!setup.plot_input) {  // the pipeline cannot read a plot: say so on the buttons rather than fail silently
-      for (const id of ["plot-upload", "plot-draw"]) { $(id).disabled = true; $(id).append(" ", h("span", { class: "soon", text: "coming" })); }
     }
     renderMode(currentView());
     const plots = setup.map_plots.map((p) => p.id);
@@ -217,17 +218,11 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     loadMap(plots[0]);
   }
 
-  async function startRun(claimText, options, caseNo, plot) {
+  async function startRun(claimText, options, caseNo, plot, errorBox, busy) {
     const claim = String(claimText || "").trim();
-    const error = $("claim-error");
+    const error = errorBox || $("why-error");
     error.hidden = true;
-    if (!claim) {
-      error.textContent = "Write the claim to check first.";
-      error.hidden = false;
-      $("claim").focus();
-      return;
-    }
-    const buttons = document.querySelectorAll("#view-home button:not([disabled])");
+    const buttons = busy ? [busy] : [];
     buttons.forEach((b) => b.setAttribute("aria-busy", "true"));
     try {
       const body = { input: plot ? { claim, plot } : { claim } };
@@ -384,7 +379,7 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     if (on && d.feature) clearPlot();  // an uploaded plot outside the frame cannot be edited: start afresh
     d.active = on;
     $("plot-draw").setAttribute("aria-pressed", String(on));
-    $("plot-draw").textContent = on ? "Stop drawing" : "Draw on the map";
+    $("plot-draw").textContent = on ? "Stop drawing" : "or draw one on the map";
     $("map").classList.toggle("drawing", on);
     if (state.geo) {
       state.geo.svg.setAttribute("tabindex", on ? "0" : "-1");
@@ -582,13 +577,6 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
       if (note) note.textContent = note.dataset.reference;
     }
 
-    // the form says what "check" will send
-    const ready = !$("draw-check").disabled;
-    $("claim-submit").textContent = ready ? "Check this plot" : "Check this claim";
-    $("plot-status").hidden = !hasPlot;
-    $("plot-status").textContent = !hasPlot ? "" : ready
-      ? `${d.measure.plot.plot_id}, ${d.measure.plot.area_ha} ha at ${d.measure.plot.lat}, ${d.measure.plot.lon}: checked as one more plot of supplier F-007 on the clean sample world.`
-      : problem ? `Your plot cannot be checked yet: ${problem}` : "Your plot is being drawn on the map.";
   }
 
   function checkPlot() {
@@ -596,50 +584,353 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     const feature = plotFeature();
     if (!feature || plotProblem() || !d.measure) return;
     setDrawing(false);
-    startRun($("claim").value, { case: state.setup.drawn_plot_world }, null, feature);
+    checkFile({ type: "FeatureCollection", features: [feature] }, `Plot ${feature.properties.plot_id}, drawn on the map`);
   }
 
-  async function uploadPlot(file) {
-    const d = state.draw;
-    setDrawing(false);
-    clearPlot();
-    let geo;
+  // ---- the analyst's own plot file: read here, checked by POST /api/check-plots ------------------
+
+  function dropStatus(text, isError) {
+    const box = $("drop-status");
+    box.hidden = !text;
+    box.textContent = text || "";
+    box.classList.toggle("is-error", Boolean(isError));
+  }
+
+  async function uploadPlots(file) {
+    let geojson;
     try {
-      geo = JSON.parse(await file.text());
+      geojson = JSON.parse(await file.text());
     } catch (error) {
-      d.problem = `${file.name} is not JSON (${error.message}).`;
-      renderDrawing();
+      dropStatus(`${file.name} is not a GeoJSON file: ${error.message}.`, true);
       return;
     }
-    if (geo && geo.type === "FeatureCollection") {
-      const features = Array.isArray(geo.features) ? geo.features : [];
-      if (features.length !== 1) {
-        d.problem = `${file.name} holds ${plural(features.length, "feature")}: upload one plot at a time.`;
-        renderDrawing();
+    checkFile(geojson, file.name);
+  }
+
+  const loadExample = () => checkFileQuiet();
+
+  async function checkFile(geojson, name, quiet) {
+    const count = geojson && Array.isArray(geojson.features) ? geojson.features.length : 0;
+    dropStatus(count ? `Checking ${plural(count, "plot")} on the maps…` : "Checking the file…");
+    const buttons = ["plots-upload", "load-example", "draw-check"].map($);
+    buttons.forEach((b) => b.setAttribute("aria-busy", "true"));
+    try {
+      const out = await postJSON("/api/check-plots", { geojson });
+      remember(`batch:${out.batch_id}`, { name });
+      state.batch = null;
+      dropStatus("");
+      location.hash = checkHref(out.batch_id);
+      return out;
+    } catch (error) {
+      dropStatus(`The file was not checked. ${error.message.replace(/^422: /, "")}`, true);
+      if (quiet) throw error;
+      return null;
+    } finally {
+      buttons.forEach((b) => b.removeAttribute("aria-busy"));
+    }
+  }
+
+  // ---- the results of a plot check: every plot by risk, on a map, and each plot's file ------------
+
+  const WORD_OF = { CONTRADICTED: "Contradicted.", UNVERIFIABLE: "Unverifiable.", NO_ISSUE: "No issue found." };
+  const ha = (value) => (value >= 1 ? `${value.toFixed(1)} ha` : `${value.toFixed(2)} ha`);
+
+  async function openBatch(batchId, plotId) {
+    state.plotId = plotId;
+    await state.setupReady;
+    if (!state.batch || state.batch.id !== batchId) {
+      state.batch = { id: batchId, output: null, view: null, details: {}, meta: recall(`batch:${batchId}`) || {} };
+      $("check-title").textContent = "Reading the results…";
+      show(plotId ? "plot" : "check");
+      try {
+        const id = encodeURIComponent(batchId);
+        const [output, view] = await Promise.all([getJSON(`/api/check-plots/${id}`), getJSON(`/ui/check-plots/${id}/view`)]);
+        if (!state.batch || state.batch.id !== batchId) return;
+        Object.assign(state.batch, { output, view });
+      } catch {
+        state.batch = null;
+        $("missing-text").textContent = `No plot check ${batchId} in this server's memory. Checks are kept in memory only, ` +
+          "the last 50: upload the file again.";
+        show("missing");
         return;
       }
-      geo = features[0];
     }
-    const feature = geo && geo.type === "Feature" ? geo : { type: "Feature", properties: {}, geometry: geo };
-    const geometry = feature.geometry || {};
-    feature.properties = { ...(feature.properties || {}) };
-    if (!feature.properties.plot_id) feature.properties.plot_id = drawnId();
-    feature.properties.source = `uploaded: ${file.name}`;
-    const ring = geometry.type === "Polygon" && Array.isArray(geometry.coordinates) && geometry.coordinates[0];
-    const w = state.geo && state.geo.data.window;
-    const inFrame = (p) => w && Array.isArray(p) && p[1] >= w.lat_min && p[1] <= w.lat_max && p[0] >= w.lon_min && p[0] <= w.lon_max;
-    if (Array.isArray(ring) && geometry.coordinates.length === 1 && ring.every(inFrame)) {
-      // inside the frame: it becomes corners the judge can still undo or extend
-      const corners = ring.map(([lon, lat]) => [lat, lon]);
-      if (corners.length > 1 && corners[0][0] === corners.at(-1)[0] && corners[0][1] === corners.at(-1)[1]) corners.pop();
-      d.points = corners;
-      d.source = "uploaded";
-    } else {
-      d.feature = feature;
-      d.source = "uploaded";
+    if (!state.batch.output) return;  // still loading: the first call draws it
+    renderCheck();
+    if (plotId) await renderPlot(plotId);
+    if (state.plotId !== plotId) return;
+    show(plotId ? "plot" : "check");
+    // the maps are drawn at their real width, known once the view shows
+    if (plotId) renderPlotMap(state.batch.details[plotId], state.batch.output.plots.find((r) => r.plot_id === plotId));
+    else renderBatchMap();
+    tourRefresh(true);
+  }
+
+  function plainSummary(out) {
+    const c = out.summary.plots;
+    const total = out.plots.length;
+    const parts = [];
+    if (c.CONTRADICTED) parts.push(`${c.CONTRADICTED} ${c.CONTRADICTED === 1 ? "shows" : "show"} forest lost after 2020`);
+    if (c.UNVERIFIABLE) parts.push(`${c.UNVERIFIABLE} cannot be checked yet`);
+    if (c.NO_ISSUE) parts.push(`${c.NO_ISSUE} ${c.NO_ISSUE === 1 ? "shows" : "show"} no issue`);
+    let text = `Of your ${plural(total, "plot")}, ${parts.length > 1 ? parts.slice(0, -1).join(", ") + " and " + parts.at(-1) : parts[0]}.`;
+    const top = out.plots[0];
+    if (top && top.verdict !== "NO_ISSUE") text += ` Start with ${top.plot_id}` + (top.supplier && top.supplier !== "not given" ? `, from ${top.supplier}.` : ".");
+    return text;
+  }
+
+  function lossCell(r) {
+    const m = r.measure;
+    if (!m || !m.covered) return h("td", { class: "num muted", text: "not measured" });
+    const years = Object.keys(m.forest_loss_ha_by_year || {}).filter((y) => Number(y) > 2020);
+    return h("td", { class: "num" + (m.loss_after_2020_ha > 0 ? " loss" : "") },
+      ha(m.loss_after_2020_ha), years.length ? h("span", { class: "sub", text: years.length > 1 ? `${years[0]}–${years.at(-1)}` : years[0] }) : null);
+  }
+
+  function renderCheck() {
+    const b = state.batch;
+    const out = b.output;
+    const total = out.plots.length;
+    const sample = state.setup && state.setup.default_mode === "sample";
+    $("check-title").textContent = b.meta.name || `Plot check ${b.id}`;
+    $("check-sub").textContent = [`${plural(total, "plot")} checked`, out.summary.refused && `${out.summary.refused} refused`,
+      `counted as producing up to ${out.producing_until}`,
+      sample ? "sample mode: maps of the Soubré area only, no network" : "live mode"].filter(Boolean).join(" · ");
+    $("export-geojson").href = out.exports["plots_no_issue_found.geojson"];
+    $("export-csv").href = out.exports["findings.csv"];
+    $("export-package").href = out.exports.package;
+    $("export-geojson").hidden = !out.summary.plots.NO_ISSUE;
+    $("check-plain").textContent = plainSummary(out);
+    $("check-counts").replaceChildren(...["CONTRADICTED", "UNVERIFIABLE", "NO_ISSUE"].map((v) =>
+      h("div", { "data-verdict": v }, h("dt", {}, verdictTag(v)), h("dd", { text: String(out.summary.plots[v]) }))));
+
+    const notes = [...out.errors.map((e) => `Feature ${e.index}${e.id ? ` (${e.id})` : ""} was not checked: ${e.error}`), ...out.warnings];
+    $("check-refused").hidden = !notes.length;
+    $("check-refused").replaceChildren(h("b", { text: out.errors.length ? "Not everything in the file could be read" : "Notes on the file" }),
+      h("ul", {}, notes.map((n) => h("li", { text: n }))));
+
+    $("plots-rows").replaceChildren(...out.plots.map((r) => {
+      const href = checkHref(b.id, r.plot_id);
+      return h("tr", { "data-plot": r.plot_id, "data-verdict": r.verdict, onclick: (e) => { if (!e.target.closest("a")) location.hash = href; },
+        onmouseenter: () => highlight(r.plot_id, true), onmouseleave: () => highlight(r.plot_id, false) },
+      h("td", { class: "num muted", text: String(r.risk_rank) }),
+      h("td", {}, h("a", { href, class: "plot-link", text: r.plot_id, onfocus: () => highlight(r.plot_id, true), onblur: () => highlight(r.plot_id, false) }),
+        h("span", { class: "sub", text: r.supplier })),
+      h("td", {}, verdictTag(r.verdict)),
+      h("td", { class: "plain-cell", text: b.view.plain[r.plot_id] || r.sentence }),
+      h("td", { class: "num", text: r.area_ha === null ? "no area" : ha(r.area_ha) }),
+      lossCell(r));
+    }));
+
+    $("supplier-list").replaceChildren(...out.suppliers.map((s) => h("li", { title: s.why },
+      h("span", { class: "supplier-rank", text: String(s.rank) }),
+      h("span", { class: "supplier-who" }, h("b", { text: s.supplier }),
+        h("span", { class: "sub", text: `${plural(s.plots, "plot")}` + (s.CONTRADICTED ? ` · ${ha(s.forest_lost_after_2020_ha)} of 2020 forest lost` : "") })),
+      h("span", { class: "supplier-tags" }, ["CONTRADICTED", "UNVERIFIABLE", "NO_ISSUE"].filter((v) => s[v]).map((v) =>
+        h("span", { class: `tag tag-${v}`, title: `${s[v]} ${VERDICT_WORDS[v] || v}`, text: `${s[v]} ${v === "NO_ISSUE" ? "clear" : v.slice(0, 5).toLowerCase() + "."}` }))))));
+
+    const sources = (out.plots.find((r) => r.evidence) || {}).evidence;
+    const fact = (label, value) => h("div", {}, h("dt", { text: label }), h("dd", { class: "mono", text: value }));
+    $("check-tech-body").replaceChildren(
+      h("dl", { class: "prints" }, fact("seal", out.seal), fact("rules_version", out.rules_version), fact("batch", out.batch_id),
+        fact("trace", out.log_file), fact("maps", sources ? sources.maps : "no plot was measured")),
+      h("p", { class: "small" }, "Receipt: ", h("a", { href: out.exports.receipt, download: `${out.batch_id}_receipt.json`, text: "receipt.json" }),
+        ". ", h("span", { class: "mono", text: "python verify.py receipt.json" }), " re-derives every verdict offline from the same cells."));
+    renderBatchMap();
+  }
+
+  function highlight(plotId, on) {
+    const shape = $("batch-map").querySelector(`[data-plot="${CSS.escape(plotId)}"]`);
+    if (shape) shape.classList.toggle("hl", on);
+    const row = $("plots-rows").querySelector(`tr[data-plot="${CSS.escape(plotId)}"]`);
+    if (row) row.classList.toggle("hl", on);
+  }
+
+  function projector(points, W, H, pad) {
+    // A flat projection of the points' box onto W x H, north up, same scale both ways (app/world/geo.py).
+    const lats = points.map((p) => p[0]);
+    const lons = points.map((p) => p[1]);
+    const lat0 = (Math.min(...lats) + Math.max(...lats)) / 2;
+    const lon0 = (Math.min(...lons) + Math.max(...lons)) / 2;
+    const sx = 111320 * Math.cos((lat0 * Math.PI) / 180);
+    const wide = Math.max(200, (Math.max(...lons) - Math.min(...lons)) * sx);
+    const tall = Math.max(200, (Math.max(...lats) - Math.min(...lats)) * 110574);
+    const k = Math.min((W - 2 * pad) / wide, (H - 2 * pad) / tall);  // pixels per metre
+    return { k, x: (lon) => W / 2 + (lon - lon0) * sx * k, y: (lat) => H / 2 - (lat - lat0) * 110574 * k };
+  }
+
+  function scaleBar(k, H) {
+    const metres = [50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000].find((m) => m * k >= 60) || 200000;
+    const label = metres >= 1000 ? `${metres / 1000} km` : `${metres} m`;
+    return s("g", { class: "w-scale" }, s("path", { d: `M16 ${H - 20}V${H - 14}H${16 + metres * k}V${H - 20}` }),
+      s("text", { x: 24 + metres * k, y: H - 14, text: label }));
+  }
+
+  function renderBatchMap() {
+    const b = state.batch;
+    const box = $("batch-map");
+    const W = Math.max(280, Math.round(box.clientWidth) || 560);
+    const H = Math.round(W * 0.75);
+    // The map frames the main group of plots; a plot more than FAR_KM from their median is named, not drawn.
+    const FAR_KM = 50;
+    const median = (values) => [...values].sort((a, c) => a - c)[Math.floor(values.length / 2)];
+    const mid = [median(b.view.shapes.map((sh) => sh.lat)), median(b.view.shapes.map((sh) => sh.lon))];
+    const km = (sh) => Math.hypot((sh.lat - mid[0]) * 110.574, (sh.lon - mid[1]) * 111.32 * Math.cos((mid[0] * Math.PI) / 180));
+    const shapes = b.view.shapes.filter((sh) => km(sh) <= FAR_KM);
+    const far = b.view.shapes.filter((sh) => km(sh) > FAR_KM);
+    const points = shapes.flatMap((sh) => (sh.rings ? sh.rings.flat() : [[sh.lat, sh.lon]]));
+    if (!points.length) { box.replaceChildren(); return; }
+    const p = projector(points, W, H, 40);
+    const marks = shapes.map((sh) => {
+      const go = () => { location.hash = checkHref(b.id, sh.plot_id); };
+      const attrs = { class: `bm bm-${sh.verdict}`, "data-plot": sh.plot_id, onclick: go,
+        onmouseenter: () => highlight(sh.plot_id, true), onmouseleave: () => highlight(sh.plot_id, false) };
+      const rings = sh.rings || [];
+      const size = rings.length
+        ? Math.max(...rings.flat().map(([lat]) => p.y(lat))) - Math.min(...rings.flat().map(([lat]) => p.y(lat)))
+        : 2 * (sh.radius_m || 0) * p.k;
+      const title = s("title", { text: `${sh.plot_id}: ${VERDICT_WORDS[sh.verdict] || sh.verdict}` });
+      if (size < 12) return s("circle", { ...attrs, cx: p.x(sh.lon).toFixed(1), cy: p.y(sh.lat).toFixed(1), r: 7 }, title);
+      if (!rings.length) return s("circle", { ...attrs, cx: p.x(sh.lon).toFixed(1), cy: p.y(sh.lat).toFixed(1), r: (sh.radius_m * p.k).toFixed(1), "stroke-dasharray": "6 4" }, title);
+      return s("g", attrs, title, rings.map((ring) => s("polygon", { points: ring.map(([lat, lon]) => `${p.x(lon).toFixed(1)},${p.y(lat).toFixed(1)}`).join(" ") })));
+    });
+    const placed = [];  // a label is written only where it does not cover another one
+    const labels = shapes.flatMap((sh) => {
+      const width = sh.plot_id.length * 7.5;
+      const right = p.x(sh.lon) + 12 + width <= W - 4;  // right of the mark, or left of it at the frame's edge
+      const x = right ? p.x(sh.lon) + 12 : p.x(sh.lon) - 12 - width;
+      const y = p.y(sh.lat) + 4;
+      if (x < 4 || placed.some((q) => Math.abs(q.y - y) < 16 && x < q.x + q.width && q.x < x + width)) return [];
+      placed.push({ x, y, width });
+      return [s("text", { class: "w-label", x: x.toFixed(1), y: y.toFixed(1), text: sh.plot_id })];
+    });
+    const said = `Map of ${plural(shapes.length, "plot")}, coloured by verdict: ` +
+      ["CONTRADICTED", "UNVERIFIABLE", "NO_ISSUE"].map((v) => `${shapes.filter((sh) => sh.verdict === v).length} ${VERDICT_WORDS[v] || v}`).join(", ");
+    box.replaceChildren(s("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": said }, marks, labels, scaleBar(p.k, H)));
+    const spanKm = (Math.max(W, H) / p.k) / 1000;
+    $("batch-map-sub").textContent = `Outlines from your file · north up · about ${spanKm < 10 ? spanKm.toFixed(1) : Math.round(spanKm)} km across` +
+      (far.length ? ` · not drawn, more than ${FAR_KM} km away: ${far.map((sh) => sh.plot_id).join(", ")}` : "");
+  }
+
+  function plotFeatureOf(detail, result) {
+    const properties = { plot_id: detail.plot_id, supplier: result.supplier };
+    if (detail.rings) {
+      return { type: "Feature", properties, geometry: detail.rings.length === 1
+        ? { type: "Polygon", coordinates: [detail.rings[0].map(([lat, lon]) => [lon, lat])] }
+        : { type: "MultiPolygon", coordinates: detail.rings.map((ring) => [ring.map(([lat, lon]) => [lon, lat])]) } };
     }
-    plotChanged();
-    if (d.feature) measurePlot();  // outside the frame: no local checks to wait for, the server says
+    return { type: "Feature", properties: { ...properties, area_ha: result.area_ha }, geometry: { type: "Point", coordinates: [detail.lon, detail.lat] } };
+  }
+
+  async function renderPlot(plotId) {
+    const b = state.batch;
+    const out = b.output;
+    const index = out.plots.findIndex((r) => r.plot_id === plotId);
+    if (index < 0) {
+      $("missing-text").textContent = `No plot ${plotId} in this check.`;
+      show("missing");
+      return;
+    }
+    const r = out.plots[index];
+    let detail = b.details[plotId];
+    if (!detail) {
+      try {
+        detail = b.details[plotId] = await getJSON(`/ui/check-plots/${encodeURIComponent(b.id)}/${encodeURIComponent(plotId)}`);
+      } catch (error) {
+        $("missing-text").textContent = `This plot could not be read: ${error.message}`;
+        show("missing");
+        return;
+      }
+    }
+    if (state.plotId !== plotId) return;
+    const prev = out.plots[index - 1];
+    const next = out.plots[index + 1];
+    $("plot-back").href = checkHref(b.id);
+    $("plot-prev").href = prev ? checkHref(b.id, prev.plot_id) : "#";
+    $("plot-next").href = next ? checkHref(b.id, next.plot_id) : "#";
+    $("plot-prev").hidden = !prev;
+    $("plot-next").hidden = !next;
+    $("plot-title").textContent = `${r.plot_id}` + (r.supplier && r.supplier !== "not given" ? ` · ${r.supplier}` : "");
+    $("plot-sub").textContent = [`risk ${r.risk_rank} of ${out.plots.length}`, r.area_ha === null ? "no area given" : `${r.area_ha} ha`,
+      r.shape, b.meta.name].filter(Boolean).join(" · ");
+    for (const id of ["plot-verdict-label", "plot-verdict-word"]) $(id).className = `${id === "plot-verdict-word" ? "verdict-word" : "verdict-label"} v-${r.verdict}`;
+    $("plot-verdict-word").textContent = WORD_OF[r.verdict] || r.verdict;
+    $("plot-plain").textContent = detail.plain;
+    $("plot-rules-words").textContent = `The rules' own words: ${r.sentence}`;
+    $("plot-receipt").href = out.exports.receipt;
+    $("plot-receipt").setAttribute("download", `${out.batch_id}_receipt.json`);
+    $("plot-package").href = out.exports.package;
+    renderPlotMap(detail, r);
+    const m = r.measure;
+    $("plot-timeline").replaceChildren(...(m ? [timelineCard({ plot_id: r.plot_id, reference_maps: m, delivered_tonnes_by_year: {},
+      producing_until: out.producing_until }, "2020-12-31")] : []));
+    const fact = (label, value) => h("div", {}, h("dt", { text: label }), h("dd", { class: "mono", text: value }));
+    const own = Object.entries(r.properties || {});
+    $("plot-tech-sub").textContent = `rule ${r.rule} · ${r.code || "no finding"} · ${r.evidence ? `Q10 answer ${r.evidence.answer}` : "no map query"}`;
+    $("plot-tech-body").replaceChildren(
+      h("dl", { class: "prints" }, fact("rule", `${r.rule}: ${RULES[r.rule] || ""}`), fact("code", r.code || "none"),
+        fact("query", r.evidence ? `${r.evidence.query}, answer ${r.evidence.answer} of the receipt` : "none"),
+        fact("cells", m ? String(m.cells) : "none"), fact("maps", r.evidence ? r.evidence.maps : "none"),
+        fact("tree cover lost by year", m && Object.keys(m.loss_ha_by_year || {}).length
+          ? Object.entries(m.loss_ha_by_year).map(([y, v]) => `${y}: ${v}`).join(" · ") : "none"),
+        fact("seal of the check", out.seal)),
+      own.length ? h("div", {}, h("span", { class: "label", text: "Your properties, kept as given" }),
+        h("dl", { class: "prints" }, own.map(([k, v]) => fact(k, typeof v === "string" ? v : JSON.stringify(v))))) : null);
+    const claim = $("claim").value.trim() || state.setup.default_claim;
+    $("why-claim").textContent = `The promise they check: “${claim}”` + ($("claim").value.trim() ? "" : " (yours can be pasted on the first page)");
+    $("why-note").textContent = state.setup.default_mode === "sample"
+      ? "Sample mode: the agents check this plot as one more plot of the example supply chain (synthetic deliveries), with the rules alone."
+      : "Live mode: the agents read the company's data through Zetaris and ask Nemotron.";
+    $("why-error").hidden = true;
+    $("why-run").onclick = () => {
+      remember("promise", $("claim").value.trim());
+      startRun(claim, state.setup.default_mode === "sample" ? { case: state.setup.drawn_plot_world } : null, null,
+        plotFeatureOf(detail, r), $("why-error"), $("why-run"));
+    };
+  }
+
+  function renderPlotMap(detail, r) {
+    const box = $("plot-map");
+    const W = Math.max(280, Math.round(box.clientWidth) || 640);
+    const w = detail.window;
+    const sx = 111320 * Math.cos((((w.lat_min + w.lat_max) / 2) * Math.PI) / 180);
+    const H = Math.round(Math.min(W * 0.6, (W * ((w.lat_max - w.lat_min) * 110574)) / ((w.lon_max - w.lon_min) * sx)));
+    const p = projector([[w.lat_min, w.lon_min], [w.lat_max, w.lon_max]], W, H, 0);
+    const g = detail.grid;
+    const half = g.cell_deg / 2;
+    const kindOf = ([, , forest, year]) => year > g.cutoff_year ? (forest >= g.forest_from ? "loss" : "loss-other")
+      : year > 0 ? "loss-old" : forest >= g.forest_from ? "forest" : null;
+    const paths = { forest: [], "loss-old": [], "loss-other": [], loss: [] };
+    for (const cell of detail.cells) {
+      const kind = kindOf(cell);
+      if (!kind) continue;
+      const [lat, lon] = cell;
+      const x0 = p.x(lon - half);
+      const y0 = p.y(lat + half);
+      paths[kind].push(`M${x0.toFixed(1)} ${y0.toFixed(1)}H${p.x(lon + half).toFixed(1)}V${p.y(lat - half).toFixed(1)}H${x0.toFixed(1)}Z`);
+    }
+    const outline = detail.rings
+      ? detail.rings.map((ring) => {
+        const pts = ring.map(([lat, lon]) => `${p.x(lon).toFixed(1)},${p.y(lat).toFixed(1)}`).join(" ");
+        return [s("polygon", { points: pts, class: "m-halo" }), s("polygon", { points: pts, class: "m-outline" })];
+      }).flat()
+      : detail.radius_m ? [s("circle", { cx: p.x(detail.lon), cy: p.y(detail.lat), r: (detail.radius_m * p.k).toFixed(1), class: "w-disk" })]
+        : [s("circle", { cx: p.x(detail.lon), cy: p.y(detail.lat), r: 5, class: "w-point" })];
+    const m = r.measure;
+    const said = `${r.plot_id}: ` + (m && m.covered ? `${ha(m.forest_2020_ha)} of EU 2020 forest inside, ${ha(m.loss_after_2020_ha)} of it lost after 2020`
+      : "no map cells measured here");
+    box.replaceChildren(s("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": said },
+      s("g", { "shape-rendering": "crispEdges" }, ["forest", "loss-old", "loss-other", "loss"].map((kind) => s("path", { class: `m-${kind}`, d: paths[kind].join("") }))),
+      outline, scaleBar(p.k, H)));
+    const swatch = (cls, text) => h("span", {}, h("i", { class: `swatch ${cls}` }), text);
+    $("plot-map-legend").replaceChildren(swatch("sw-forest", "EU forest 2020"), swatch("sw-loss", "Lost after 2020, on EU forest"),
+      swatch("sw-loss-other", "Lost after 2020, elsewhere"), swatch("sw-loss-old", "Lost before 2021"), swatch("sw-outline", "Your outline"));
+    $("plot-map-sub").textContent = m && m.covered
+      ? `${ha(m.forest_2020_ha)} of EU 2020 forest inside · ${ha(m.loss_after_2020_ha)} of it lost after 2020`
+      : (m && m.reason) || "not measured";
+    $("plot-map-note").textContent = detail.cells.length
+      ? `${plural(detail.cells.length, "cell")} of 30 m, as the check read them (query Q10): EU JRC GFC2020 v4 for the forest in 2020, Hansen/UMD v1.12 for the year of loss. North is up.`
+      : `No map cell was read here${m && m.reason ? `: ${m.reason}` : ""}. Only your outline is drawn.`;
   }
 
   // ---- the Satellite Lens: the model looks at the scene, the code checks each cell ---------------
@@ -1238,9 +1529,9 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
       h("div", { class: "legend" },
         h("span", {}, h("i", { class: "swatch sw-loss" }), "Lost on EU 2020 forest"),
         h("span", {}, h("i", { class: "swatch sw-loss-other" }), "Other tree cover lost"),
-        h("span", {}, h("i", { class: "swatch sw-forest" }), deliveredYears.length
+        deliveredYears.length || !plot.producing_until ? h("span", {}, h("i", { class: "swatch sw-forest" }), deliveredYears.length
           ? `${plot.plot_id} delivered ${deliveredYears[0]}–${deliveredYears.at(-1)} (${plot.declared_by === "analyst" ? "declared with the drawn plot" : "registry"})`
-          : "No delivery recorded")),
+          : "No delivery recorded") : h("span", { text: `Every plot of the file counts as producing up to ${plot.producing_until}` })),
       h("p", { class: "small muted", text: `EU 2020 forest inside the outline: ${maps.forest_2020_ha.toFixed(2)} ha; ` +
         `${maps.loss_after_2020_ha.toFixed(2)} ha of it lost after the cut-off.` }));
   }
@@ -1604,19 +1895,31 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     list.setAttribute("aria-busy", "true");
     list.replaceChildren(h("li", { class: "none", text: "Reading the runs this server keeps…" }));
     let runs;
+    let checks;
     try {
-      runs = await getJSON("/ui/runs");
+      [checks, runs] = await Promise.all([getJSON("/ui/check-plots"), getJSON("/ui/runs")]);
     } catch (error) {
       list.replaceChildren(h("li", { class: "error", text: `Could not list the runs: ${error.message}` }));
       return;
     } finally {
       list.removeAttribute("aria-busy");
     }
-    if (!runs.length) {
-      list.replaceChildren(h("li", { class: "none" }, "No run yet in this server's memory. ", h("a", { href: "#/", text: "Check a claim" }), "."));
+    if (!runs.length && !checks.length) {
+      list.replaceChildren(h("li", { class: "none" }, "Nothing checked yet in this server's memory. ", h("a", { href: "#/", text: "Check your plots" }), "."));
       return;
     }
-    list.replaceChildren(...runs.map((r) => {
+    const plotChecks = checks.map((c) => {
+      const name = (recall(`batch:${c.batch_id}`) || {}).name;
+      const counts = c.summary.plots;
+      const worst = ["CONTRADICTED", "UNVERIFIABLE", "NO_ISSUE"].find((v) => counts[v]);
+      return h("li", {}, h("a", { href: checkHref(c.batch_id) },
+        worst ? verdictTag(worst) : h("span", { class: "tag tag-quiet", text: "NO PLOT" }),
+        h("span", { class: "stack-8" }, h("span", { class: "file-claim", text: name || `Plot check of ${plural(c.plots, "plot")}` }),
+          h("span", { class: "sub", text: [c.batch_id, plural(c.plots, "plot"), `${counts.CONTRADICTED} contradicted`,
+            `${counts.UNVERIFIABLE} unverifiable`, `${counts.NO_ISSUE} clear`].join(" · ") })),
+        h("span", { class: "sub", text: "Results →" })));
+    });
+    list.replaceChildren(...plotChecks, ...runs.map((r) => {
       const status = r.verdict ? verdictTag(r.verdict) : h("span", { class: "tag tag-quiet", text: (r.status || "").replace("_", " ").toUpperCase() });
       const bits = [r.run_id, r.mode && `${r.mode} mode`, r.degraded && "degraded", r.changed && "changed with try to fool it"];
       return h("li", {}, h("a", { href: runHref(r.run_id, r.verdict ? "file" : "live") },
@@ -1688,68 +1991,83 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     $("bench-score").textContent = "not run yet";
   }
 
-  // ---- the guided tour: five bubbles on the demo case -----------------------------------------------
-  // Nothing in it is a number: each bubble points at what the run itself shows on screen.
+  // ---- the guided tour: five bubbles on the example plot file ----------------------------------------
+  // Nothing in it is a number: each bubble points at what the check itself shows on screen.
 
   const TOUR = [
-    { view: "live", target: "live-title", title: "The promise",
-      text: "This is what the company says about its cocoa. GreenTrace does not take its word for it: it checks." },
-    { view: "live", target: "agents", title: "Five AI agents at work",
-      text: "They read the promise, plan the checks, pull satellite alerts, maps and deliveries, then try to break every " +
-        "finding. Every step is logged: the full trace is under Technical details." },
-    { view: "live", target: "live-result", wait: "live-lead", title: "The verdict, in plain words",
-      text: "The verdict comes from fixed rules, not from the AI, and this sentence is written by code from what was found." },
-    { view: "file", target: "where", fallback: "findings", title: "The proof, on the map",
-      text: "The farm behind the verdict, as the run read it: its outline and the satellite alert. Each finding names " +
-        "the rows it rests on." },
-    { view: "file", target: "fool", title: "Try to fool it",
-      text: "Change one fact, for example the date of the alert, and run it again. If the verdict flips, the evidence " +
-        "file shows exactly why." },
+    { view: "home", target: "drop", title: "Your plots",
+      text: "Start with the GeoJSON of your production plots, the file the EUDR already asks for. For the tour, " +
+        "GreenTrace checks its example file: real places, example ids and suppliers." },
+    { view: "check", target: "plots-table", title: "Every plot, by risk",
+      text: "Each plot gets a verdict from fixed rules and one sentence in plain words. The riskiest come first; " +
+        "click one to open its file." },
+    { view: "check", target: "batch-map-card", title: "All of them on the map",
+      text: "Coloured by verdict. Your suppliers are ranked the same way, so you know whom to call first." },
+    { view: "plot", target: "plot-plain-box", title: "One plot, in plain words",
+      text: "Then the evidence: the map cells inside the outline, the loss year by year, and a receipt that " +
+        "re-derives the verdict offline." },
+    { view: "plot", target: "why", title: "Why? Ask the agents",
+      text: "Five AI agents re-check the plot, try to break the finding and write an evidence file in which you can " +
+        "try to fool them." },
   ];
 
-  async function startTour() {
+  function startTour() {
     if (!state.setup) return;
-    state.tour = { step: 0, runId: null };
-    await startRun(state.setup.default_claim, null, null);
-    if (!state.run || !state.tour) { closeTour(); return; }
-    state.tour.runId = state.run.id;
-    tourRefresh();
+    state.tour = { step: 0, batchId: null, plotId: null };
+    if (currentView() !== "home") location.hash = "#/";
+    else tourRefresh(true);
   }
 
-  function tourGo(delta) {
+  async function tourGo(delta) {
     const tour = state.tour;
     if (!tour) return;
     const next = tour.step + delta;
     if (next >= TOUR.length) { closeTour(); return; }
     if (next < 0) return;
+    if (!tour.batchId && next > 0) {  // the tour's plots: the example file, checked for real
+      $("tour-next").setAttribute("aria-busy", "true");
+      const out = await checkFileQuiet();
+      $("tour-next").removeAttribute("aria-busy");
+      if (!out || state.tour !== tour) return;
+      Object.assign(tour, { batchId: out.batch_id, plotId: out.plots[0].plot_id });
+    }
     tour.step = next;
     const want = TOUR[next].view;
-    if (currentView() !== want) location.hash = runHref(tour.runId, want);  // route() refreshes the bubble
+    const href = want === "home" ? "#/" : checkHref(tour.batchId, want === "plot" ? tour.plotId : null);
+    if (location.hash !== href) location.hash = href;  // route() refreshes the bubble
     else tourRefresh(true);
+  }
+
+  async function checkFileQuiet() {
+    try {
+      return await checkFile(await getJSON("/static/example_plots.geojson"), "Example data · real places near Soubré, example ids and suppliers", true);
+    } catch (error) {
+      dropStatus(`The example file could not be read: ${error.message}`, true);
+      return null;
+    }
   }
 
   function tourRefresh(focus) {
     const tour = state.tour;
     const bubble = $("tour");
     document.querySelectorAll(".tour-on").forEach((node) => node.classList.remove("tour-on"));
-    if (!tour || !tour.runId) { bubble.hidden = true; return; }
+    if (!tour) { bubble.hidden = true; return; }
     const step = TOUR[tour.step];
-    const run = state.run;
-    if (!run || run.id !== tour.runId || currentView() !== step.view) { bubble.hidden = true; return; }
-    const ready = step.wait ? Boolean(run.output && !$(step.target).hidden && run.plain) : true;
-    let target = $(ready ? step.target : step.wait);
-    if (target.hidden && step.fallback) target = $(step.fallback);
+    const loaded = step.view === "home" || (state.batch && state.batch.id === tour.batchId && state.batch.output
+      && (step.view === "check" || state.plotId === tour.plotId));
+    if (currentView() !== step.view || !loaded) { bubble.hidden = true; return; }
+    const target = $(step.target);
     $("tour-count").textContent = `${tour.step + 1} of ${TOUR.length}`;
     $("tour-title").textContent = step.title;
-    $("tour-text").textContent = ready ? step.text : "The agents are still working. The verdict appears here when the rules have spoken.";
+    $("tour-text").textContent = step.text;
     $("tour-back").disabled = tour.step === 0;
-    $("tour-next").disabled = !ready;
+    $("tour-next").disabled = false;
     $("tour-next").textContent = tour.step === TOUR.length - 1 ? "Done" : "Next";
     const wasHidden = bubble.hidden;
     bubble.hidden = false;
     target.classList.add("tour-on");
     const scrollTo = placeTour(target);
-    const shown = `${tour.step}:${ready}:${target.id}`;
+    const shown = `${tour.step}:${target.id}`;
     if (tour.shown !== shown || wasHidden) {  // scroll only when the bubble moves to something new
       tour.shown = shown;
       window.scrollTo({ top: scrollTo, behavior: reducedMotion ? "auto" : "smooth" });
@@ -1801,11 +2119,24 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    $("run-demo").addEventListener("click", () => startRun(state.setup ? state.setup.default_claim : $("claim").defaultValue, null, null));
-    $("claim-form").addEventListener("submit", (event) => {
-      event.preventDefault();
-      if (!$("draw-check").disabled) checkPlot(); else startRun($("claim").value, null, null);
+    $("plots-upload").addEventListener("click", () => $("plots-file").click());
+    $("plots-file").addEventListener("change", (event) => {
+      const [file] = event.target.files;
+      if (file) uploadPlots(file);
+      event.target.value = "";  // the same file can be chosen again after a fix
     });
+    // Drop the file anywhere on the first page; the drop zone says it is ready to take it.
+    const home = $("view-home");
+    home.addEventListener("dragover", (event) => { event.preventDefault(); $("drop").classList.add("over"); });
+    home.addEventListener("dragleave", (event) => { if (!home.contains(event.relatedTarget)) $("drop").classList.remove("over"); });
+    home.addEventListener("drop", (event) => {
+      event.preventDefault();
+      $("drop").classList.remove("over");
+      const [file] = event.dataTransfer.files;
+      if (file) uploadPlots(file);
+    });
+    $("load-example").addEventListener("click", loadExample);
+    $("claim").addEventListener("change", () => remember("promise", $("claim").value.trim()));
     for (const button of document.querySelectorAll(".filters button")) {
       button.addEventListener("click", () => setFilter(button.dataset.filter));
     }
@@ -1818,12 +2149,6 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     $("bench-run").addEventListener("click", runBench);
     $("plot-draw").addEventListener("click", () => setDrawing(!state.draw.active));
     $("lens-run").addEventListener("click", runLens);
-    $("plot-upload").addEventListener("click", () => $("plot-file").click());
-    $("plot-file").addEventListener("change", (event) => {
-      const [file] = event.target.files;
-      if (file) uploadPlot(file);
-      event.target.value = "";  // the same file can be chosen again after a fix
-    });
     $("draw-undo").addEventListener("click", undoPoint);
     $("draw-clear").addEventListener("click", clearPlot);
     $("draw-check").addEventListener("click", checkPlot);
@@ -1836,10 +2161,16 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     });
     window.addEventListener("resize", () => {
       drawWhere();
+      const b = state.batch;
+      if (b && b.output && currentView() === "check") renderBatchMap();
+      if (b && b.output && currentView() === "plot" && b.details[state.plotId]) {
+        renderPlotMap(b.details[state.plotId], b.output.plots.find((r) => r.plot_id === state.plotId));
+      }
       if (state.tour && !$("tour").hidden) tourRefresh();
     });
     window.addEventListener("hashchange", () => route(false));
-    loadSetup().then(() => {
+    state.setupReady = loadSetup();
+    state.setupReady.then(() => {
       if (state.run && state.run.output) renderFile(state.run);
       if (currentView() === "bench") renderBench();
     });
