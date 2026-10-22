@@ -9,6 +9,7 @@ import hashlib
 import json
 import os
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 from typing import Any, Optional
 
@@ -107,7 +108,9 @@ def _source_sha256(db: Path) -> Optional[str]:
     if not db.exists():
         return None
     try:
-        with sqlite3.connect(db) as connection:
+        # closing(): "with sqlite3.connect()" commits but leaves the file open, and Windows
+        # then refuses to replace it when the cells change.
+        with closing(sqlite3.connect(db)) as connection:
             row = connection.execute("SELECT sha256 FROM source").fetchone()
         return row[0] if row else None
     except sqlite3.Error:
