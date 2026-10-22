@@ -2,7 +2,7 @@
 
 The home page map draws the real 30 m cells (EU JRC GFC2020 forest, Hansen loss) on a dark ground.
 If `<plot>.jpg` exists in this folder, `GET /api/plot-map` names it and the page shows it under the
-cells. Nothing is invented: without the file, the ground stays dark.
+cells, with an "Imagery" opacity slider on the map. Nothing is invented: without the file, the ground stays dark.
 
 Each image must cover exactly its frame, north up, EPSG:4326, 1200 m x 800 m (3:2):
 

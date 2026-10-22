@@ -143,9 +143,10 @@ def test_the_page_has_the_mockup_tabs_and_no_silent_button(client):
     for tab in ("Check a claim", "Evidence files", "Reliability tests", "Download audit package",
                 "Or paste your supplier's claim", "Check this claim"):
         assert tab in page
-    # Upload and drawing are not wired to the pipeline yet: they are disabled and say so.
-    for button in re.findall(r"<button[^>]*id=\"plot-(?:upload|draw)\"[^>]*>.*?</button>", page):
-        assert " disabled" in button and "coming" in button
+    # Upload and drawing are wired to input.plot now: live buttons, a real file input, nothing "coming".
+    buttons = re.findall(r"<button[^>]*id=\"(?:plot-upload|plot-draw|draw-undo|draw-clear|draw-check)\"[^>]*>.*?</button>", page)
+    assert len(buttons) == 5 and not any(" disabled" in b or "coming" in b for b in buttons)
+    assert 'id="plot-file"' in page and client.get("/ui/setup").json()["plot_input"] is True
     examples = client.get("/ui/setup").json()["examples"]
     assert [(e["label"], e["case"]) for e in examples] == [("A clean supply chain", 1),
                                                            ("An admission hidden in an annex", 18)]
@@ -217,3 +218,50 @@ def test_the_visual_rules_hold_in_the_stylesheet():
     assert sizes <= {12, 14, 15, 16, 20, 24, 40, 64}, sizes  # 15: the trace rows, the system's one exception
     radii = {int(n) for n in re.findall(r"border-radius:\s*(\d+)px", css)}
     assert radii <= {6, 10, 16, 20, 999}, radii  # 999: the status pill of mockup 3
+
+
+# ---- the judge's plot: drawn or uploaded, measured, then checked by a real run ------------------------
+
+def square(lat, lon, area, plot_id="P-900"):
+    from app.world import geo
+    ring = [[float(x), float(y)] for x, y in (pair.split() for pair in geo.square_wkt(lat, lon, area)[9:-2].split(", "))]
+    return {"type": "Feature", "properties": {"plot_id": plot_id}, "geometry": {"type": "Polygon", "coordinates": [ring]}}
+
+
+def test_plot_measure_gives_the_numbers_the_run_will_use(client):
+    drawn = client.post("/api/plot-measure", json={"plot": square(5.7300, -6.5220, 10.0)}).json()
+    shown = client.get("/api/plot-map", params={"plot": "P-042"}).json()["measure"]
+    assert drawn["plot"]["plot_id"] == "P-900" and drawn["kind"] == "polygon"
+    for key in ("forest_2020_ha", "loss_after_2020_ha", "loss_ha_by_year", "main_loss_year", "covered"):
+        assert drawn["measure"][key] == shown[key], key
+
+
+def test_plot_measure_outside_the_maps_says_no_reference_data(client):
+    far = client.post("/api/plot-measure", json={"plot": square(6.70, -6.45, 5.0)}).json()["measure"]
+    assert far["covered"] is False and far["reason"] == "no reference data for this area"
+    assert far["forest_2020_ha"] is None  # not measured is not zero
+
+
+@pytest.mark.parametrize("plot, words", [
+    ({"type": "LineString", "coordinates": [[-6.52, 5.73], [-6.51, 5.74]]}, "a Polygon, or a Point"),
+    ({"type": "Point", "coordinates": [-6.52, 5.73]}, "area_ha"),
+    ({"type": "Polygon", "coordinates": [[[-6.52, 5.73], [-6.51, 5.74], [-6.51, 5.73], [-6.52, 5.74], [-6.52, 5.73]]]},
+     "invalid polygon"),
+    ("not geojson", "GeoJSON object"),
+])
+def test_plot_measure_refuses_a_bad_plot_with_the_pipelines_reason(client, plot, words):
+    response = client.post("/api/plot-measure", json={"plot": plot})
+    assert response.status_code == 422 and words in response.json()["detail"]
+
+
+def test_a_drawn_plot_runs_live_and_its_timeline_shows_the_loss(client):
+    response = client.post("/runs", json={"input": {"claim": CLAIM, "plot": square(5.7300, -6.5220, 10.0)},
+                                          "options": {"sample_mode": True, "case": 1}})
+    run_id = response.json()["run_id"]
+    *trace, final = events(client, run_id)
+    actions = [json.loads(e["data"])["action"] for e in trace]
+    assert "receive_plot" in actions and any("Q10" in json.loads(e["data"])["input_summary"] for e in trace)
+    output = json.loads(final["data"])
+    assert output["verdict"] == "CONTRADICTED" and output["findings"][0]["evidence"][0] == {"source": "plot", "id": "P-900"}
+    (plot,) = client.get(f"/runs/{run_id}/timeline").json()["plots"]
+    assert plot["plot_id"] == "P-900" and plot["reference_maps"]["loss_after_2020_ha"] == pytest.approx(3.42, abs=0.01)

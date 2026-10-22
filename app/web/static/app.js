@@ -26,7 +26,9 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
   const MAP_H = 640;
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  const state = { setup: null, run: null, filter: "all", maps: {}, mapPlot: null, bench: null };
+  const state = { setup: null, run: null, filter: "all", maps: {}, mapPlot: null, bench: null, geo: null,
+    // the judge's plot: corners drawn on the map (editable), or an uploaded GeoJSON that falls outside the frame
+    draw: { active: false, points: [], feature: null, source: null, measure: null, problem: null, timer: null, asked: 0 } };
   const $ = (id) => document.getElementById(id);
   const SVG = "http://www.w3.org/2000/svg";
 
@@ -175,8 +177,8 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
       class: "btn", type: "button", title: `Case ${example.case}: ${example.change}. Sample mode, rules alone.`,
       text: example.label, onclick: () => startRun($("claim").value, { sample_mode: true, case: example.case }, example.case),
     })));
-    if (!setup.plot_input) {
-      for (const id of ["plot-upload", "plot-draw"]) $(id).title = "Coming: the agents do not read a plot from this form yet";
+    if (!setup.plot_input) {  // the pipeline cannot read a plot: say so on the buttons rather than fail silently
+      for (const id of ["plot-upload", "plot-draw"]) { $(id).disabled = true; $(id).append(" ", h("span", { class: "soon", text: "coming" })); }
     }
     renderMode(currentView());
     const plots = setup.map_plots.map((p) => p.id);
@@ -186,7 +188,7 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     loadMap(plots[0]);
   }
 
-  async function startRun(claimText, options, caseNo) {
+  async function startRun(claimText, options, caseNo, plot) {
     const claim = String(claimText || "").trim();
     const error = $("claim-error");
     error.hidden = true;
@@ -199,7 +201,7 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     const buttons = document.querySelectorAll("#view-home button:not([disabled])");
     buttons.forEach((b) => b.setAttribute("aria-busy", "true"));
     try {
-      const body = { input: { claim } };
+      const body = { input: plot ? { claim, plot } : { claim } };
       if (options) body.options = options;
       const { run_id: id } = await postJSON("/runs", body);
       remember(`run:${id}`, { claim, caseNo });
@@ -217,6 +219,10 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
   // ---- the map: real cells from data/reference_cells.csv.gz, drawn as they are -----------------
 
   async function loadMap(plotId) {
+    if (state.mapPlot && state.mapPlot !== plotId && state.draw.points.length) {
+      clearPlot();  // the corners belong to the other frame
+      $("draw-status").textContent = "Drawing cleared: it was on the other map.";
+    }
     state.mapPlot = plotId;
     for (const button of $("map-switch").querySelectorAll("button")) {
       button.setAttribute("aria-pressed", String(button.dataset.plot === plotId));
@@ -284,7 +290,11 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
         ["forest", "loss-old", "loss-other", "loss"].map((kind) => s("path", { class: `m-${kind}`, d: paths[kind].join("") }))),
       s("polygon", { points, class: "m-halo" }),
       s("polygon", { points, class: "m-outline" }),
-      s("g", { class: "m-vertex" }, data.plot.vertices.map(([lat, lon]) => s("circle", { cx: x(lon).toFixed(1), cy: y(lat).toFixed(1), r: 5 }))));
+      s("g", { class: "m-vertex" }, data.plot.vertices.map(([lat, lon]) => s("circle", { cx: x(lon).toFixed(1), cy: y(lat).toFixed(1), r: 5 }))),
+      s("g", { id: "draw-layer" }));
+    svg.addEventListener("click", addPoint);
+    svg.addEventListener("keydown", drawKeys);
+    state.geo = { data, x, y, svg };
 
     const scale = h("div", { class: "map-scale", "aria-hidden": "true" },
       h("span", { class: "map-scale-bar", style: `width: ${(100 / w.width_m) * 100}cqw` }), "100 m");
@@ -293,14 +303,18 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     const image = data.image ? h("img", { src: data.image, alt: `Sentinel-2 image of the area around ${data.plot.id}` }) : null;
     $("map").replaceChildren($("map-switch"), ...[image, svg, scale, north].filter(Boolean));
     $("map-switch").setAttribute("aria-label", `Plot shown: ${data.plot.id}`);
+    if (image) {
+      image.style.opacity = String(state.imageOpacity ?? 1);
+      $("map").append(h("label", { class: "map-imagery" }, "Imagery",
+        h("input", { type: "range", min: 0, max: 100, value: Math.round((state.imageOpacity ?? 1) * 100), "aria-label": "Imagery opacity",
+          oninput: (e) => { state.imageOpacity = e.target.value / 100; image.style.opacity = String(state.imageOpacity); } })));
+    }
 
+    $("map").classList.toggle("drawing", state.draw.active);
+    svg.setAttribute("tabindex", state.draw.active ? "0" : "-1");
     $("map-title").textContent = data.place;
     $("map-coords").textContent = `${data.plot.lat.toFixed(4)}° N · ${Math.abs(data.plot.lon).toFixed(4)}° W`;
-    const number = (label, value, cls) => h("div", {}, h("dt", { text: label }), h("dd", { class: cls || null, text: value }));
-    $("map-numbers").replaceChildren(
-      number("Outline", `${m.outline_ha.toFixed(1)} ha`),
-      number("Year of loss · Hansen", m.main_loss_year ? String(m.main_loss_year) : "none"),
-      number("Lost after 2020 · on EU forest", `${m.loss_after_2020_ha.toFixed(2)} ha`, m.loss_after_2020_ha > 0 ? "loss" : null));
+    renderNumbers(m);
     const swatch = (cls, text) => h("span", {}, h("i", { class: `swatch ${cls}` }), text);
     const forestLine = m.forest_2020_ha > 0
       ? `EU 2020 forest inside the outline: ${m.forest_2020_ha.toFixed(2)} ha.`
@@ -310,9 +324,292 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
         swatch("sw-forest", "EU forest 2020"), swatch("sw-loss", "Lost after 2020, on EU forest"),
         swatch("sw-loss-other", "Lost after 2020, elsewhere"), swatch("sw-loss-old", "Lost before 2021"),
         swatch("sw-outline", "Outline")),
-      h("span", { text: `${forestLine} Outline: a ${data.plot.declared_area_ha.toFixed(1)} ha square around the declared point. ` +
+      h("span", { id: "map-note", text: `${forestLine} Outline: a ${data.plot.declared_area_ha.toFixed(1)} ha square around the declared point. ` +
         "Measured offline by app/checks/landcover.py from 30 m cells; not an input of the demo run." +
         (data.image ? " Imagery: Sentinel-2, contains modified Copernicus Sentinel data." : "") }));
+    renderDrawing();
+  }
+
+  function renderNumbers(m, whose) {
+    const number = (label, value, cls) => h("div", {}, h("dt", { text: label }), h("dd", { class: cls || null, text: value }));
+    if (!m.covered) {
+      $("map-numbers").replaceChildren(number(whose ? `${whose} · outline` : "Outline", `${m.outline_ha.toFixed(2)} ha`),
+        number("Year of loss · Hansen", "no data"), number("Lost after 2020 · on EU forest", "no data"));
+      return;
+    }
+    $("map-numbers").replaceChildren(
+      number(whose ? `${whose} · outline` : "Outline", `${m.outline_ha.toFixed(whose ? 2 : 1)} ha`),
+      number("Year of loss · Hansen", m.main_loss_year ? String(m.main_loss_year) : "none"),
+      number("Lost after 2020 · on EU forest", `${m.loss_after_2020_ha.toFixed(2)} ha`, m.loss_after_2020_ha > 0 ? "loss" : null));
+  }
+
+  // ---- the judge's plot: drawn on the map, or uploaded as GeoJSON ------------------------------
+
+  const MIN_HA = 0.05;   // app/world/drawn.py: MIN_HA, MAX_HA, MAX_VERTICES (the server checks again)
+  const MAX_HA = 500;
+  const MAX_CORNERS = 499;
+
+  function setDrawing(on) {
+    const d = state.draw;
+    if (on && d.feature) clearPlot();  // an uploaded plot outside the frame cannot be edited: start afresh
+    d.active = on;
+    $("plot-draw").setAttribute("aria-pressed", String(on));
+    $("plot-draw").textContent = on ? "Stop drawing" : "Draw on the map";
+    $("map").classList.toggle("drawing", on);
+    if (state.geo) {
+      state.geo.svg.setAttribute("tabindex", on ? "0" : "-1");
+      if (on) state.geo.svg.setAttribute("aria-description", "Click to add a corner; Backspace undoes the last one, Escape stops drawing");
+    }
+    if (on) {
+      $("map").scrollIntoView({ block: "nearest", behavior: reducedMotion ? "auto" : "smooth" });
+      if (state.geo) state.geo.svg.focus({ preventScroll: true });
+    }
+    renderDrawing();
+  }
+
+  function toLatLon(event) {
+    const { svg, data } = state.geo;
+    const point = svg.createSVGPoint();
+    point.x = event.clientX;
+    point.y = event.clientY;
+    const at = point.matrixTransform(svg.getScreenCTM().inverse());
+    const w = data.window;
+    return [w.lat_max - (at.y / MAP_H) * (w.lat_max - w.lat_min), w.lon_min + (at.x / MAP_W) * (w.lon_max - w.lon_min)];
+  }
+
+  function addPoint(event) {
+    const d = state.draw;
+    if (!d.active || !state.geo) return;
+    if (d.points.length >= MAX_CORNERS) return;
+    const [lat, lon] = toLatLon(event);
+    d.points.push([Number(lat.toFixed(6)), Number(lon.toFixed(6))]);
+    d.source = "drawn";
+    plotChanged();
+  }
+
+  function drawKeys(event) {
+    if (!state.draw.active) return;
+    if (event.key === "Backspace" || event.key === "Delete") { event.preventDefault(); undoPoint(); }
+    if (event.key === "Escape") { event.preventDefault(); setDrawing(false); }
+  }
+
+  function undoPoint() {
+    state.draw.points.pop();
+    if (!state.draw.points.length) state.draw.source = null;
+    plotChanged();
+  }
+
+  function clearPlot() {
+    const d = state.draw;
+    Object.assign(d, { points: [], feature: null, source: null, measure: null, problem: null });
+    plotChanged();
+  }
+
+  function localMetres(points) {
+    const lat0 = points.reduce((sum, p) => sum + p[0], 0) / points.length;
+    const sx = 111320 * Math.cos((lat0 * Math.PI) / 180);  // app/world/geo.py, the same flat-earth scale
+    return points.map(([lat, lon]) => [lon * sx, lat * 110574]);
+  }
+
+  function areaHa(points) {
+    if (points.length < 3) return 0;
+    const m = localMetres(points);
+    let twice = 0;
+    for (let i = 0; i < m.length; i += 1) {
+      const [x1, y1] = m[i];
+      const [x2, y2] = m[(i + 1) % m.length];
+      twice += x1 * y2 - x2 * y1;
+    }
+    return Math.abs(twice) / 2 / 10000;
+  }
+
+  function crossesItself(points) {
+    const m = localMetres(points);
+    const n = m.length;
+    const side = (a, b, c) => Math.sign((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]));
+    for (let i = 0; i < n; i += 1) {
+      for (let j = i + 1; j < n; j += 1) {
+        if (j === i + 1 || (i === 0 && j === n - 1)) continue;  // neighbours share a corner
+        const [a, b, c, e] = [m[i], m[(i + 1) % n], m[j], m[(j + 1) % n]];
+        if (side(a, b, c) * side(a, b, e) < 0 && side(c, e, a) * side(c, e, b) < 0) return true;
+      }
+    }
+    return false;
+  }
+
+  function plotFeature() {
+    const d = state.draw;
+    if (d.feature) return d.feature;
+    if (d.points.length < 3) return null;
+    const ring = d.points.map(([lat, lon]) => [lon, lat]);
+    ring.push(ring[0]);
+    return { type: "Feature", properties: { plot_id: state.setup ? drawnId() : "P-900", source: "drawn on the GreenTrace map" },
+      geometry: { type: "Polygon", coordinates: [ring] } };
+  }
+
+  const drawnId = () => (state.geo && state.geo.data.drawn_plot_id) || "P-900";
+
+  function plotProblem() {
+    const d = state.draw;
+    if (d.problem) return d.problem;
+    if (d.feature) return null;
+    if (d.points.length < 3) return null;
+    if (crossesItself(d.points)) return "The outline crosses itself: undo the last corner or start again.";
+    const area = areaHa(d.points);
+    if (area < MIN_HA || area > MAX_HA) return `${area.toFixed(2)} ha: a plot is between ${MIN_HA} and ${MAX_HA} ha.`;
+    return null;
+  }
+
+  function plotChanged() {
+    const d = state.draw;
+    d.measure = null;
+    if (!d.feature) d.problem = null;
+    renderDrawing();
+    clearTimeout(d.timer);
+    if (plotFeature() && !plotProblem()) d.timer = setTimeout(measurePlot, 300);
+  }
+
+  async function measurePlot() {
+    const d = state.draw;
+    const feature = plotFeature();
+    if (!feature) return;
+    const asked = (d.asked += 1);
+    try {
+      const measured = await postJSON("/api/plot-measure", { plot: feature });
+      if (asked !== d.asked) return;  // the plot changed meanwhile: a newer answer is coming
+      d.measure = measured;
+      d.problem = null;
+    } catch (error) {
+      if (asked !== d.asked) return;
+      d.problem = error.message.replace(/^422: (input\.plot: )?/, "");
+    }
+    renderDrawing();
+  }
+
+  function renderDrawing() {
+    const d = state.draw;
+    const feature = plotFeature();
+    const problem = plotProblem();
+    const hasPlot = Boolean(d.points.length || d.feature);
+    $("map-tools").hidden = !(d.active || hasPlot);
+    $("draw-undo").disabled = !d.points.length;
+    $("draw-clear").disabled = !hasPlot;
+    $("draw-check").disabled = !feature || Boolean(problem) || !d.measure;
+    $("map").classList.toggle("has-plot", hasPlot);
+
+    // the outline on the map
+    if (state.geo) {
+      const { x, y, data } = state.geo;
+      const layer = state.geo.svg.querySelector("#draw-layer");
+      const pts = d.points.map(([lat, lon]) => `${x(lon).toFixed(1)},${y(lat).toFixed(1)}`).join(" ");
+      const shapes = [];
+      if (d.points.length >= 3) shapes.push(s("polygon", { points: pts, class: "d-area" + (problem ? " d-bad" : "") }));
+      else if (d.points.length === 2) shapes.push(s("polyline", { points: pts, class: "d-line" }));
+      d.points.forEach(([lat, lon], i) => shapes.push(s("circle", { cx: x(lon).toFixed(1), cy: y(lat).toFixed(1), r: i === 0 ? 7 : 5, class: "d-corner" })));
+      const geom = d.feature && d.feature.geometry;
+      if (geom && geom.type === "Point") {
+        const [lon, lat] = geom.coordinates;
+        const w = data.window;
+        if (lat >= w.lat_min && lat <= w.lat_max && lon >= w.lon_min && lon <= w.lon_max) {
+          const r = (Math.sqrt((d.feature.properties.area_ha * 10000) / Math.PI) / w.width_m) * MAP_W;
+          shapes.push(s("circle", { cx: x(lon).toFixed(1), cy: y(lat).toFixed(1), r: r.toFixed(1), class: "d-area" }));
+        }
+      }
+      layer.replaceChildren(...shapes);
+    }
+
+    // what it says, in words
+    let status;
+    if (d.feature && problem) {
+      status = "";  // the reason, below, says why the file is refused
+    } else if (d.feature) {
+      const g = d.feature.geometry;
+      status = `Uploaded ${g.type === "Point" ? `point of ${d.feature.properties.area_ha} ha` : "polygon"}, outside this map's frame.`;
+    } else if (!d.points.length) {
+      status = d.active ? "Click the map to place the plot's corners, in order. Three corners or more make a plot." : "";
+    } else if (d.points.length < 3) {
+      status = `${plural(d.points.length, "corner")} · place at least 3.`;
+    } else {
+      status = `${plural(d.points.length, "corner")} · ${areaHa(d.points).toFixed(2)} ha`;
+    }
+    if (problem) status = d.feature || (!d.points.length && d.source === null)
+      ? `File refused: ${problem}` : `${status} ${problem}`;
+    else if (feature && !d.measure) status += " · measuring on the 30 m cells…";
+    else if (d.measure && !d.measure.measure.covered) status += ` · ${d.measure.measure.reason}: the run will say so.`;
+    $("draw-status").textContent = status;
+
+    // the numbers under the map: the judge's plot once measured, else the reference plot
+    const note = $("map-note");
+    if (note && !note.dataset.reference) note.dataset.reference = note.textContent;
+    if (d.measure) {
+      const m = d.measure.measure;
+      renderNumbers(m, d.measure.plot.plot_id);
+      if (note) note.textContent = !m.covered ? `${d.measure.plot.plot_id}: ${m.reason}.`
+        : `${d.measure.plot.plot_id}, ${d.source === "uploaded" ? "uploaded" : "drawn"} by you: EU 2020 forest inside ${m.forest_2020_ha.toFixed(2)} ha. ` +
+          "Measured offline by app/checks/landcover.py from the same 30 m cells the run reads with Q10.";
+    } else if (state.geo && !hasPlot) {
+      renderNumbers(state.geo.data.measure);
+      if (note) note.textContent = note.dataset.reference;
+    }
+
+    // the form says what "check" will send
+    const ready = !$("draw-check").disabled;
+    $("claim-submit").textContent = ready ? "Check this plot" : "Check this claim";
+    $("plot-status").hidden = !hasPlot;
+    $("plot-status").textContent = !hasPlot ? "" : ready
+      ? `${d.measure.plot.plot_id}, ${d.measure.plot.area_ha} ha at ${d.measure.plot.lat}, ${d.measure.plot.lon}: checked as one more plot of supplier F-007 on the clean sample world.`
+      : problem ? `Your plot cannot be checked yet: ${problem}` : "Your plot is being drawn on the map.";
+  }
+
+  function checkPlot() {
+    const d = state.draw;
+    const feature = plotFeature();
+    if (!feature || plotProblem() || !d.measure) return;
+    setDrawing(false);
+    startRun($("claim").value, { case: state.setup.drawn_plot_world }, null, feature);
+  }
+
+  async function uploadPlot(file) {
+    const d = state.draw;
+    setDrawing(false);
+    clearPlot();
+    let geo;
+    try {
+      geo = JSON.parse(await file.text());
+    } catch (error) {
+      d.problem = `${file.name} is not JSON (${error.message}).`;
+      renderDrawing();
+      return;
+    }
+    if (geo && geo.type === "FeatureCollection") {
+      const features = Array.isArray(geo.features) ? geo.features : [];
+      if (features.length !== 1) {
+        d.problem = `${file.name} holds ${plural(features.length, "feature")}: upload one plot at a time.`;
+        renderDrawing();
+        return;
+      }
+      geo = features[0];
+    }
+    const feature = geo && geo.type === "Feature" ? geo : { type: "Feature", properties: {}, geometry: geo };
+    const geometry = feature.geometry || {};
+    feature.properties = { ...(feature.properties || {}) };
+    if (!feature.properties.plot_id) feature.properties.plot_id = drawnId();
+    feature.properties.source = `uploaded: ${file.name}`;
+    const ring = geometry.type === "Polygon" && Array.isArray(geometry.coordinates) && geometry.coordinates[0];
+    const w = state.geo && state.geo.data.window;
+    const inFrame = (p) => w && Array.isArray(p) && p[1] >= w.lat_min && p[1] <= w.lat_max && p[0] >= w.lon_min && p[0] <= w.lon_max;
+    if (Array.isArray(ring) && geometry.coordinates.length === 1 && ring.every(inFrame)) {
+      // inside the frame: it becomes corners the judge can still undo or extend
+      const corners = ring.map(([lon, lat]) => [lat, lon]);
+      if (corners.length > 1 && corners[0][0] === corners.at(-1)[0] && corners[0][1] === corners.at(-1)[1]) corners.pop();
+      d.points = corners;
+      d.source = "uploaded";
+    } else {
+      d.feature = feature;
+      d.source = "uploaded";
+    }
+    plotChanged();
+    if (d.feature) measurePlot();  // outside the frame: no local checks to wait for, the server says
   }
 
   // ---- a run: its trace lines, then its output -------------------------------------------------
@@ -670,6 +967,7 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
       $("part-rows").replaceChildren();
     } else {
       renderFindings(out);
+      renderTimelines(run);
       renderPartRows(out);
       renderFlip(run);
       renderAsk(out);
@@ -684,6 +982,69 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
         typeof out.execution_time_seconds === "number" && `run ${out.execution_time_seconds} s`,
         out.log_file && `trace ${out.log_file}`].filter(Boolean).join(" · ") }),
       h("a", { href: "#/files", text: "All evidence files" }));
+  }
+
+  async function renderTimelines(run) {
+    const box = $("timelines");
+    const key = `${run.id}:${run.output.verdict_sha256}`;
+    if (box.dataset.key === key) return;
+    box.dataset.key = key;
+    box.replaceChildren();
+    let data;
+    try {
+      data = await getJSON(`/runs/${encodeURIComponent(run.id)}/timeline`);
+    } catch {
+      return;  // a run this server no longer keeps: the evidence file still stands without its chart
+    }
+    if (box.dataset.key !== key) return;
+    box.replaceChildren(...data.plots.filter((p) => p.reference_maps).map((p) => timelineCard(p, data.cutoff)));
+  }
+
+  function timelineCard(plot, cutoff) {
+    const maps = plot.reference_maps;
+    const head = h("div", { class: "timeline-head" },
+      h("h3", { class: "h-card", text: "When the forest went, year by year" }),
+      h("span", { class: "sub", text: `${plot.plot_id} · tree cover lost inside the outline · Hansen/UMD, real` }));
+    if (!maps.covered) {
+      return h("article", { class: "timeline" }, head, h("p", { class: "none", text: `${plot.plot_id}: ${maps.reason}.` }));
+    }
+    const cut = Number(cutoff.slice(0, 4));
+    const all = maps.loss_ha_by_year || {};
+    const forest = maps.forest_loss_ha_by_year || {};
+    const delivered = plot.delivered_tonnes_by_year || {};
+    const years = [...Object.keys(all), ...Object.keys(delivered)].map(Number);
+    const first = Math.min(cut - 6, ...years);
+    const last = Math.max(cut + 4, ...years);
+    const top = Math.max(...Object.values(all), 0.01);
+    const tallest = Object.keys(all).reduce((a, b) => (all[b] > (all[a] || 0) ? b : a), Object.keys(all)[0]);
+    const columns = [];
+    for (let year = first; year <= last; year += 1) {
+      const total = all[year] || 0;
+      const onForest = forest[year] || 0;
+      const label = `${year}: ${total.toFixed(2)} ha of tree cover lost` + (onForest ? `, ${onForest.toFixed(2)} ha of it on EU 2020 forest` : "") +
+        (delivered[year] ? `; delivered ${delivered[year]} t` : "");
+      columns.push(h("div", { class: "tl-col" + (year > cut ? " tl-after" : ""), title: label },
+        h("span", { class: "tl-value", text: String(year) === String(tallest) && total ? `${total.toFixed(2)} ha` : "" }),
+        h("span", { class: "tl-bars", "aria-hidden": "true" },
+          h("i", { class: "tl-other", style: `height: ${((total - onForest) / top) * 100}%` }),
+          h("i", { class: "tl-forest", style: `height: ${(onForest / top) * 100}%` })),
+        h("span", { class: "tl-year", text: String(year) }),
+        h("i", { class: "tl-delivered" + (delivered[year] ? " on" : ""), "aria-hidden": "true" })));
+    }
+    const deliveredYears = Object.keys(delivered);
+    return h("article", { class: "timeline", "aria-label": `Loss by year inside ${plot.plot_id}` },
+      head,
+      h("div", { class: "tl-chart", style: `--cut: ${((cut + 1 - first) / (last - first + 1)) * 100}%` },
+        h("span", { class: "tl-cut", text: "after the cut-off · 31 Dec 2020" }), columns),
+      h("ul", { class: "sr-only" }, columns.map((c) => h("li", { text: c.title }))),
+      h("div", { class: "legend" },
+        h("span", {}, h("i", { class: "swatch sw-loss" }), "Lost on EU 2020 forest"),
+        h("span", {}, h("i", { class: "swatch sw-loss-other" }), "Other tree cover lost"),
+        h("span", {}, h("i", { class: "swatch sw-forest" }), deliveredYears.length
+          ? `${plot.plot_id} delivered ${deliveredYears[0]}–${deliveredYears.at(-1)} (${plot.declared_by === "analyst" ? "declared with the drawn plot" : "registry"})`
+          : "No delivery recorded")),
+      h("p", { class: "small muted", text: `EU 2020 forest inside the outline: ${maps.forest_2020_ha.toFixed(2)} ha; ` +
+        `${maps.loss_after_2020_ha.toFixed(2)} ha of it lost after the cut-off.` }));
   }
 
   function checkedBy(list) {
@@ -1035,7 +1396,10 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
 
   document.addEventListener("DOMContentLoaded", () => {
     $("run-demo").addEventListener("click", () => startRun(state.setup ? state.setup.default_claim : $("claim").defaultValue, null, null));
-    $("claim-form").addEventListener("submit", (event) => { event.preventDefault(); startRun($("claim").value, null, null); });
+    $("claim-form").addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!$("draw-check").disabled) checkPlot(); else startRun($("claim").value, null, null);
+    });
     for (const button of document.querySelectorAll(".filters button")) {
       button.addEventListener("click", () => setFilter(button.dataset.filter));
     }
@@ -1046,6 +1410,16 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     $("open-letters").addEventListener("click", openLetters);
     $("letters-close").addEventListener("click", () => $("letters").close());
     $("bench-run").addEventListener("click", runBench);
+    $("plot-draw").addEventListener("click", () => setDrawing(!state.draw.active));
+    $("plot-upload").addEventListener("click", () => $("plot-file").click());
+    $("plot-file").addEventListener("change", (event) => {
+      const [file] = event.target.files;
+      if (file) uploadPlot(file);
+      event.target.value = "";  // the same file can be chosen again after a fix
+    });
+    $("draw-undo").addEventListener("click", undoPoint);
+    $("draw-clear").addEventListener("click", clearPlot);
+    $("draw-check").addEventListener("click", checkPlot);
     window.addEventListener("hashchange", () => route(false));
     loadSetup().then(() => {
       if (state.run && state.run.output) renderFile(state.run);

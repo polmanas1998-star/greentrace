@@ -1,7 +1,9 @@
 """The home page map: one real plot on the real reference maps, read offline.
 
-GET /api/plot-map?plot=P-042   the 30 m cells around the plot, its outline, and what
-                               app/checks/landcover.py measures inside it
+GET  /api/plot-map?plot=P-042   the 30 m cells around the plot, its outline, and what
+                                app/checks/landcover.py measures inside it
+POST /api/plot-measure          a plot the judge drew or uploaded (the GeoJSON of input.plot),
+                                checked by app/world/drawn.py and measured the same way
 
 Cells come from data/reference_cells.csv.gz (EU JRC GFC2020 forest in 2020, Hansen/UMD
 loss year) through landcover.read_cells, and the numbers through landcover.measure: the
@@ -13,13 +15,14 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Body, HTTPException, Query
 from shapely import affinity, wkt
 
 from app.checks import landcover
-from app.world import geo
+from app.world import drawn, geo
 
 MAPS_DIR = Path(__file__).resolve().parent / "static" / "maps"
+DRAWN_PLOT_ID = "P-900"  # a plot the judge draws: free id (the registry runs P-001 to P-040, the demo P-041, P-042)
 PLACE = "near Soubré, Côte d'Ivoire · EU JRC 2020 forest map + Hansen loss"
 WINDOW_M = (1200.0, 800.0)  # width, height around the plot: the 3:2 frame of the mockup
 
@@ -54,6 +57,19 @@ def plot_map(plot: str = Query("P-042", max_length=16)) -> dict[str, Any]:
     return {**_measured(plot), "image": _image(plot)}
 
 
+@router.post("/api/plot-measure")
+def plot_measure(plot: Any = Body(..., embed=True)) -> dict[str, Any]:
+    """What the run will find in this plot's cells, before the run: same check, same measure, no verdict."""
+    try:
+        row = drawn.plot_from_geojson(plot)
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    measure = landcover.measure(row, landcover.read_cells(*landcover.plot_box(row)))
+    return {"plot": {k: row[k] for k in ("plot_id", "lat", "lon", "area_ha")},
+            "kind": "polygon" if row["polygon_wkt"] else "point",
+            "measure": _numbers(measure, row["area_ha"])}
+
+
 def _image(plot_id: str) -> str | None:
     return f"/static/maps/{plot_id}.jpg" if (MAPS_DIR / f"{plot_id}.jpg").is_file() else None
 
@@ -67,7 +83,6 @@ def _measured(plot_id: str) -> dict[str, Any]:
     cells = landcover.read_cells(window["lat_min"], window["lat_max"], window["lon_min"], window["lon_max"])
     inside = landcover.read_cells(*landcover.plot_box({"polygon_wkt": plot.polygon_wkt}))
     measure = landcover.measure({"polygon_wkt": plot.polygon_wkt}, inside)
-    by_year = measure["loss_ha_by_year"] or {}
     return {
         "plot": {"id": plot.plot_id, "lat": plot.lat, "lon": plot.lon, "declared_area_ha": plot.area_ha,
                  "role": plot.role, "outline": "square of the declared area around the declared point",
@@ -79,16 +94,10 @@ def _measured(plot_id: str) -> dict[str, Any]:
         # Only the cells that draw something: EU forest in 2020, or a loss year.
         "cells": [[c["lat"], c["lon"], c["forest_fraction_2020"], c["loss_year"]] for c in cells
                   if c["forest_fraction_2020"] >= landcover.FOREST_FROM or c["loss_year"]],
-        "measure": {
-            "outline_ha": round(_area_ha(outline, plot.lat), 2),
-            "forest_2020_ha": measure["forest_2020_ha"],
-            "loss_after_2020_ha": measure["loss_after_2020_ha"],
-            "loss_ha_by_year": measure["loss_ha_by_year"],
-            "main_loss_year": int(max(by_year, key=by_year.get)) if by_year else None,
-            "covered": measure["covered"],
-            "reason": measure["reason"],
-        },
+        "measure": _numbers(measure, round(_area_ha(outline, plot.lat), 2)),
         "sources": [s["name"] for s in landcover.load_meta()["sources"]],
+        "extent": landcover.load_meta()["extent"],
+        "drawn_plot_id": DRAWN_PLOT_ID,
     }
 
 
@@ -104,6 +113,19 @@ def _window(plot: MapPlot) -> dict[str, float]:
             and extent["lon_min"] <= window["lon_min"] and window["lon_max"] <= extent["lon_max"]):
         raise ValueError(f"{plot.plot_id}: the map window leaves the committed reference maps")
     return window
+
+
+def _numbers(measure: dict[str, Any], outline_ha: float) -> dict[str, Any]:
+    by_year = measure["loss_ha_by_year"] or {}
+    return {
+        "outline_ha": outline_ha,
+        "forest_2020_ha": measure["forest_2020_ha"],
+        "loss_after_2020_ha": measure["loss_after_2020_ha"],
+        "loss_ha_by_year": measure["loss_ha_by_year"],
+        "main_loss_year": int(max(by_year, key=by_year.get)) if by_year else None,
+        "covered": measure["covered"],
+        "reason": measure["reason"],
+    }
 
 
 def _area_ha(outline: Any, lat: float) -> float:
