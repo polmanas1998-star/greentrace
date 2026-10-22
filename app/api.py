@@ -4,14 +4,17 @@ GET  /health                 the service answers
 POST /run                    one investigation; returns the evidence file
 GET  /runs/{run_id}          the evidence file of a finished run (kept in memory)
 POST /runs/{run_id}/what_if  change one value, re-run only what depends on it
+GET  /runs/{run_id}/receipt  the verdict receipt: python verify.py receipt.json re-derives it offline
+GET  /runs/{run_id}/package  the audit package: one zip, receipt included
 """
 from typing import Any
 
 from dotenv import load_dotenv
-from fastapi import Body, FastAPI, HTTPException
+from fastapi import Body, FastAPI, HTTPException, Response
 from pydantic import BaseModel
 
 from app import orchestrator
+from app.receipt import build_receipt, package_zip
 from app.pipeline import run_case
 
 load_dotenv()  # keys and SAMPLE_MODE from .env; never committed
@@ -39,10 +42,26 @@ def run(case: Any = Body(...)) -> dict[str, Any]:
 
 @app.get("/runs/{run_id}")
 def get_run(run_id: str) -> dict[str, Any]:
+    return _finished(run_id).output
+
+
+@app.get("/runs/{run_id}/receipt")
+def get_receipt(run_id: str) -> dict[str, Any]:
+    return build_receipt(_finished(run_id))
+
+
+@app.get("/runs/{run_id}/package")
+def get_package(run_id: str) -> Response:
+    run = _finished(run_id)
+    return Response(package_zip(run, run.log_dir), media_type="application/zip",
+                    headers={"Content-Disposition": f'attachment; filename="greentrace-{run_id}.zip"'})
+
+
+def _finished(run_id: str) -> orchestrator.Investigation:
     finished = orchestrator.RUNS.get(run_id)
     if finished is None:
         raise HTTPException(status_code=404, detail=f"no finished run {run_id} in this process")
-    return finished.output
+    return finished
 
 
 @app.post("/runs/{run_id}/what_if")

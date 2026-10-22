@@ -262,6 +262,7 @@ class ModelGate:
     ) -> None:
         env = os.environ if env is None else env
         self.run_id, self.log, self._sleep = run_id, log or trace, sleep
+        self.calls: list[dict[str, Any]] = []  # who asked, who answered, a hash of the answer: for the receipt
         self.sample_mode = _truthy(env.get("SAMPLE_MODE"))
         first = (env.get("MODEL_PROVIDER") or "meterless").strip().lower()
         if first not in CHAINS:
@@ -318,6 +319,7 @@ class ModelGate:
             info["requested_model"] = provider.models[lane]
             if outcome.ok:
                 info.update(provider=provider.name, model=outcome.model, output_sha256=sha256_of(outcome.value))
+                self._record(info)
                 return outcome.value, info
             if outcome.invalid:
                 return self._rules(agent, asked, info, f"{provider.name}: {outcome.problem}")
@@ -404,7 +406,11 @@ class ModelGate:
     def _rules(self, agent: str, asked: str, info: dict[str, Any], reason: str) -> tuple[None, dict[str, Any]]:
         info.update(provider="rules", model=None, reason=self._redact(reason))
         self._line(agent, "fallback_rules", "rules", None, asked, f"{reason}: the agent uses its rules", "degraded")
+        self._record(info)
         return None, info
+
+    def _record(self, info: dict[str, Any]) -> None:
+        self.calls.append({key: info[key] for key in ("agent", "lane", "provider", "model", "output_sha256")})
 
     def _redact(self, text: str) -> str:
         for secret in self._secrets:

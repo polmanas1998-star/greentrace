@@ -4,6 +4,8 @@ Few model calls here (kit, section 4): the queries come from the plan, the check
 code. Every card it writes in the World Model depends on the entities it was read
 from, so changing one value later invalidates exactly the cards built on it.
 """
+from typing import Mapping, Optional
+
 from app.agents.context import RunContext
 from app.checks import geometry
 from app.memory.world_model import Source
@@ -16,36 +18,51 @@ MARGIN_DEG = 0.01  # about 1 km around the supply area
 def gather(ctx: RunContext, hypotheses: list[dict], extracted: Extracted) -> Evidence:
     asked = {q for h in hypotheses for q in h["queries"]}
     ask = ctx.gate.ask
+    answers: dict[str, Optional[list[dict]]] = {}
 
-    dq_issues = ask("Investigator", "Q0").rows if "Q0" in asked else []
-    suppliers_rows = ask("Investigator", "Q2", company_id=ctx.company_id).rows
-    if not suppliers_rows:
+    if "Q0" in asked:
+        answers["Q0"] = ask("Investigator", "Q0").rows
+    answers["Q2"] = ask("Investigator", "Q2", company_id=ctx.company_id).rows
+    if not answers["Q2"]:
         raise ValueError(f"unknown company: {ctx.company_id}")
-    first = suppliers_rows[0]
-    company = {"company_id": ctx.company_id, "fiscal_year": first["fiscal_year"],
-               "total_tonnes": first["total_tonnes"]}
-    suppliers = [{k: r[k] for k in ("supplier_id", "name", "cooperative_group")} for r in suppliers_rows]
+    fiscal_year = answers["Q2"][0]["fiscal_year"]
 
-    plots = ask("Investigator", "Q3", supplier_ids=[s["supplier_id"] for s in suppliers]).rows
-    deliveries = ask("Investigator", "Q6", company_id=ctx.company_id,
-                     year_from=2021, year_to=company["fiscal_year"]).rows
+    plots = answers["Q3"] = ask("Investigator", "Q3",
+                                supplier_ids=[r["supplier_id"] for r in answers["Q2"]]).rows
+    answers["Q6"] = ask("Investigator", "Q6", company_id=ctx.company_id, year_from=2021, year_to=fiscal_year).rows
     if "Q7" in asked:
         ask("Investigator", "Q7", company_id=ctx.company_id)
 
-    alerts = None
     located = [p for p in plots if geometry.coordinates_valid(p)]
     if "Q4" in asked and located:
         try:
-            alerts = ask("Investigator", "Q4",
-                         lat_min=round(min(p["lat"] for p in located) - MARGIN_DEG, 6),
-                         lat_max=round(max(p["lat"] for p in located) + MARGIN_DEG, 6),
-                         lon_min=round(min(p["lon"] for p in located) - MARGIN_DEG, 6),
-                         lon_max=round(max(p["lon"] for p in located) + MARGIN_DEG, 6)).rows
+            answers["Q4"] = ask("Investigator", "Q4",
+                                lat_min=round(min(p["lat"] for p in located) - MARGIN_DEG, 6),
+                                lat_max=round(max(p["lat"] for p in located) + MARGIN_DEG, 6),
+                                lon_min=round(min(p["lon"] for p in located) - MARGIN_DEG, 6),
+                                lon_max=round(max(p["lon"] for p in located) + MARGIN_DEG, 6)).rows
         except SourceUnavailable:
-            alerts = None
+            pass  # no Q4 answer: the alerts are unknown, and rule 1 says so
 
-    return Evidence(company=company, suppliers=suppliers, plots=plots, deliveries=deliveries,
-                    alerts=alerts, dq_issues=dq_issues, extracted=extracted)
+    return evidence_from_answers(answers, extracted, ctx.company_id)
+
+
+def evidence_from_answers(answers: Mapping[str, Optional[list[dict]]], extracted: Extracted,
+                          company_id: str) -> Evidence:
+    """The evidence from the Investigator's rows, by query id. Pure: verify.py rebuilds it from a receipt.
+
+    Q2 gives the company and its suppliers, Q3 the plots, Q6 the deliveries, Q0 the data-quality
+    issues, Q4 the alerts (no Q4 answer: the alert source did not answer, or nothing was located).
+    """
+    suppliers_rows = answers.get("Q2") or []
+    if not suppliers_rows:
+        raise ValueError(f"unknown company: {company_id}")
+    first = suppliers_rows[0]
+    company = {"company_id": company_id, "fiscal_year": first["fiscal_year"], "total_tonnes": first["total_tonnes"]}
+    suppliers = [{k: r[k] for k in ("supplier_id", "name", "cooperative_group")} for r in suppliers_rows]
+    return Evidence(company=company, suppliers=suppliers, plots=answers.get("Q3") or [],
+                    deliveries=answers.get("Q6") or [], alerts=answers.get("Q4"),
+                    dq_issues=answers.get("Q0") or [], extracted=extracted)
 
 
 def write_cards(ctx: RunContext, evidence: Evidence) -> list[dict]:

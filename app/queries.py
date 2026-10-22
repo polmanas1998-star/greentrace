@@ -74,6 +74,7 @@ class Answer:
     query_id: str
     sql: str
     rows: list[dict[str, Any]]
+    agent: str = ""  # who asked: the verdict receipt rebuilds the evidence from the Investigator's answers
 
     @property
     def rows_sha256(self) -> str:
@@ -143,7 +144,7 @@ class DataGate:
                 if last:
                     raise
                 continue
-            answer = Answer(query_id, sql, rows)
+            answer = Answer(query_id, sql, rows, agent)
             self.answers.append(answer)
             self._line(agent, "query_zetaris", query_id, params, f"{len(rows)} row(s)", attempt, "success",
                        len(rows))
