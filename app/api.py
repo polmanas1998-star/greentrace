@@ -53,3 +53,6 @@ def what_if(run_id: str, change: WhatIf) -> dict[str, Any]:
         raise HTTPException(status_code=404, detail=str(error)) from error
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
+
+from app.web import mount  # noqa: E402 - the interface (app/web), on top of the routes above
+mount(app)
