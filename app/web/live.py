@@ -2,6 +2,7 @@
 
 POST /runs                    starts one investigation in a thread, answers {run_id} at once
 GET  /runs/{run_id}/events    every trace line as it is written, then the evidence file
+GET  /ui/runs                 the runs this process keeps, newest first (the "Evidence files" tab)
 
 run_case() already writes each trace line to a stream (run.py gives it stderr). Here
 the stream is a LiveRun: it keeps the run's lines in order and wakes every reader.
@@ -121,3 +122,22 @@ def events(run_id: str, request: Request) -> StreamingResponse:
     start = int(last) + 1 if last.isdigit() else 0
     return StreamingResponse(live.events(start), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+@router.get("/ui/runs")
+def runs() -> list[dict[str, Any]]:
+    """Live runs still going or that ended without an evidence file, then every finished run kept."""
+    listed = []
+    for run_id, run in reversed(LIVE.items()):
+        if run_id not in orchestrator.RUNS:
+            out = run.output or {}
+            listed.append({"run_id": run_id, "claim": None, "verdict": out.get("verdict"),
+                           "status": "running" if not run.done else "failed" if run.error else out.get("status"),
+                           "mode": out.get("mode"), "degraded": out.get("degraded"), "changed": False})
+    for run_id, finished in reversed(orchestrator.RUNS.items()):
+        out = finished.output
+        body = finished.request.get("input", finished.request)
+        listed.append({"run_id": run_id, "claim": body.get("claim"), "verdict": out.get("verdict"),
+                       "status": out.get("status"), "mode": out.get("mode"), "degraded": out.get("degraded"),
+                       "changed": bool(finished.changes)})
+    return listed
