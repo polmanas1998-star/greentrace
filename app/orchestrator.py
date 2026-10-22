@@ -12,6 +12,10 @@ that changed go back to the Evaluator.
 Data: "sample" runs on the synthetic world in SQLite (SAMPLE_MODE=true, no network);
 "live" runs on Zetaris through the semantic layer. Same agents, same rules. Both read the
 real reference maps (Q10) inside a plot the analyst draws (input.plot).
+
+Memory across investigations (H-MEM, app/memory/hmem.py, on when HMEM_URL is set): the
+Investigator reads it first, the Writer writes one note per supplier concerned at the end.
+It never reaches the evidence, the rules, the receipt or the seal.
 """
 import os
 import re
@@ -27,6 +31,7 @@ from app.agents.context import RunContext
 from app.canonical import sha256_of
 from app.explain import exports
 from app.explain.flip import compute_flip
+from app.memory import hmem as hmem_notes
 from app.memory.world_model import Source, entity_id
 from app.memory.world_model import WorldModel
 from app.queries import DataGate, SQLiteEngine, ZetarisEngine
@@ -69,7 +74,7 @@ def sample_mode(options: dict) -> bool:
 
 
 def investigate(request: dict, run_id: str, *, log, memory_engine=None, zetaris=None,
-                log_dir: Optional[Path] = None, stream=None) -> dict[str, Any]:
+                log_dir: Optional[Path] = None, stream=None, hmem=None) -> dict[str, Any]:
     started = time.perf_counter()
     claim, company_id, options, input_plot = _read_request(request)
     declared = drawn.plot_from_geojson(input_plot) if input_plot is not None else None
@@ -94,6 +99,7 @@ def investigate(request: dict, run_id: str, *, log, memory_engine=None, zetaris=
         model=models if models.providers else None,
         max_rounds=int(options.get("max_rounds", 3)),
     )
+    ctx.notes["hmem"] = hmem if hmem is not None else hmem_notes.from_env()
     ctx.step("Pipeline", "receive_case", f"claim on {company_id}",
              f"data {'sample' if sample else 'live'}; model chain {' > '.join(models.chain)}",
              target="Extractor", status="success")
@@ -113,6 +119,7 @@ def investigate(request: dict, run_id: str, *, log, memory_engine=None, zetaris=
     run.cards = investigator.write_cards(ctx, run.evidence)
     _review(run, run.cards)
     run.output = _conclude(run, started)
+    _write_notes(run)
     _remember(run)
     return run.output
 
@@ -191,6 +198,10 @@ def _conclude(run: Investigation, started: float) -> dict[str, Any]:
     report["flip"] = flip["sentence"]
     report["flip_tried"] = flip["tried"]
     report["blocked_cards"] = [r["card"] for r in run.reviews.values() if r["decision"] == evaluator.BLOCK]
+    if ctx.notes.get("hmem") is not None:  # information only: never evidence, never in the receipt
+        now = hmem_notes.notes_for(run.evidence, decision, ctx.run_id, verdict_seal(decision),
+                                   ctx.notes["hmem"].today())
+        report["seen_before"] = hmem_notes.seen_before(ctx.notes.get("remembered", []), now)
     report["eudr_export"] = exports.eudr_geojson(run.evidence, decision)
     report["supplier_letters"] = exports.supplier_letters(run.evidence, report)
     ctx.step("Writer", "export_files", "plot file and supplier letters, no model",
@@ -198,6 +209,26 @@ def _conclude(run: Investigation, started: float) -> dict[str, Any]:
              f"found, {len(report['eudr_export']['excluded'])} left out; "
              f"{len(report['supplier_letters'])} supplier letter draft(s)", status="success")
     return _output(ctx.run_id, run.sample, run.request, ctx, started, report=report, decision=decision)
+
+
+def _write_notes(run: Investigation) -> None:
+    """The Writer leaves one H-MEM note per supplier concerned. Never after a what_if: those are hypotheses."""
+    ctx = run.ctx
+    memory = ctx.notes.get("hmem")
+    if memory is None or ctx.notes.get("hmem_down"):
+        return
+    decision = decision_for(run.evidence, [c["id"] for c in run.cards if c["id"] not in run.reviews])
+    notes = hmem_notes.notes_for(run.evidence, decision, ctx.run_id, run.output["verdict_sha256"], memory.today())
+    try:
+        written = [memory.remember(note) for note in notes]
+    except hmem_notes.HMemUnavailable as error:
+        ctx.step("Writer", "remember_findings", f"{len(notes)} note(s)", f"H-MEM did not answer: {error}"[:300],
+                 status="degraded", provider="meterless")
+        return
+    ctx.step("Writer", "remember_findings", f"{len(notes)} supplier(s) concerned, H-MEM store",
+             "; ".join(f"{n.supplier_id} {n.verdict} by {n.because} ({m}, until {n.expires})"
+                       for n, m in zip(notes, written)) or "no supplier concerned: nothing to remember",
+             status="success", provider="meterless")
 
 
 # ---- what_if: one value, checked -------------------------------------------------------------

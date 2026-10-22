@@ -167,7 +167,11 @@ declared point. Every number is measured, and kept in `data/reference_cells.meta
   (`meterless/reference`, upstream commit `1742dec`, `meterless/UPSTREAM.sha256`), passes its
   conformance suite 8/8 (`tests/test_world_model.py`) and is the agents' shared memory
   (`app/memory/world_model.py`, `meterless/server.ts`); a Meterless Runtime provider coded to its
-  contract in `app/adapters/llm.py` (see Limits).
+  contract in `app/adapters/llm.py` (see Limits). Second Meterless engine: **H-MEM**, the unmodified
+  reference (`meterless/hmem`, same upstream commit, conformance 13/13, `tests/test_hmem.py`), used for
+  one thing only: one note per supplier a finding concerns, read first by the next investigation and
+  shown as "Seen before". It never decides, never enters the receipt, lives in `data/memory/` (local,
+  erasable: `python -m app.memory.hmem --forget <company_id>`) and is on when `HMEM_URL` is set (Docker).
 - **Cursor** (build): how it was used, honestly, in `docs/CURSOR_LOG.md` (free plan only; the sponsor
   credit was never distributed during the build window).
 - **NVIDIA Nemotron** (power): Nemotron 3.5 on two pinned lanes, `nemotron-3.5-lightning-30b-a3b`

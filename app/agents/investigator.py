@@ -6,11 +6,15 @@ from, so changing one value later invalidates exactly the cards built on it.
 
 A plot drawn by the analyst (input.plot) is a declaration, not a registry row: it joins
 the evidence next to the rows, and Q10 reads the reference cells around it.
+
+Before any query it reads what H-MEM remembers of the company (app/memory/hmem.py) and
+says so in the trace. What it remembers never becomes evidence: the rows of the day do.
 """
 from typing import Any, Mapping, Optional
 
 from app.agents.context import RunContext
 from app.checks import geometry, landcover
+from app.memory.hmem import HMemUnavailable
 from app.memory.world_model import Source
 from app.queries import SourceUnavailable
 from app.rules import Evidence, Extracted, decide
@@ -20,6 +24,7 @@ MARGIN_DEG = 0.01  # about 1 km around the supply area
 
 
 def gather(ctx: RunContext, hypotheses: list[dict], extracted: Extracted) -> Evidence:
+    recall(ctx)
     asked = {q for h in hypotheses for q in h["queries"]}
     ask = ctx.gate.ask
     answers: dict[str, Optional[list[dict]]] = {}
@@ -60,6 +65,29 @@ def gather(ctx: RunContext, hypotheses: list[dict], extracted: Extracted) -> Evi
     if declared:
         ctx.notes["declared_deliveries"] = [d for d in evidence.deliveries if d["plot_id"] == declared["plot_id"]]
     return evidence
+
+
+def recall(ctx: RunContext) -> None:
+    """Read H-MEM first: one trace line per supplier remembered. Kept aside for "Seen before" only."""
+    memory = ctx.notes.get("hmem")
+    ctx.notes["remembered"] = []
+    if memory is None:
+        return
+    try:
+        remembered, stale = memory.recall(ctx.company_id)
+    except HMemUnavailable as error:
+        ctx.notes["hmem_down"] = True
+        ctx.step("Investigator", "recall_memory", f"H-MEM notes on {ctx.company_id}",
+                 f"H-MEM did not answer, investigating without memory: {error}"[:300], status="degraded",
+                 provider="meterless")
+        return
+    ctx.notes["remembered"] = remembered
+    lines = [note.said() for note in remembered] or [f"nothing remembered about {ctx.company_id}"]
+    if stale:
+        lines.append(f"forgot {len(stale)} stale note(s)")
+    for line in lines:
+        ctx.step("Investigator", "recall_memory", f"H-MEM notes on {ctx.company_id}, before any query", line,
+                 target="Investigator", status="success", provider="meterless")
 
 
 def evidence_from_answers(answers: Mapping[str, Optional[list[dict]]], extracted: Extracted,

@@ -15,6 +15,9 @@ RUN npm ci --omit=dev --no-audit --no-fund
 COPY meterless/server.ts meterless/LICENSE meterless/UPSTREAM.sha256 ./
 COPY meterless/reference/src ./reference/src
 COPY meterless/reference/package.json meterless/reference/tsconfig.json ./reference/
+COPY meterless/hmem/reference/src ./hmem/reference/src
+COPY meterless/hmem/reference/package.json meterless/hmem/reference/tsconfig.json ./hmem/reference/
+COPY meterless/hmem/LICENSE meterless/hmem/UPSTREAM.sha256 ./hmem/
 
 # ---- 2. the Python dependencies in a virtual environment, and the reference cells indexed --------
 FROM python:3.11-slim AS python-build
@@ -36,7 +39,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PATH=/opt/venv/bin:$PATH \
     SAMPLE_MODE=true \
     PORT=8000 \
-    WORLD_MODEL_URL=http://127.0.0.1:8787
+    WORLD_MODEL_URL=http://127.0.0.1:8787 \
+    HMEM_URL=http://127.0.0.1:8787/hmem
 
 RUN useradd --create-home greentrace
 COPY --from=world-model /usr/local/bin/node /usr/local/bin/node
