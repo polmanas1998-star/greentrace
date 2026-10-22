@@ -36,6 +36,7 @@
   "findings": [
     {
       "claim_part": "no_deforestation",
+      "code": "tree_cover_loss_outside_2020_forest",
       "finding": "P-041: 0.51 ha of tree cover lost in 2021, 2024; tree cover was lost, but the EU 2020 map did not count this land as forest: confirm in the field",
       "verdict": "UNVERIFIABLE",
       "rule": 3,
@@ -1450,5 +1451,5 @@
     "rules_sha256": "4ad87565994cd7d1b111f7c07da79475f3ccf62e7d0158af1af3fb1b9f977f7b"
   },
   "log_file": "logs/example-06.jsonl",
-  "execution_time_seconds": 0.06
+  "execution_time_seconds": 0.08
 }

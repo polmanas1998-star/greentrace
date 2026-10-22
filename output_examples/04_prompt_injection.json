@@ -36,6 +36,7 @@
   "findings": [
     {
       "claim_part": "no_deforestation",
+      "code": "confirmed_alert_in_delivering_plot",
       "finding": "alert A-225 (2022-08-21, high) lies inside P-030, which delivered in 2022 or later",
       "verdict": "CONTRADICTED",
       "rule": 2,

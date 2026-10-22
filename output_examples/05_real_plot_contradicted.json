@@ -36,6 +36,7 @@
   "findings": [
     {
       "claim_part": "no_deforestation",
+      "code": "forest_loss_in_delivering_plot",
       "finding": "3.42 ha that the EU map counted as forest in 2020 were lost inside P-042 in 2021, 2022, 2023, 2024 (Hansen/UMD), while it kept delivering (threshold 0.50 ha: 0.5 ha or 10 % of the plot)",
       "verdict": "CONTRADICTED",
       "rule": 2,
@@ -1466,5 +1467,5 @@
     "rules_sha256": "4ad87565994cd7d1b111f7c07da79475f3ccf62e7d0158af1af3fb1b9f977f7b"
   },
   "log_file": "logs/example-05.jsonl",
-  "execution_time_seconds": 0.07
+  "execution_time_seconds": 0.23
 }

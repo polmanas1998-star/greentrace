@@ -36,6 +36,7 @@
   "findings": [
     {
       "claim_part": "coverage",
+      "code": "volume_not_traced",
       "finding": "88.0% of 2025 volume traced to a plot (needs 99%)",
       "verdict": "UNVERIFIABLE",
       "rule": 3,

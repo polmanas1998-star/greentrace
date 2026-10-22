@@ -36,6 +36,7 @@
   "findings": [
     {
       "claim_part": "no_deforestation",
+      "code": "confirmed_alert_in_delivering_plot",
       "finding": "alert A-221 (2022-03-14, high) lies inside P-014, which delivered in 2022 or later",
       "verdict": "CONTRADICTED",
       "rule": 2,
@@ -1476,5 +1477,5 @@
     "rules_sha256": "4ad87565994cd7d1b111f7c07da79475f3ccf62e7d0158af1af3fb1b9f977f7b"
   },
   "log_file": "logs/example-01.jsonl",
-  "execution_time_seconds": 0.07
+  "execution_time_seconds": 0.24
 }
