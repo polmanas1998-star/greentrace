@@ -25,7 +25,8 @@ def test_demo_case_is_contradicted_with_its_evidence(tmp_path):
     assert out["verdict"] == "CONTRADICTED" and out["mode"] == "sample" and out["degraded"]
     finding = out["findings"][0]
     assert finding["evidence"] == [{"source": "alert", "id": "A-221"}, {"source": "plot", "id": "P-014"}]
-    assert [t["id"] for t in finding["refutations_tried"]] == ["R3", "R4", "R5"]
+    assert [t["id"] for t in finding["refutations_tried"]] == ["R3", "R1", "R4", "R5", "R6", "R8"]
+    assert all(t["result"] == "rejected" for t in finding["refutations_tried"])
 
 
 def test_the_evaluator_sends_the_plan_back_before_approving(tmp_path):
