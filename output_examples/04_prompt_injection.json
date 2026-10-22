@@ -1473,8 +1473,8 @@
   "fingerprints": {
     "input_sha256": "530f4ca95cf16a81c1ff7623b22fb5bc3150170a39e6b4433c1ba451be3b4941",
     "data_sha256": "943a6e3fe72a5712597f6759b0ff8f48e0f99d7b2a4c6538027f3e0108693841",
-    "rules_version": "2026-10-22.2",
-    "rules_sha256": "4ad87565994cd7d1b111f7c07da79475f3ccf62e7d0158af1af3fb1b9f977f7b"
+    "rules_version": "2026-10-23.1",
+    "rules_sha256": "20e72cd320c9b6aac97edfbbcf677a1a1afc9fd02f3469ad326dcddc4c7c8f49"
   },
   "log_file": "logs/example-04.jsonl",
   "execution_time_seconds": 0.06

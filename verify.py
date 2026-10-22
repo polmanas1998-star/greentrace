@@ -24,7 +24,7 @@ from app.canonical import canonical_json, sha256_of
 from app.explain.flip import compute_flip
 from app.orchestrator import apply_change
 from app.receipt import RECEIPT_VERSION, decision_for, evidence_answers, rules_sha256, verdict_seal
-from app.rules import Extracted
+from app.rules import Extracted, check_plot
 from app.world.drawn import plot_from_geojson
 
 LABELS = ("alert_id", "plot_id", "delivery_id", "supplier_id", "doc_id", "rule")
@@ -32,6 +32,8 @@ LABELS = ("alert_id", "plot_id", "delivery_id", "supplier_id", "doc_id", "rule")
 
 def check(receipt: dict[str, Any]) -> dict[str, Any]:
     """{"status": "VALID" or "TAMPERED", "problems": [...], "verdict": recomputed, "seal": recomputed}."""
+    if receipt.get("kind") == "plot_check":
+        return check_plots(receipt)
     problems = _integrity(receipt) + _quotes(receipt)
     if receipt["rules_sha256"] != rules_sha256():
         problems.append("rules: this checkout's app/rules.py is not the one the receipt was made with")
@@ -63,6 +65,34 @@ def check(receipt: dict[str, Any]) -> dict[str, Any]:
         problems.append("flip: replaying the single changes gives another result")
     return {"status": "TAMPERED" if problems else "VALID", "problems": problems,
             "verdict": decision["verdict"], "seal": seal, "changes_replayed": len(flip["tried"])}
+
+
+def check_plots(receipt: dict[str, Any]) -> dict[str, Any]:
+    """An analyst's plot file: every row hash, then every plot's verdict re-derived from its own Q10 rows."""
+    from app.plotcheck import NO_ISSUE, seal
+
+    problems = _integrity(receipt)
+    if receipt["rules_sha256"] != rules_sha256():
+        problems.append("rules: this checkout's app/rules.py is not the one the receipt was made with")
+    plots = {p["plot_id"]: p for p in receipt["plots"]}
+    recomputed = []
+    for result in receipt["results"]:
+        answer = result.get("answer")
+        cells = receipt["sources"][answer]["rows"] if answer is not None else None
+        findings = check_plot(plots[result["plot_id"]], cells, {receipt["producing_until"]})
+        again = {"plot_id": result["plot_id"], "verdict": findings[0].verdict if findings else NO_ISSUE,
+                 "code": findings[0].code if findings else None, "rule": findings[0].rule if findings else 4}
+        if (again["verdict"], again["code"]) != (result["verdict"], result["code"]):
+            problems.append(f"plot {result['plot_id']}: the rules give {again['verdict']} on these rows, "
+                            f"the receipt says {result['verdict']}")
+        recomputed.append(again)
+    seal_again = seal(recomputed)
+    if seal_again != receipt["seal"]:
+        problems.append("seal: the verdicts recomputed do not give the receipt's seal")
+    verdicts = [r["verdict"] for r in recomputed]
+    summary = ", ".join(f"{verdicts.count(v)} {v}" for v in dict.fromkeys(verdicts))
+    return {"status": "TAMPERED" if problems else "VALID", "problems": problems, "verdict": summary,
+            "seal": seal_again, "changes_replayed": 0}
 
 
 def _integrity(receipt: dict) -> list[str]:
@@ -115,6 +145,12 @@ def main(argv: list[str]) -> int:
         print(f"UNREADABLE: {type(error).__name__}: {error}")
         return 2
     sources = receipt["sources"]
+    if result["status"] == "VALID" and receipt.get("kind") == "plot_check":
+        cells = sum(len(s["rows"]) for s in sources)
+        print(f"VALID: {len(receipt['results'])} plot(s) re-derived offline from {cells} map cells "
+              f"of {len(sources)} answers: {result['verdict']}.")
+        print(f"seal {result['seal']}")
+        return 0
     if result["status"] == "VALID":
         quotes = sum(1 for i in receipt["extracted"]["admissions"] + receipt["extracted"]["mentions"] if i.get("quote"))
         print(f"VALID: {result['verdict']} re-derived offline from {sum(len(s['rows']) for s in sources)} rows "
@@ -124,7 +160,7 @@ def main(argv: list[str]) -> int:
         return 0
     print("TAMPERED: " + "; ".join(result["problems"]))
     print(f"verdict recomputed on the data as found: {result['verdict']}")
-    print(f"seal recomputed {result['seal']}, receipt says {receipt['verdict_sha256']}")
+    print(f"seal recomputed {result['seal']}, receipt says {receipt.get('verdict_sha256') or receipt.get('seal')}")
     return 1
 
 

@@ -27,7 +27,7 @@ from typing import Optional
 
 from app.checks import geometry, landcover, registry
 
-RULES_VERSION = "2026-10-22.2"
+RULES_VERSION = "2026-10-23.1"
 
 PROVEN, CONTRADICTED, UNVERIFIABLE = "PROVEN", "CONTRADICTED", "UNVERIFIABLE"
 CUTOFF = "2020-12-31"
@@ -206,6 +206,22 @@ def map_check(plot: dict, cells: Optional[list[dict]], delivered_in: set[int]) -
                        f"{plot_id}: {sum(cover.values()):.2f} ha of tree cover lost in {_years(cover)}; "
                        f"{TREE_COVER_NOT_FOREST}", refs)
     return None
+
+
+def check_plot(plot: dict, cells: Optional[list[dict]], delivered_in: set[int]) -> list[Finding]:
+    """One plot of an analyst's own file (no registry around it): rule 1 for what cannot be measured,
+    then the reference maps (rule 2 of kit v7, map_check). An empty list: no issue found."""
+    plot_id = plot["plot_id"]
+    if plot["area_ha"] is None and not plot["polygon_wkt"]:
+        return [Finding("no_deforestation", 1, UNVERIFIABLE, "area_missing",
+                        f"{plot_id} is a point with no area: its outline cannot be measured",
+                        (f"plot:{plot_id}",))]
+    if geometry.polygon_missing(plot):
+        return [Finding("no_deforestation", 1, UNVERIFIABLE, "polygon_missing",
+                        f"{plot_id} covers {plot['area_ha']} ha but is declared by a point (the EUDR asks for a "
+                        f"polygon above 4 ha)", (f"plot:{plot_id}",))]
+    finding = map_check(plot, cells, delivered_in)
+    return [finding] if finding else []
 
 
 def _years(hectares: dict[int, float]) -> str:
