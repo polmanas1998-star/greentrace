@@ -1,0 +1,4889 @@
+{
+ "receipt_version": "1",
+ "run_id": "example-01",
+ "claim": "100% of our cocoa comes from deforestation-free farms since 2021.",
+ "company_id": "chocodurable",
+ "mode": "sample",
+ "degraded": true,
+ "input_sha256": "60b05db9477e1497bb5132906b7818bba23c2e10a49b65e2bd8571a07fccd638",
+ "data_sha256": "8cfad32bd910d2dc64f337934ed4eb4a907349cb658cebcc96e39bd46573ddfe",
+ "rules_version": "2026-10-22.2",
+ "rules_sha256": "4ad87565994cd7d1b111f7c07da79475f3ccf62e7d0158af1af3fb1b9f977f7b",
+ "sources": [
+  {
+   "index": 0,
+   "query_id": "Q1",
+   "agent": "Extractor",
+   "sql": "SELECT doc_id, section, paragraph_no, paragraph_text FROM report_paragraphs WHERE doc_id = 'rse_2025' ORDER BY section DESC, paragraph_no",
+   "rows": [
+    {
+     "doc_id": "rse_2025",
+     "section": "main",
+     "paragraph_no": 1,
+     "paragraph_text": "ChocoDurable SA buys cocoa from twelve farmer cooperatives in the west of Cote d'Ivoire and sells chocolate in nine European markets."
+    },
+    {
+     "doc_id": "rse_2025",
+     "section": "main",
+     "paragraph_no": 2,
+     "paragraph_text": "Since twenty twenty-one, 100% of our cocoa comes from deforestation-free farms. Not one hectare of forest has been cleared to grow the cocoa we buy."
+    },
+    {
+     "doc_id": "rse_2025",
+     "section": "main",
+     "paragraph_no": 3,
+     "paragraph_text": "Every tonne we bought in the 2025 fiscal year is traced to a geolocated plot recorded in our supplier registry, which our cooperatives update each season."
+    },
+    {
+     "doc_id": "rse_2025",
+     "section": "main",
+     "paragraph_no": 4,
+     "paragraph_text": "We screen every plot against public satellite deforestation alerts each quarter. A confirmed alert inside a plot suspends deliveries from that plot until a field visit clears it."
+    },
+    {
+     "doc_id": "rse_2025",
+     "section": "main",
+     "paragraph_no": 5,
+     "paragraph_text": "Our reference date is the one set by the EU Deforestation Regulation: no forest cleared after the thirty-first of December twenty twenty."
+    },
+    {
+     "doc_id": "rse_2025",
+     "section": "main",
+     "paragraph_no": 6,
+     "paragraph_text": "In 2025 we paid a premium above the farm-gate price to every member of our partner cooperatives, and we co-financed two village schools."
+    },
+    {
+     "doc_id": "rse_2025",
+     "section": "main",
+     "paragraph_no": 7,
+     "paragraph_text": "Part of our volume is also certified under an independent sustainability scheme, which audits the cooperatives once a year."
+    },
+    {
+     "doc_id": "rse_2025",
+     "section": "main",
+     "paragraph_no": 8,
+     "paragraph_text": "Our agronomists trained more than one thousand farmers in shade-grown cocoa, which keeps trees on the farm and protects soil moisture."
+    },
+    {
+     "doc_id": "rse_2025",
+     "section": "main",
+     "paragraph_no": 9,
+     "paragraph_text": "Next year we will publish the plot map of every cooperative so that anyone can check it."
+    },
+    {
+     "doc_id": "rse_2025",
+     "section": "annex",
+     "paragraph_no": 1,
+     "paragraph_text": "Methodology. Plots under four hectares are geolocated by a single point, as the Regulation allows; larger plots are mapped as a polygon."
+    },
+    {
+     "doc_id": "rse_2025",
+     "section": "annex",
+     "paragraph_no": 2,
+     "paragraph_text": "Volumes are reported for the fiscal year ending on the thirtieth of September 2025, in tonnes of dry beans."
+    },
+    {
+     "doc_id": "rse_2025",
+     "section": "annex",
+     "paragraph_no": 3,
+     "paragraph_text": "Alerts are read from public deforestation alert systems; only alerts of high or highest confidence are treated as confirmed."
+    }
+   ],
+   "rows_sha256": "9a84f545ca7f442f7ca6512a4b00e0ff9088150d3c569ed07503b3ff5fe8ba25",
+   "row_sha256": [
+    "5a8a9e5ef9802b05e080d8017afa1c4a37a3f2aae2e4cec350cbe6067372a993",
+    "6ce442360bdfb40eb434813bdca9e1cc2793470ffdb6da666a3b4747973e9de4",
+    "b13bc1162919131ba00d23c912a5ef73c64592e77edb0bebe35ad56e58f202fc",
+    "7a748aaeb64443b50c042bbd0cacef9a69155a0d167f12706fec1a0ea99d2769",
+    "27d4548bb41ed940f362b4a7f69c2d49eb7fb3921d9c0ab2525cb9a891173619",
+    "7f586ab45289e396b6f9500064c05346f37828126289d4923b56d6d5d80c75aa",
+    "23ae8418624dfcb051cfbf9bebb056eee00a3189ce7a8a2b7ae41cc1f28b6926",
+    "48285aaee074ca55b66bb285bfb5fd31e33e0b86e0f8fc69e8e22368930ed694",
+    "9d147ae3b4868d588d66cd851dd941073b9e36d6a6dfdafa627b1f5e8a4216a3",
+    "378157ba54c61f5f5e3fc95b461905dc197c8386e6567d5873af7a9c59dbcba7",
+    "fb854b581da05ba349ef6aeaf069a61c49f2978ccd187c427727a52332141f5b",
+    "a19aa89a1199ede06249529e1f8bdc1cdbfed52018093e22fbfa3ad7ef9c67a1"
+   ]
+  },
+  {
+   "index": 1,
+   "query_id": "Q1",
+   "agent": "Extractor",
+   "sql": "SELECT doc_id, section, paragraph_no, paragraph_text FROM report_paragraphs WHERE doc_id = 'ngo_2025' ORDER BY section DESC, paragraph_no",
+   "rows": [
+    {
+     "doc_id": "ngo_2025",
+     "section": "main",
+     "paragraph_no": 1,
+     "paragraph_text": "Terres Vivantes is an association that follows cocoa farming in the west of Cote d'Ivoire. This note covers our visits from January to June 2025."
+    },
+    {
+     "doc_id": "ngo_2025",
+     "section": "main",
+     "paragraph_no": 2,
+     "paragraph_text": "Our team visited fourteen villages and spoke with farmers, cooperative managers and buyers. We did not visit any company office."
+    },
+    {
+     "doc_id": "ngo_2025",
+     "section": "main",
+     "paragraph_no": 3,
+     "paragraph_text": "Farm-gate prices rose this season, but many farmers told us that the premiums promised by exporters arrive late, sometimes a full season later."
+    },
+    {
+     "doc_id": "ngo_2025",
+     "section": "main",
+     "paragraph_no": 4,
+     "paragraph_text": "Most cooperatives we met keep a register of their members' plots, but several registers are on paper and are not shared with the farmers themselves."
+    },
+    {
+     "doc_id": "ngo_2025",
+     "section": "main",
+     "paragraph_no": 5,
+     "paragraph_text": "Access to schools has improved in the villages served by new roads; it remains difficult further from the main axes."
+    },
+    {
+     "doc_id": "ngo_2025",
+     "section": "main",
+     "paragraph_no": 6,
+     "paragraph_text": "Farmers asked for clearer rules on which documents they must keep to sell to European buyers after the new regulation applies."
+    },
+    {
+     "doc_id": "ngo_2025",
+     "section": "main",
+     "paragraph_no": 7,
+     "paragraph_text": "We recommend that buyers share their plot maps with the cooperatives, and that cooperatives explain the maps to their members."
+    },
+    {
+     "doc_id": "ngo_2025",
+     "section": "main",
+     "paragraph_no": 8,
+     "paragraph_text": "We thank the farmers and cooperative staff who gave us their time."
+    }
+   ],
+   "rows_sha256": "6ce83f78c5d3c4307f5a404566d0fdeb12d75087d70f5eeff785180c73b9753e",
+   "row_sha256": [
+    "226815e3ad89a7974a0af67d73a36d40c2ab9915dbb13d260ab12ecca07252dd",
+    "773a1089d168c7dd3fd25cdd9a15419f7ed69fd9f25171c47ea1425a21ce3cd1",
+    "ecfd18bdf72405d41947a6b40eb8da1e6672fa9c7e74a1e0db131b502672fd52",
+    "512c4b9e7f29c4075b17259fc14fffec2fc120612555bd06f2b2fbe5d6026380",
+    "b132945bf81d6cc5668e1d882f44cff44bf8183af513e015d96a27c1a18bcf9b",
+    "524b763f6723c29803897f6d63938d085ccf29f3c344926ad1f973e369754533",
+    "5e4bad6d624b234f282d8e2276b36b000d6b10d46200b4391ef0246aeb03e7b6",
+    "85b59cfc71cebb135286a7d7ced1f788633e4953db8a0a2e3683e177dc8c540c"
+   ]
+  },
+  {
+   "index": 2,
+   "query_id": "Q0",
+   "agent": "Investigator",
+   "sql": "RUN DQ + SHOW DQ INVALID RECORD",
+   "rows": [],
+   "rows_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+   "row_sha256": []
+  },
+  {
+   "index": 3,
+   "query_id": "Q2",
+   "agent": "Investigator",
+   "sql": "SELECT s.supplier_id, s.name, s.cooperative_group, c.total_tonnes, c.fiscal_year FROM suppliers s JOIN company c ON s.company_id = c.company_id WHERE c.company_id = 'chocodurable' ORDER BY s.supplier_id",
+   "rows": [
+    {
+     "supplier_id": "F-002",
+     "name": "Blewa",
+     "cooperative_group": "Union Neyabli",
+     "total_tonnes": 79.67,
+     "fiscal_year": 2025
+    },
+    {
+     "supplier_id": "F-005",
+     "name": "Dioulabo",
+     "cooperative_group": "Union Neyabli",
+     "total_tonnes": 79.67,
+     "fiscal_year": 2025
+    },
+    {
+     "supplier_id": "F-007",
+     "name": "Agnibi",
+     "cooperative_group": "Union Neyabli",
+     "total_tonnes": 79.67,
+     "fiscal_year": 2025
+    },
+    {
+     "supplier_id": "F-011",
+     "name": "Gnamienso",
+     "cooperative_group": "Union Neyabli",
+     "total_tonnes": 79.67,
+     "fiscal_year": 2025
+    },
+    {
+     "supplier_id": "F-014",
+     "name": "Kodjobra",
+     "cooperative_group": "Union Tieple",
+     "total_tonnes": 79.67,
+     "fiscal_year": 2025
+    },
+    {
+     "supplier_id": "F-019",
+     "name": "Lomanie",
+     "cooperative_group": "Union Tieple",
+     "total_tonnes": 79.67,
+     "fiscal_year": 2025
+    },
+    {
+     "supplier_id": "F-023",
+     "name": "Sapiadou",
+     "cooperative_group": "Union Tieple",
+     "total_tonnes": 79.67,
+     "fiscal_year": 2025
+    },
+    {
+     "supplier_id": "F-026",
+     "name": "Tehirou",
+     "cooperative_group": "Union Tieple",
+     "total_tonnes": 79.67,
+     "fiscal_year": 2025
+    },
+    {
+     "supplier_id": "F-031",
+     "name": "Wawassi",
+     "cooperative_group": "Union Gonzro",
+     "total_tonnes": 79.67,
+     "fiscal_year": 2025
+    },
+    {
+     "supplier_id": "F-034",
+     "name": "Yobouakro",
+     "cooperative_group": "Union Gonzro",
+     "total_tonnes": 79.67,
+     "fiscal_year": 2025
+    },
+    {
+     "supplier_id": "F-038",
+     "name": "Zebrako",
+     "cooperative_group": "Union Gonzro",
+     "total_tonnes": 79.67,
+     "fiscal_year": 2025
+    },
+    {
+     "supplier_id": "F-040",
+     "name": "Mandeyo",
+     "cooperative_group": "Union Gonzro",
+     "total_tonnes": 79.67,
+     "fiscal_year": 2025
+    }
+   ],
+   "rows_sha256": "7a692ef2e6ed7e0b346ad1d16d7f931b795691adba74945c56ebaf2b9af75de4",
+   "row_sha256": [
+    "b12c216ed2238966fa84518d8cab467f439386c4e0e6023fdf22a379451f4b16",
+    "58cd91a0dc0770febe931c46c43fa60c575d902c0ef804d83a0cb6429d6dbce0",
+    "c7b8ec720a926b0945268142fd7ee268df8dfd10e5309036657309572470805a",
+    "b34222404c2674b5d5b95077a7a0b196eabb02da3e761a3a5ce3ca51e172c248",
+    "a194b9d320bccc256eafe2c2a08d1b29a25354143f9c8bd9994c7b73fce9f264",
+    "e85f7839acfbb89232d306dec89527cf3a58f50a9123bfb45a5766806e6a925c",
+    "50ff67694763cf567519427326668c38f1f4df9942d58a34f6fc13d997ad6973",
+    "271a8070348a55b6d03c774bf485a6dbaf64d9eb117c1c40001106cb33635664",
+    "976a4c2c9705673dc25f20eebb642e1fcc363658158309ea303a56ac15cbc4a2",
+    "4bade6d57a635ef96a46320c06232f73ac2d86c4a90c7bcc237c1b2e75e3c803",
+    "327f852ab6c96b2fb98282503053a5499547f681e3c97a76e5ecb06965245a3c",
+    "8c01bd7c441a52a251e7574690016956a50b148f660b03ba838c5cf1af3292af"
+   ]
+  },
+  {
+   "index": 4,
+   "query_id": "Q3",
+   "agent": "Investigator",
+   "sql": "SELECT plot_id, supplier_id, lat, lon, polygon_wkt, area_ha FROM plots WHERE supplier_id IN ('F-002', 'F-005', 'F-007', 'F-011', 'F-014', 'F-019', 'F-023', 'F-026', 'F-031', 'F-034', 'F-038', 'F-040') ORDER BY plot_id, supplier_id",
+   "rows": [
+    {
+     "plot_id": "P-001",
+     "supplier_id": "F-002",
+     "lat": 6.798278,
+     "lon": -6.599989,
+     "polygon_wkt": "POLYGON((-6.600841 6.797426, -6.599137 6.797426, -6.599137 6.799130, -6.600841 6.799130, -6.600841 6.797426))",
+     "area_ha": 3.55
+    },
+    {
+     "plot_id": "P-002",
+     "supplier_id": "F-002",
+     "lat": 6.801628,
+     "lon": -6.574657,
+     "polygon_wkt": "POLYGON((-6.575356 6.800929, -6.573958 6.800929, -6.573958 6.802327, -6.575356 6.802327, -6.575356 6.800929))",
+     "area_ha": 2.39
+    },
+    {
+     "plot_id": "P-003",
+     "supplier_id": "F-002",
+     "lat": 6.800457,
+     "lon": -6.545464,
+     "polygon_wkt": "POLYGON((-6.546247 6.799674, -6.544681 6.799674, -6.544681 6.801240, -6.546247 6.801240, -6.546247 6.799674))",
+     "area_ha": 3.0
+    },
+    {
+     "plot_id": "P-004",
+     "supplier_id": "F-002",
+     "lat": 6.800216,
+     "lon": -6.517536,
+     "polygon_wkt": "POLYGON((-6.518503 6.799249, -6.516569 6.799249, -6.516569 6.801183, -6.518503 6.801183, -6.518503 6.799249))",
+     "area_ha": 4.57
+    },
+    {
+     "plot_id": "P-005",
+     "supplier_id": "F-005",
+     "lat": 6.801135,
+     "lon": -6.491048,
+     "polygon_wkt": "POLYGON((-6.491757 6.800426, -6.490339 6.800426, -6.490339 6.801844, -6.491757 6.801844, -6.491757 6.800426))",
+     "area_ha": 2.46
+    },
+    {
+     "plot_id": "P-006",
+     "supplier_id": "F-005",
+     "lat": 6.800516,
+     "lon": -6.46606,
+     "polygon_wkt": "",
+     "area_ha": 3.32
+    },
+    {
+     "plot_id": "P-007",
+     "supplier_id": "F-005",
+     "lat": 6.799772,
+     "lon": -6.435735,
+     "polygon_wkt": "POLYGON((-6.436666 6.798841, -6.434804 6.798841, -6.434804 6.800703, -6.436666 6.800703, -6.436666 6.798841))",
+     "area_ha": 4.24
+    },
+    {
+     "plot_id": "P-008",
+     "supplier_id": "F-005",
+     "lat": 6.800811,
+     "lon": -6.411329,
+     "polygon_wkt": "POLYGON((-6.412046 6.800095, -6.410612 6.800095, -6.410612 6.801527, -6.412046 6.801527, -6.412046 6.800095))",
+     "area_ha": 2.51
+    },
+    {
+     "plot_id": "P-009",
+     "supplier_id": "F-011",
+     "lat": 6.829301,
+     "lon": -6.598058,
+     "polygon_wkt": "POLYGON((-6.598698 6.828662, -6.597418 6.828662, -6.597418 6.829940, -6.598698 6.829940, -6.598698 6.828662))",
+     "area_ha": 2.0
+    },
+    {
+     "plot_id": "P-010",
+     "supplier_id": "F-011",
+     "lat": 6.829391,
+     "lon": -6.572798,
+     "polygon_wkt": "POLYGON((-6.573407 6.828783, -6.572189 6.828783, -6.572189 6.829999, -6.573407 6.829999, -6.573407 6.828783))",
+     "area_ha": 1.81
+    },
+    {
+     "plot_id": "P-011",
+     "supplier_id": "F-011",
+     "lat": 6.826409,
+     "lon": -6.54546,
+     "polygon_wkt": "POLYGON((-6.546199 6.825670, -6.544721 6.825670, -6.544721 6.827148, -6.546199 6.827148, -6.546199 6.825670))",
+     "area_ha": 2.67
+    },
+    {
+     "plot_id": "P-012",
+     "supplier_id": "F-011",
+     "lat": 6.826939,
+     "lon": -6.516876,
+     "polygon_wkt": "",
+     "area_ha": 3.03
+    },
+    {
+     "plot_id": "P-013",
+     "supplier_id": "F-007",
+     "lat": 6.827481,
+     "lon": -6.493589,
+     "polygon_wkt": "POLYGON((-6.494531 6.826539, -6.492647 6.826539, -6.492647 6.828423, -6.494531 6.828423, -6.494531 6.826539))",
+     "area_ha": 4.34
+    },
+    {
+     "plot_id": "P-014",
+     "supplier_id": "F-007",
+     "lat": 6.826514,
+     "lon": -6.464651,
+     "polygon_wkt": "POLYGON((-6.465460 6.825705, -6.463842 6.825705, -6.463842 6.827323, -6.465460 6.827323, -6.465460 6.825705))",
+     "area_ha": 3.2
+    },
+    {
+     "plot_id": "P-015",
+     "supplier_id": "F-007",
+     "lat": 6.827519,
+     "lon": -6.437165,
+     "polygon_wkt": "POLYGON((-6.437800 6.826884, -6.436530 6.826884, -6.436530 6.828154, -6.437800 6.828154, -6.437800 6.826884))",
+     "area_ha": 1.97
+    },
+    {
+     "plot_id": "P-016",
+     "supplier_id": "F-007",
+     "lat": 6.82716,
+     "lon": -6.408887,
+     "polygon_wkt": "POLYGON((-6.409780 6.826267, -6.407994 6.826267, -6.407994 6.828053, -6.409780 6.828053, -6.409780 6.826267))",
+     "area_ha": 3.9
+    },
+    {
+     "plot_id": "P-017",
+     "supplier_id": "F-014",
+     "lat": 6.854222,
+     "lon": -6.598115,
+     "polygon_wkt": "POLYGON((-6.598835 6.853503, -6.597395 6.853503, -6.597395 6.854941, -6.598835 6.854941, -6.598835 6.853503))",
+     "area_ha": 2.53
+    },
+    {
+     "plot_id": "P-018",
+     "supplier_id": "F-014",
+     "lat": 6.8539,
+     "lon": -6.570932,
+     "polygon_wkt": "",
+     "area_ha": 2.45
+    },
+    {
+     "plot_id": "P-019",
+     "supplier_id": "F-014",
+     "lat": 6.854344,
+     "lon": -6.547866,
+     "polygon_wkt": "POLYGON((-6.548567 6.853643, -6.547165 6.853643, -6.547165 6.855045, -6.548567 6.855045, -6.548567 6.853643))",
+     "area_ha": 2.4
+    },
+    {
+     "plot_id": "P-020",
+     "supplier_id": "F-019",
+     "lat": 6.852585,
+     "lon": -6.52062,
+     "polygon_wkt": "POLYGON((-6.521560 6.851645, -6.519680 6.851645, -6.519680 6.853525, -6.521560 6.853525, -6.521560 6.851645))",
+     "area_ha": 4.32
+    },
+    {
+     "plot_id": "P-021",
+     "supplier_id": "F-019",
+     "lat": 6.856011,
+     "lon": -6.493237,
+     "polygon_wkt": "POLYGON((-6.494345 6.854903, -6.492129 6.854903, -6.492129 6.857119, -6.494345 6.857119, -6.494345 6.854903))",
+     "area_ha": 6.0
+    },
+    {
+     "plot_id": "P-022",
+     "supplier_id": "F-019",
+     "lat": 6.854127,
+     "lon": -6.46438,
+     "polygon_wkt": "POLYGON((-6.465084 6.853424, -6.463676 6.853424, -6.463676 6.854830, -6.465084 6.854830, -6.465084 6.853424))",
+     "area_ha": 2.42
+    },
+    {
+     "plot_id": "P-023",
+     "supplier_id": "F-023",
+     "lat": 6.856007,
+     "lon": -6.436586,
+     "polygon_wkt": "POLYGON((-6.437412 6.855182, -6.435760 6.855182, -6.435760 6.856832, -6.437412 6.856832, -6.437412 6.855182))",
+     "area_ha": 3.33
+    },
+    {
+     "plot_id": "P-024",
+     "supplier_id": "F-023",
+     "lat": 6.854124,
+     "lon": -6.408076,
+     "polygon_wkt": "",
+     "area_ha": 3.77
+    },
+    {
+     "plot_id": "P-025",
+     "supplier_id": "F-023",
+     "lat": 6.8816,
+     "lon": -6.59973,
+     "polygon_wkt": "POLYGON((-6.600655 6.880676, -6.598805 6.880676, -6.598805 6.882524, -6.600655 6.882524, -6.600655 6.880676))",
+     "area_ha": 4.18
+    },
+    {
+     "plot_id": "P-026",
+     "supplier_id": "F-026",
+     "lat": 6.880524,
+     "lon": -6.571504,
+     "polygon_wkt": "POLYGON((-6.572352 6.879677, -6.570656 6.879677, -6.570656 6.881371, -6.572352 6.881371, -6.572352 6.879677))",
+     "area_ha": 3.51
+    },
+    {
+     "plot_id": "P-027",
+     "supplier_id": "F-026",
+     "lat": 6.881298,
+     "lon": -6.54398,
+     "polygon_wkt": "POLYGON((-6.544793 6.880485, -6.543167 6.880485, -6.543167 6.882111, -6.544793 6.882111, -6.544793 6.880485))",
+     "area_ha": 3.23
+    },
+    {
+     "plot_id": "P-028",
+     "supplier_id": "F-026",
+     "lat": 6.880464,
+     "lon": -6.519624,
+     "polygon_wkt": "POLYGON((-6.520202 6.879887, -6.519046 6.879887, -6.519046 6.881041, -6.520202 6.881041, -6.520202 6.879887))",
+     "area_ha": 1.63
+    },
+    {
+     "plot_id": "P-029",
+     "supplier_id": "F-031",
+     "lat": 6.882097,
+     "lon": -6.490999,
+     "polygon_wkt": "POLYGON((-6.492011 6.881086, -6.489987 6.881086, -6.489987 6.883108, -6.492011 6.883108, -6.492011 6.881086))",
+     "area_ha": 5.0
+    },
+    {
+     "plot_id": "P-030",
+     "supplier_id": "F-031",
+     "lat": 6.881497,
+     "lon": -6.464346,
+     "polygon_wkt": "POLYGON((-6.465316 6.880527, -6.463376 6.880527, -6.463376 6.882467, -6.465316 6.882467, -6.465316 6.880527))",
+     "area_ha": 4.6
+    },
+    {
+     "plot_id": "P-031",
+     "supplier_id": "F-031",
+     "lat": 6.880309,
+     "lon": -6.437224,
+     "polygon_wkt": "POLYGON((-6.438173 6.879360, -6.436275 6.879360, -6.436275 6.881258, -6.438173 6.881258, -6.438173 6.879360))",
+     "area_ha": 4.4
+    },
+    {
+     "plot_id": "P-032",
+     "supplier_id": "F-034",
+     "lat": 6.882868,
+     "lon": -6.408625,
+     "polygon_wkt": "POLYGON((-6.409499 6.881995, -6.407751 6.881995, -6.407751 6.883741, -6.409499 6.883741, -6.409499 6.881995))",
+     "area_ha": 3.73
+    },
+    {
+     "plot_id": "P-033",
+     "supplier_id": "F-034",
+     "lat": 6.910366,
+     "lon": -6.598501,
+     "polygon_wkt": "",
+     "area_ha": 2.0
+    },
+    {
+     "plot_id": "P-034",
+     "supplier_id": "F-034",
+     "lat": 6.910409,
+     "lon": -6.574676,
+     "polygon_wkt": "POLYGON((-6.575610 6.909476, -6.573742 6.909476, -6.573742 6.911342, -6.575610 6.911342, -6.575610 6.909476))",
+     "area_ha": 4.26
+    },
+    {
+     "plot_id": "P-035",
+     "supplier_id": "F-038",
+     "lat": 6.909814,
+     "lon": -6.545651,
+     "polygon_wkt": "POLYGON((-6.546474 6.908991, -6.544828 6.908991, -6.544828 6.910637, -6.546474 6.910637, -6.546474 6.908991))",
+     "area_ha": 3.31
+    },
+    {
+     "plot_id": "P-036",
+     "supplier_id": "F-038",
+     "lat": 6.910628,
+     "lon": -6.516466,
+     "polygon_wkt": "",
+     "area_ha": 3.39
+    },
+    {
+     "plot_id": "P-037",
+     "supplier_id": "F-038",
+     "lat": 6.90843,
+     "lon": -6.49341,
+     "polygon_wkt": "POLYGON((-6.494135 6.907705, -6.492685 6.907705, -6.492685 6.909155, -6.494135 6.909155, -6.494135 6.907705))",
+     "area_ha": 2.57
+    },
+    {
+     "plot_id": "P-038",
+     "supplier_id": "F-040",
+     "lat": 6.908517,
+     "lon": -6.466123,
+     "polygon_wkt": "POLYGON((-6.467082 6.907559, -6.465164 6.907559, -6.465164 6.909475, -6.467082 6.909475, -6.467082 6.907559))",
+     "area_ha": 4.49
+    },
+    {
+     "plot_id": "P-039",
+     "supplier_id": "F-040",
+     "lat": 6.908124,
+     "lon": -6.437387,
+     "polygon_wkt": "",
+     "area_ha": 1.24
+    },
+    {
+     "plot_id": "P-040",
+     "supplier_id": "F-040",
+     "lat": 6.906265,
+     "lon": -6.409653,
+     "polygon_wkt": "POLYGON((-6.410688 6.905231, -6.408618 6.905231, -6.408618 6.907299, -6.410688 6.907299, -6.410688 6.905231))",
+     "area_ha": 5.23
+    }
+   ],
+   "rows_sha256": "e2cdde3ccbbc025a76445e733e8130986d970fbd63909206f1c1d3b13ac70d9a",
+   "row_sha256": [
+    "a1bdfe684d655a9918f0495e1aa3e4bc2c7d49ad887698b5b2006bae61fcf702",
+    "41ce18a65f36a35087bbaa67239ff36cc25db35e8f74ed0d612fbe645449f570",
+    "b5f64aa6805537bd1ecad94a0f0a771167c1782b5689955f68eccb05f3dc47d5",
+    "0928ba22e847838fc31f1b7aa59c6872d12ccec38e5c44f84170b6493ce49bd7",
+    "307a21c61113fd874c7ab627ecf7f5b908c2474fc11c5257381af059bbf7a4c8",
+    "a997006b9bf6dddea50cbd839230fb2059da6cc2c9491cacc3c8f192e3b1b312",
+    "0ed79519714773b1a87bbf4692c95ed069cce674f91aaf68fa5f463d570c5dc5",
+    "c0ce93cf97ebb9ffa4e319a836d64e38f93d26e5dd9d331ef394fc93cb5c291d",
+    "5d9ac3fc2b0bb775c4b72dad0dd0fd2eaebb0d2f3807c16bb9730ababc0ab421",
+    "ce37596e44be1c9c94d8741d6fb65b54fe36fe54201cad542316775474038dee",
+    "31f518313ef92fe480bd0ce4712d927cdbf3dded7ada11038ac7fecbd22c8b13",
+    "9c4c1169f4cae28ea0585f1aaba6c5470234f0a0c0bf7216a6f13e10e928d0e9",
+    "7be3912d13bc50606e2449a7df27a1d6eaf055d2c837512e9e30dcf67575b45b",
+    "f8f342c6a30597e27d64230a609e9b6e0a8a31f09b2017fbab07352c5ea57850",
+    "f35e08f89875a4c459124348940ee2126f191eed4d9ebaea326886202ee8b8d5",
+    "1b015aa220ff8504983991580ad0cbc05a93646d059cbebca84ed60f481a8ef0",
+    "e18eca621c75497a8fc25eb8505e09bc7e2a86e850509187f8f91f31e815e28c",
+    "dda28388181cf8665803dc2dd954b30151a57df552f0b5ce81dcd6a8b759f070",
+    "3a99aa5a30f43106612e72362eb67bd5425135a0e462376119f2032289be378b",
+    "9b200143e7b1554f4daefec369be899283e382988f48ea4bdfd7b4a488898696",
+    "029021e8eb9736e5615d7c45e3240c1f2c279adc3e44074ee18505d5f0123799",
+    "d7d908ca7b248c9accdd7e28c1b7edd096266bbad004fa5dcae317925a3fa4d8",
+    "fc8e2ba878608f64d1b738a0b7a2bc3fab093a6934b26eaefd95a9d31ca029ea",
+    "ffe231253195591e56e634f331e021a9338be27154ba0769026ba5318c11e61b",
+    "9cdbc569134906f2a5bafd841b63a0f2c3d588b23fec4e50bae114814b0a4da7",
+    "806ab193e033b53c088e3a724423fce07d845e94da67ca0aa1216c2cb692cbe0",
+    "7a391b556d0a40978b1c1f59d0d9dd31b2c578a8e732214505cf4744f54f42fc",
+    "5fcf2451565d089e76b64a23d0182256713ba0b6e6ac8e42cc3ee8d121059175",
+    "fe9d0f0af14f2905aedfe76751cc9c03addf7e7e8a6aa0366fa9e26ab47c5ed9",
+    "34abc0acd3fb395988beda4d6a99213860ed58646dcec664dbd8404b23019c79",
+    "b0e97d1ad2927c14d3f81cbbbbfb46e63c8315fe8c32470d4a41b4a525042a08",
+    "b263a5e419cfeb19824402821352a0c01e613bbc34e914f35e1f20fef4e30424",
+    "d3bf5d87487932ce262b89e77a6b266773302747a91c0c915043ad93399fbb79",
+    "c626bf63d6a4748e8701cf7fce4d21c9ace4d1174bda7435c60fad769e0b9d65",
+    "68620ab27f027d066e41c53aa548a53cb1ff6edef584d04590bb00d7c44d346c",
+    "2c78452d662f30afda1f0d417aa50b56682f697d80ca0e9606840165b82836a8",
+    "d8154b22f18ed56445e061f4772a2fd6f487a59f3583e5fdbcea1300351d56da",
+    "91177c845081c96c744ebce533cb289810196249654ef33e829869a17f191b09",
+    "a6e257643f6e7589c4d4c07116a0fc89d2a3f78cd9440582caa0fe2142e9db34",
+    "e585521c6ed9a21b71b1c27d40484ec159ec7b87138422b46e27affcb3e7485a"
+   ]
+  },
+  {
+   "index": 5,
+   "query_id": "Q6",
+   "agent": "Investigator",
+   "sql": "SELECT d.delivery_id, d.supplier_id, d.plot_id, d.year, d.tonnes, d.certified FROM deliveries d JOIN suppliers s ON d.supplier_id = s.supplier_id WHERE s.company_id = 'chocodurable' AND d.year BETWEEN 2021 AND 2025 ORDER BY d.delivery_id",
+   "rows": [
+    {
+     "delivery_id": "D-0001",
+     "supplier_id": "F-002",
+     "plot_id": "P-001",
+     "year": 2021,
+     "tonnes": 1.31,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0002",
+     "supplier_id": "F-002",
+     "plot_id": "P-002",
+     "year": 2021,
+     "tonnes": 1.53,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0003",
+     "supplier_id": "F-002",
+     "plot_id": "P-003",
+     "year": 2021,
+     "tonnes": 1.3,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0004",
+     "supplier_id": "F-002",
+     "plot_id": "P-004",
+     "year": 2021,
+     "tonnes": 2.53,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0005",
+     "supplier_id": "F-005",
+     "plot_id": "P-005",
+     "year": 2021,
+     "tonnes": 1.74,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0006",
+     "supplier_id": "F-005",
+     "plot_id": "P-006",
+     "year": 2021,
+     "tonnes": 2.47,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0007",
+     "supplier_id": "F-005",
+     "plot_id": "P-007",
+     "year": 2021,
+     "tonnes": 2.78,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0008",
+     "supplier_id": "F-005",
+     "plot_id": "P-008",
+     "year": 2021,
+     "tonnes": 1.41,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0009",
+     "supplier_id": "F-011",
+     "plot_id": "P-009",
+     "year": 2021,
+     "tonnes": 0.83,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0010",
+     "supplier_id": "F-011",
+     "plot_id": "P-010",
+     "year": 2021,
+     "tonnes": 0.85,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0011",
+     "supplier_id": "F-011",
+     "plot_id": "P-011",
+     "year": 2021,
+     "tonnes": 1.51,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0012",
+     "supplier_id": "F-011",
+     "plot_id": "P-012",
+     "year": 2021,
+     "tonnes": 2.03,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0013",
+     "supplier_id": "F-007",
+     "plot_id": "P-013",
+     "year": 2021,
+     "tonnes": 3.28,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0014",
+     "supplier_id": "F-007",
+     "plot_id": "P-014",
+     "year": 2021,
+     "tonnes": 2.4,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0015",
+     "supplier_id": "F-007",
+     "plot_id": "P-015",
+     "year": 2021,
+     "tonnes": 1.23,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0016",
+     "supplier_id": "F-007",
+     "plot_id": "P-016",
+     "year": 2021,
+     "tonnes": 1.48,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0017",
+     "supplier_id": "F-014",
+     "plot_id": "P-017",
+     "year": 2021,
+     "tonnes": 1.2,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0018",
+     "supplier_id": "F-014",
+     "plot_id": "P-018",
+     "year": 2021,
+     "tonnes": 1.3,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0019",
+     "supplier_id": "F-014",
+     "plot_id": "P-019",
+     "year": 2021,
+     "tonnes": 1.78,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0020",
+     "supplier_id": "F-019",
+     "plot_id": "P-020",
+     "year": 2021,
+     "tonnes": 3.23,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0021",
+     "supplier_id": "F-019",
+     "plot_id": "P-021",
+     "year": 2021,
+     "tonnes": 3.28,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0022",
+     "supplier_id": "F-019",
+     "plot_id": "P-022",
+     "year": 2021,
+     "tonnes": 0.98,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0023",
+     "supplier_id": "F-023",
+     "plot_id": "P-023",
+     "year": 2021,
+     "tonnes": 1.93,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0024",
+     "supplier_id": "F-023",
+     "plot_id": "P-024",
+     "year": 2021,
+     "tonnes": 2.84,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0025",
+     "supplier_id": "F-023",
+     "plot_id": "P-025",
+     "year": 2021,
+     "tonnes": 2.98,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0026",
+     "supplier_id": "F-026",
+     "plot_id": "P-026",
+     "year": 2021,
+     "tonnes": 2.33,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0027",
+     "supplier_id": "F-026",
+     "plot_id": "P-027",
+     "year": 2021,
+     "tonnes": 1.53,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0028",
+     "supplier_id": "F-026",
+     "plot_id": "P-028",
+     "year": 2021,
+     "tonnes": 0.89,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0029",
+     "supplier_id": "F-031",
+     "plot_id": "P-029",
+     "year": 2021,
+     "tonnes": 3.32,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0030",
+     "supplier_id": "F-031",
+     "plot_id": "P-030",
+     "year": 2021,
+     "tonnes": 3.06,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0031",
+     "supplier_id": "F-031",
+     "plot_id": "P-031",
+     "year": 2021,
+     "tonnes": 2.92,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0032",
+     "supplier_id": "F-034",
+     "plot_id": "P-032",
+     "year": 2021,
+     "tonnes": 1.42,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0033",
+     "supplier_id": "F-034",
+     "plot_id": "P-033",
+     "year": 2021,
+     "tonnes": 0.77,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0034",
+     "supplier_id": "F-034",
+     "plot_id": "P-034",
+     "year": 2021,
+     "tonnes": 2.96,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0035",
+     "supplier_id": "F-038",
+     "plot_id": "P-035",
+     "year": 2021,
+     "tonnes": 1.21,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0036",
+     "supplier_id": "F-038",
+     "plot_id": "P-036",
+     "year": 2021,
+     "tonnes": 1.52,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0037",
+     "supplier_id": "F-038",
+     "plot_id": "P-037",
+     "year": 2021,
+     "tonnes": 1.21,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0038",
+     "supplier_id": "F-040",
+     "plot_id": "P-038",
+     "year": 2021,
+     "tonnes": 2.86,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0039",
+     "supplier_id": "F-040",
+     "plot_id": "P-039",
+     "year": 2021,
+     "tonnes": 0.43,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0040",
+     "supplier_id": "F-040",
+     "plot_id": "P-040",
+     "year": 2021,
+     "tonnes": 2.9,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0041",
+     "supplier_id": "F-002",
+     "plot_id": "P-001",
+     "year": 2022,
+     "tonnes": 1.44,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0042",
+     "supplier_id": "F-002",
+     "plot_id": "P-002",
+     "year": 2022,
+     "tonnes": 1.57,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0043",
+     "supplier_id": "F-002",
+     "plot_id": "P-003",
+     "year": 2022,
+     "tonnes": 1.34,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0044",
+     "supplier_id": "F-002",
+     "plot_id": "P-004",
+     "year": 2022,
+     "tonnes": 2.64,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0045",
+     "supplier_id": "F-005",
+     "plot_id": "P-005",
+     "year": 2022,
+     "tonnes": 1.6,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0046",
+     "supplier_id": "F-005",
+     "plot_id": "P-006",
+     "year": 2022,
+     "tonnes": 2.25,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0047",
+     "supplier_id": "F-005",
+     "plot_id": "P-007",
+     "year": 2022,
+     "tonnes": 2.77,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0048",
+     "supplier_id": "F-005",
+     "plot_id": "P-008",
+     "year": 2022,
+     "tonnes": 1.61,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0049",
+     "supplier_id": "F-011",
+     "plot_id": "P-009",
+     "year": 2022,
+     "tonnes": 0.88,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0050",
+     "supplier_id": "F-011",
+     "plot_id": "P-010",
+     "year": 2022,
+     "tonnes": 0.92,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0051",
+     "supplier_id": "F-011",
+     "plot_id": "P-011",
+     "year": 2022,
+     "tonnes": 1.47,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0052",
+     "supplier_id": "F-011",
+     "plot_id": "P-012",
+     "year": 2022,
+     "tonnes": 2.17,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0053",
+     "supplier_id": "F-007",
+     "plot_id": "P-013",
+     "year": 2022,
+     "tonnes": 3.41,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0054",
+     "supplier_id": "F-007",
+     "plot_id": "P-014",
+     "year": 2022,
+     "tonnes": 2.4,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0055",
+     "supplier_id": "F-007",
+     "plot_id": "P-015",
+     "year": 2022,
+     "tonnes": 1.23,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0056",
+     "supplier_id": "F-007",
+     "plot_id": "P-016",
+     "year": 2022,
+     "tonnes": 1.66,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0057",
+     "supplier_id": "F-014",
+     "plot_id": "P-017",
+     "year": 2022,
+     "tonnes": 1.19,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0058",
+     "supplier_id": "F-014",
+     "plot_id": "P-018",
+     "year": 2022,
+     "tonnes": 1.48,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0059",
+     "supplier_id": "F-014",
+     "plot_id": "P-019",
+     "year": 2022,
+     "tonnes": 1.92,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0060",
+     "supplier_id": "F-019",
+     "plot_id": "P-020",
+     "year": 2022,
+     "tonnes": 2.94,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0061",
+     "supplier_id": "F-019",
+     "plot_id": "P-021",
+     "year": 2022,
+     "tonnes": 3.08,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0062",
+     "supplier_id": "F-019",
+     "plot_id": "P-022",
+     "year": 2022,
+     "tonnes": 0.94,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0063",
+     "supplier_id": "F-023",
+     "plot_id": "P-023",
+     "year": 2022,
+     "tonnes": 2.09,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0064",
+     "supplier_id": "F-023",
+     "plot_id": "P-024",
+     "year": 2022,
+     "tonnes": 2.75,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0065",
+     "supplier_id": "F-023",
+     "plot_id": "P-025",
+     "year": 2022,
+     "tonnes": 2.56,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0066",
+     "supplier_id": "F-026",
+     "plot_id": "P-026",
+     "year": 2022,
+     "tonnes": 2.62,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0067",
+     "supplier_id": "F-026",
+     "plot_id": "P-027",
+     "year": 2022,
+     "tonnes": 1.54,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0068",
+     "supplier_id": "F-026",
+     "plot_id": "P-028",
+     "year": 2022,
+     "tonnes": 0.85,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0069",
+     "supplier_id": "F-031",
+     "plot_id": "P-029",
+     "year": 2022,
+     "tonnes": 3.35,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0070",
+     "supplier_id": "F-031",
+     "plot_id": "P-030",
+     "year": 2022,
+     "tonnes": 3.08,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0071",
+     "supplier_id": "F-031",
+     "plot_id": "P-031",
+     "year": 2022,
+     "tonnes": 2.95,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0072",
+     "supplier_id": "F-034",
+     "plot_id": "P-032",
+     "year": 2022,
+     "tonnes": 1.34,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0073",
+     "supplier_id": "F-034",
+     "plot_id": "P-033",
+     "year": 2022,
+     "tonnes": 0.72,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0074",
+     "supplier_id": "F-034",
+     "plot_id": "P-034",
+     "year": 2022,
+     "tonnes": 2.86,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0075",
+     "supplier_id": "F-038",
+     "plot_id": "P-035",
+     "year": 2022,
+     "tonnes": 1.34,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0076",
+     "supplier_id": "F-038",
+     "plot_id": "P-036",
+     "year": 2022,
+     "tonnes": 1.55,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0077",
+     "supplier_id": "F-038",
+     "plot_id": "P-037",
+     "year": 2022,
+     "tonnes": 1.31,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0078",
+     "supplier_id": "F-040",
+     "plot_id": "P-038",
+     "year": 2022,
+     "tonnes": 3.11,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0079",
+     "supplier_id": "F-040",
+     "plot_id": "P-039",
+     "year": 2022,
+     "tonnes": 0.47,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0080",
+     "supplier_id": "F-040",
+     "plot_id": "P-040",
+     "year": 2022,
+     "tonnes": 2.72,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0081",
+     "supplier_id": "F-002",
+     "plot_id": "P-001",
+     "year": 2023,
+     "tonnes": 1.4,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0082",
+     "supplier_id": "F-002",
+     "plot_id": "P-002",
+     "year": 2023,
+     "tonnes": 1.6,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0083",
+     "supplier_id": "F-002",
+     "plot_id": "P-003",
+     "year": 2023,
+     "tonnes": 1.29,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0084",
+     "supplier_id": "F-002",
+     "plot_id": "P-004",
+     "year": 2023,
+     "tonnes": 2.92,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0085",
+     "supplier_id": "F-005",
+     "plot_id": "P-005",
+     "year": 2023,
+     "tonnes": 1.53,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0086",
+     "supplier_id": "F-005",
+     "plot_id": "P-006",
+     "year": 2023,
+     "tonnes": 2.34,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0087",
+     "supplier_id": "F-005",
+     "plot_id": "P-007",
+     "year": 2023,
+     "tonnes": 2.49,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0088",
+     "supplier_id": "F-005",
+     "plot_id": "P-008",
+     "year": 2023,
+     "tonnes": 1.38,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0089",
+     "supplier_id": "F-011",
+     "plot_id": "P-009",
+     "year": 2023,
+     "tonnes": 0.81,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0090",
+     "supplier_id": "F-011",
+     "plot_id": "P-010",
+     "year": 2023,
+     "tonnes": 0.93,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0091",
+     "supplier_id": "F-011",
+     "plot_id": "P-011",
+     "year": 2023,
+     "tonnes": 1.64,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0092",
+     "supplier_id": "F-011",
+     "plot_id": "P-012",
+     "year": 2023,
+     "tonnes": 1.96,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0093",
+     "supplier_id": "F-007",
+     "plot_id": "P-013",
+     "year": 2023,
+     "tonnes": 2.86,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0094",
+     "supplier_id": "F-007",
+     "plot_id": "P-014",
+     "year": 2023,
+     "tonnes": 2.4,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0095",
+     "supplier_id": "F-007",
+     "plot_id": "P-015",
+     "year": 2023,
+     "tonnes": 1.14,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0096",
+     "supplier_id": "F-007",
+     "plot_id": "P-016",
+     "year": 2023,
+     "tonnes": 1.46,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0097",
+     "supplier_id": "F-014",
+     "plot_id": "P-017",
+     "year": 2023,
+     "tonnes": 1.15,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0098",
+     "supplier_id": "F-014",
+     "plot_id": "P-018",
+     "year": 2023,
+     "tonnes": 1.46,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0099",
+     "supplier_id": "F-014",
+     "plot_id": "P-019",
+     "year": 2023,
+     "tonnes": 1.91,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0100",
+     "supplier_id": "F-019",
+     "plot_id": "P-020",
+     "year": 2023,
+     "tonnes": 2.94,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0101",
+     "supplier_id": "F-019",
+     "plot_id": "P-021",
+     "year": 2023,
+     "tonnes": 3.5,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0102",
+     "supplier_id": "F-019",
+     "plot_id": "P-022",
+     "year": 2023,
+     "tonnes": 0.95,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0103",
+     "supplier_id": "F-023",
+     "plot_id": "P-023",
+     "year": 2023,
+     "tonnes": 2.12,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0104",
+     "supplier_id": "F-023",
+     "plot_id": "P-024",
+     "year": 2023,
+     "tonnes": 2.79,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0105",
+     "supplier_id": "F-023",
+     "plot_id": "P-025",
+     "year": 2023,
+     "tonnes": 3.01,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0106",
+     "supplier_id": "F-026",
+     "plot_id": "P-026",
+     "year": 2023,
+     "tonnes": 2.42,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0107",
+     "supplier_id": "F-026",
+     "plot_id": "P-027",
+     "year": 2023,
+     "tonnes": 1.44,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0108",
+     "supplier_id": "F-026",
+     "plot_id": "P-028",
+     "year": 2023,
+     "tonnes": 0.83,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0109",
+     "supplier_id": "F-031",
+     "plot_id": "P-029",
+     "year": 2023,
+     "tonnes": 3.34,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0110",
+     "supplier_id": "F-031",
+     "plot_id": "P-030",
+     "year": 2023,
+     "tonnes": 3.07,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0111",
+     "supplier_id": "F-031",
+     "plot_id": "P-031",
+     "year": 2023,
+     "tonnes": 2.94,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0112",
+     "supplier_id": "F-034",
+     "plot_id": "P-032",
+     "year": 2023,
+     "tonnes": 1.42,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0113",
+     "supplier_id": "F-034",
+     "plot_id": "P-033",
+     "year": 2023,
+     "tonnes": 0.81,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0114",
+     "supplier_id": "F-034",
+     "plot_id": "P-034",
+     "year": 2023,
+     "tonnes": 3.26,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0115",
+     "supplier_id": "F-038",
+     "plot_id": "P-035",
+     "year": 2023,
+     "tonnes": 1.2,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0116",
+     "supplier_id": "F-038",
+     "plot_id": "P-036",
+     "year": 2023,
+     "tonnes": 1.81,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0117",
+     "supplier_id": "F-038",
+     "plot_id": "P-037",
+     "year": 2023,
+     "tonnes": 1.23,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0118",
+     "supplier_id": "F-040",
+     "plot_id": "P-038",
+     "year": 2023,
+     "tonnes": 3.09,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0119",
+     "supplier_id": "F-040",
+     "plot_id": "P-039",
+     "year": 2023,
+     "tonnes": 0.44,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0120",
+     "supplier_id": "F-040",
+     "plot_id": "P-040",
+     "year": 2023,
+     "tonnes": 2.62,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0121",
+     "supplier_id": "F-002",
+     "plot_id": "P-001",
+     "year": 2024,
+     "tonnes": 1.41,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0122",
+     "supplier_id": "F-002",
+     "plot_id": "P-002",
+     "year": 2024,
+     "tonnes": 1.53,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0123",
+     "supplier_id": "F-002",
+     "plot_id": "P-003",
+     "year": 2024,
+     "tonnes": 1.47,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0124",
+     "supplier_id": "F-002",
+     "plot_id": "P-004",
+     "year": 2024,
+     "tonnes": 2.9,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0125",
+     "supplier_id": "F-005",
+     "plot_id": "P-005",
+     "year": 2024,
+     "tonnes": 1.48,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0126",
+     "supplier_id": "F-005",
+     "plot_id": "P-006",
+     "year": 2024,
+     "tonnes": 2.56,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0127",
+     "supplier_id": "F-005",
+     "plot_id": "P-007",
+     "year": 2024,
+     "tonnes": 2.52,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0128",
+     "supplier_id": "F-005",
+     "plot_id": "P-008",
+     "year": 2024,
+     "tonnes": 1.64,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0129",
+     "supplier_id": "F-011",
+     "plot_id": "P-009",
+     "year": 2024,
+     "tonnes": 0.83,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0130",
+     "supplier_id": "F-011",
+     "plot_id": "P-010",
+     "year": 2024,
+     "tonnes": 0.83,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0131",
+     "supplier_id": "F-011",
+     "plot_id": "P-011",
+     "year": 2024,
+     "tonnes": 1.58,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0132",
+     "supplier_id": "F-011",
+     "plot_id": "P-012",
+     "year": 2024,
+     "tonnes": 2.08,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0133",
+     "supplier_id": "F-007",
+     "plot_id": "P-013",
+     "year": 2024,
+     "tonnes": 2.92,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0134",
+     "supplier_id": "F-007",
+     "plot_id": "P-014",
+     "year": 2024,
+     "tonnes": 2.4,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0135",
+     "supplier_id": "F-007",
+     "plot_id": "P-015",
+     "year": 2024,
+     "tonnes": 1.16,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0136",
+     "supplier_id": "F-007",
+     "plot_id": "P-016",
+     "year": 2024,
+     "tonnes": 1.46,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0137",
+     "supplier_id": "F-014",
+     "plot_id": "P-017",
+     "year": 2024,
+     "tonnes": 1.08,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0138",
+     "supplier_id": "F-014",
+     "plot_id": "P-018",
+     "year": 2024,
+     "tonnes": 1.48,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0139",
+     "supplier_id": "F-014",
+     "plot_id": "P-019",
+     "year": 2024,
+     "tonnes": 1.81,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0140",
+     "supplier_id": "F-019",
+     "plot_id": "P-020",
+     "year": 2024,
+     "tonnes": 2.74,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0141",
+     "supplier_id": "F-019",
+     "plot_id": "P-021",
+     "year": 2024,
+     "tonnes": 3.36,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0142",
+     "supplier_id": "F-019",
+     "plot_id": "P-022",
+     "year": 2024,
+     "tonnes": 0.9,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0143",
+     "supplier_id": "F-023",
+     "plot_id": "P-023",
+     "year": 2024,
+     "tonnes": 2.01,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0144",
+     "supplier_id": "F-023",
+     "plot_id": "P-024",
+     "year": 2024,
+     "tonnes": 2.59,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0145",
+     "supplier_id": "F-023",
+     "plot_id": "P-025",
+     "year": 2024,
+     "tonnes": 2.73,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0146",
+     "supplier_id": "F-026",
+     "plot_id": "P-026",
+     "year": 2024,
+     "tonnes": 2.37,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0147",
+     "supplier_id": "F-026",
+     "plot_id": "P-027",
+     "year": 2024,
+     "tonnes": 1.41,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0148",
+     "supplier_id": "F-026",
+     "plot_id": "P-028",
+     "year": 2024,
+     "tonnes": 0.85,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0149",
+     "supplier_id": "F-031",
+     "plot_id": "P-029",
+     "year": 2024,
+     "tonnes": 3.28,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0150",
+     "supplier_id": "F-031",
+     "plot_id": "P-030",
+     "year": 2024,
+     "tonnes": 3.02,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0151",
+     "supplier_id": "F-031",
+     "plot_id": "P-031",
+     "year": 2024,
+     "tonnes": 2.88,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0152",
+     "supplier_id": "F-034",
+     "plot_id": "P-032",
+     "year": 2024,
+     "tonnes": 1.3,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0153",
+     "supplier_id": "F-034",
+     "plot_id": "P-033",
+     "year": 2024,
+     "tonnes": 0.75,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0154",
+     "supplier_id": "F-034",
+     "plot_id": "P-034",
+     "year": 2024,
+     "tonnes": 2.79,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0155",
+     "supplier_id": "F-038",
+     "plot_id": "P-035",
+     "year": 2024,
+     "tonnes": 1.11,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0156",
+     "supplier_id": "F-038",
+     "plot_id": "P-036",
+     "year": 2024,
+     "tonnes": 1.58,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0157",
+     "supplier_id": "F-038",
+     "plot_id": "P-037",
+     "year": 2024,
+     "tonnes": 1.26,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0158",
+     "supplier_id": "F-040",
+     "plot_id": "P-038",
+     "year": 2024,
+     "tonnes": 2.81,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0159",
+     "supplier_id": "F-040",
+     "plot_id": "P-039",
+     "year": 2024,
+     "tonnes": 0.43,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0160",
+     "supplier_id": "F-040",
+     "plot_id": "P-040",
+     "year": 2024,
+     "tonnes": 3.16,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0161",
+     "supplier_id": "F-002",
+     "plot_id": "P-001",
+     "year": 2025,
+     "tonnes": 1.39,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0162",
+     "supplier_id": "F-002",
+     "plot_id": "P-002",
+     "year": 2025,
+     "tonnes": 1.7,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0163",
+     "supplier_id": "F-002",
+     "plot_id": "P-003",
+     "year": 2025,
+     "tonnes": 1.36,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0164",
+     "supplier_id": "F-002",
+     "plot_id": "P-004",
+     "year": 2025,
+     "tonnes": 2.82,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0165",
+     "supplier_id": "F-005",
+     "plot_id": "P-005",
+     "year": 2025,
+     "tonnes": 1.75,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0166",
+     "supplier_id": "F-005",
+     "plot_id": "P-006",
+     "year": 2025,
+     "tonnes": 2.44,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0167",
+     "supplier_id": "F-005",
+     "plot_id": "P-007",
+     "year": 2025,
+     "tonnes": 2.49,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0168",
+     "supplier_id": "F-005",
+     "plot_id": "P-008",
+     "year": 2025,
+     "tonnes": 1.56,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0169",
+     "supplier_id": "F-011",
+     "plot_id": "P-009",
+     "year": 2025,
+     "tonnes": 0.87,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0170",
+     "supplier_id": "F-011",
+     "plot_id": "P-010",
+     "year": 2025,
+     "tonnes": 0.83,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0171",
+     "supplier_id": "F-011",
+     "plot_id": "P-011",
+     "year": 2025,
+     "tonnes": 1.61,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0172",
+     "supplier_id": "F-011",
+     "plot_id": "P-012",
+     "year": 2025,
+     "tonnes": 1.8,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0173",
+     "supplier_id": "F-007",
+     "plot_id": "P-013",
+     "year": 2025,
+     "tonnes": 3.47,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0174",
+     "supplier_id": "F-007",
+     "plot_id": "P-014",
+     "year": 2025,
+     "tonnes": 2.4,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0175",
+     "supplier_id": "F-007",
+     "plot_id": "P-015",
+     "year": 2025,
+     "tonnes": 1.38,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0176",
+     "supplier_id": "F-007",
+     "plot_id": "P-016",
+     "year": 2025,
+     "tonnes": 1.63,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0177",
+     "supplier_id": "F-014",
+     "plot_id": "P-017",
+     "year": 2025,
+     "tonnes": 1.19,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0178",
+     "supplier_id": "F-014",
+     "plot_id": "P-018",
+     "year": 2025,
+     "tonnes": 1.56,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0179",
+     "supplier_id": "F-014",
+     "plot_id": "P-019",
+     "year": 2025,
+     "tonnes": 1.9,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0180",
+     "supplier_id": "F-019",
+     "plot_id": "P-020",
+     "year": 2025,
+     "tonnes": 2.96,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0181",
+     "supplier_id": "F-019",
+     "plot_id": "P-021",
+     "year": 2025,
+     "tonnes": 3.63,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0182",
+     "supplier_id": "F-019",
+     "plot_id": "P-022",
+     "year": 2025,
+     "tonnes": 1.01,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0183",
+     "supplier_id": "F-023",
+     "plot_id": "P-023",
+     "year": 2025,
+     "tonnes": 1.95,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0184",
+     "supplier_id": "F-023",
+     "plot_id": "P-024",
+     "year": 2025,
+     "tonnes": 2.91,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0185",
+     "supplier_id": "F-023",
+     "plot_id": "P-025",
+     "year": 2025,
+     "tonnes": 2.69,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0186",
+     "supplier_id": "F-026",
+     "plot_id": "P-026",
+     "year": 2025,
+     "tonnes": 2.36,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0187",
+     "supplier_id": "F-026",
+     "plot_id": "P-027",
+     "year": 2025,
+     "tonnes": 1.48,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0188",
+     "supplier_id": "F-026",
+     "plot_id": "P-028",
+     "year": 2025,
+     "tonnes": 0.86,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0189",
+     "supplier_id": "F-031",
+     "plot_id": "P-029",
+     "year": 2025,
+     "tonnes": 3.41,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0190",
+     "supplier_id": "F-031",
+     "plot_id": "P-030",
+     "year": 2025,
+     "tonnes": 3.14,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0191",
+     "supplier_id": "F-031",
+     "plot_id": "P-031",
+     "year": 2025,
+     "tonnes": 3.0,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0192",
+     "supplier_id": "F-034",
+     "plot_id": "P-032",
+     "year": 2025,
+     "tonnes": 1.35,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0193",
+     "supplier_id": "F-034",
+     "plot_id": "P-033",
+     "year": 2025,
+     "tonnes": 0.74,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0194",
+     "supplier_id": "F-034",
+     "plot_id": "P-034",
+     "year": 2025,
+     "tonnes": 3.08,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0195",
+     "supplier_id": "F-038",
+     "plot_id": "P-035",
+     "year": 2025,
+     "tonnes": 1.14,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0196",
+     "supplier_id": "F-038",
+     "plot_id": "P-036",
+     "year": 2025,
+     "tonnes": 1.79,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0197",
+     "supplier_id": "F-038",
+     "plot_id": "P-037",
+     "year": 2025,
+     "tonnes": 1.38,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0198",
+     "supplier_id": "F-040",
+     "plot_id": "P-038",
+     "year": 2025,
+     "tonnes": 3.14,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0199",
+     "supplier_id": "F-040",
+     "plot_id": "P-039",
+     "year": 2025,
+     "tonnes": 0.48,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0200",
+     "supplier_id": "F-040",
+     "plot_id": "P-040",
+     "year": 2025,
+     "tonnes": 3.02,
+     "certified": "no"
+    }
+   ],
+   "rows_sha256": "3d462c8a116bda92346b37899ed6d8472822ba24a2457aefbb3a899c0b7afa32",
+   "row_sha256": [
+    "938ee3662ba8f9018111c3ec7166befe3e4eae2d091e1752014aef3d3ca594df",
+    "a1a0e726b2cf919e8cfa14d586887af9e226c8563dbcc4c0fb04dc46d6fff964",
+    "87e8cbaaf1ea8da0d5900d80c3a1b4ec738cd2a68f0c646505b7f9a2fd329d48",
+    "04c92413f8a6d7e9e732beca34177317a3f83ff6e1a4dbfd8209d8899d3adae6",
+    "93d4c006beaae3b9d89bae0c00f64d7908512bac4e1b8bc20b0e3227e804d885",
+    "b563948af110b4bd366461a904d2e8ec3d0c508f327fed5a8864669046f89aa4",
+    "638164528a1927e38e4143c64961ddd6a49d022ef98aedf3f9e67d88c23884e2",
+    "a94734000c12249f3ba285ed6a700be627cf6ffaaf157cb5491101391e09b490",
+    "41565c74bc72e3be1430a4905c045cb39869d5cb13aeb4974e84cd1003641b8c",
+    "44fcd1876449a25aa0d55921de7882a593da6fa9b40aa18fa7e58616746bbf2d",
+    "97fbb77b9726588b9ae582562d5fb559f902e948aea9fe626c92d217eec0b4ae",
+    "4152eacb89cdc126d95e0669406d98f5d96f44d5f13d5447fbf459392bf49542",
+    "16c04662e03f65193b9cc94fa79eafa905d242fbd5f3c7afd48900c1d6aa10dd",
+    "0b237132e04e3f7e43ba1c026152d7368993d4b1d5d46e672c9f0da6cbf4a9bd",
+    "d7542bbd2f6515fc6e5dbb18240092af6388aeb2f8d28c44d2cac296d829daf1",
+    "f997db7d50370a928cf0a694131fdbf93afd7cb9a3c9a6e7295de4b9caaa13f2",
+    "82c4099bbadd997e4a80898f534995c5ed882aad7aff7d71c016c6e5ed02a4f7",
+    "6b227a320a6cd0acdcba4f21d2d13ca723bd1ff8cd62b2377354d21eb96654c2",
+    "abe41de62849482145290a4b4f341704f0d161d46c1e62ce84bb805d61de3410",
+    "a3f2207af084c2f43c28e7f7842ab484cf9704cc01eac798125ab570a041e363",
+    "081138e57b85985e9679a6c141032d2c73b9f7919bb28a47b8a431675bc98888",
+    "d9525cf7dd8a884beef6f4fcd31f032f21d8ee41c778b7e4c066ec863d626b2e",
+    "a3dc08d4373eec05e037e7c5ef26ba66b279eae2247d819a68a67e82551e1eea",
+    "b74afc0d0783d6b77b30c3d09d0819f71b14ccbf5d160755336dbef4971677df",
+    "c72c96e1f186417db6fa6cd30bd6ed5176081454ae604618b268e7b29e6308bc",
+    "0ee0d02ace4f0d2faa2221853dacabf80eb446cbdb2ccc089b2dd2875fa071aa",
+    "9928807a4a3022f7d2ca857894bb057ab44086d94369bcca1dff91ee9401231a",
+    "fd83726bb7e7090a44f3d2671a4e58e88e1d330108ea4a0c47b1abe7dbaac31d",
+    "a68b63238ffc5d7df7576c3ac49b8c1165e2e4159f44a5cf07fce5a2c235da9f",
+    "bea67be12dfad4250527bce8faabc658e835207957c19b27aff543c28f4d71d6",
+    "8c4b87bc7c1ddc7f8d1c1c97a69330f36c5fb5367fa659944de9e8cbbb6661a4",
+    "11edd25b2968d7ade8987918594e1f3ae8c846e5e0aa940379f1c8cb518ab2fa",
+    "d484a67448d446dd26014551dc84e473cfc5b580490c32c2a38d4f1f55d903e8",
+    "19c34c00a87d2c53a569a36c62515bccb0456ade9b676958d2b0b1ddbfe78d8c",
+    "959938f7ba6158701683efc86a273a50755576dbfd814a7ae447acbd502adaba",
+    "e18f9e99c0f6bbd957d468a0c19dc7c970b0abdd32653e27f325788139b0b754",
+    "9af80b53a3448a3604e22a78226945a5cffe9fe21ff2344240451b5edd899789",
+    "b43357b279ff4a6c104cb778a07463cb14a79d51d4848232747ac74200cc0f32",
+    "45d3934aa03aac213618a87e61eb24f2fb1c3087bc2153a9ba7fa2c45dc06ba8",
+    "57b0c4b7b32cc61c80a56afea2c782f198a9f83eaa1d80d35da938d6cc6c24ef",
+    "bf3e1107eb6a07cc770679e56e4941998b0428d40e199da3da26010f9cb9163e",
+    "b921caccef890acb0854ce40342df3e071e9e357b2c2549ae1a56ac7266bada0",
+    "16bea0c69c969b9dfe973127ff8e69f4fee2326e2c950561a9f5f9f6290e52c4",
+    "d252dcbab488aca4a3c39ae011d60d270eae3280711d28e758c7270b3450de7e",
+    "d41256058b54d381d9c416252a26d509662ab2d31387445cd560dabc11b0a586",
+    "2a54c8b1980144793d3a302453f5e568c621f1624f89f73a3beea88d983aa9f0",
+    "d72880da8b61aedf83dcf5a2858354fc53f3302bd45a4eeafaf3d4e68852d444",
+    "a5b5e8424ca6a784949a45d077a706850c74dd0fd94a89e427f25eaa87f9a975",
+    "ab9e5190e8ce073360ced763264f3e134cf4c6581c765b2fbc6910c3165b302d",
+    "0abcc250c54791cb6e18a9aaf8557b82fd1091a65bb82bf91df28c11ad3e7a86",
+    "4afe56bf8ccf9ad0ce29e396c7d1a71e0be66a3158b9deba2131bdf57a888613",
+    "ec9e321221d1d4c134a6485ac19a47ab1a078b28feb709669aa2afa2438d5303",
+    "d016823928a5bcfab22cc6ce7ad23ef217d6d5a3df6267488e8f53c09a048047",
+    "6a12fd6107d9feaf183725aa23af27674fd031b61a907e623ff46f4119b696c1",
+    "6cf92b3cedae00c9f4c105b0a001ae2194c3cf28a5049593e2acc942e473eb09",
+    "7413abc609ff1973524f6475114da121a47ae391a69a7c8a9745851b996eb2fb",
+    "bd8021f1f24aa28d77258971a6e4b6717240a416d5e742bffcdd9d5bb3995597",
+    "d48c77bbff512790dddf34d2278e77a9dc52f94a72609a416d0f18ce9acead14",
+    "9683d099094b253f4048dd2f71aeeaa99a35e288e9bf74dbfad669daecbdbf2d",
+    "1b31d4cf4005edb01bf923e8f99f610230a6fd7a7138fae7b85bca61ad10032b",
+    "4e1996a457c91a0ba48ab75ea7de83f285ea5293d825e339b58ba58d55f994f8",
+    "51a1a0c684932b952d61b7707548c9ddd4cba7675d17842d4173210138381517",
+    "7bb2bd70eca260a6bd3ffda67e0be049a3cd9124c3d62a18ae79151e3f3c1e40",
+    "c33e8c5a31dde2b15a9889f32349bd333a358fa423a5f5f19ef2678b8c40f6b0",
+    "4da2c0be563bee9d60971313a1edac2dcd09cbd192ed19720852ffcd17dadeec",
+    "95442b748c285e3798dba47e9aed87dd3099510fc13dbbb82050e5259b9482f0",
+    "5a9e4419d84a22b7c9034e948bef90a823cf6add75f08fd85e2660ba34884699",
+    "dbab5465435ca13b598cf318d60a81b7635805b9d6994babe76ff0c8092da636",
+    "52058d3324fef36939836cb8cf92acfcbb84091e25e887c19fd12b37f49819b9",
+    "736c815540f4d7e04d8a86109f3e9aa4f1f04412d5bae1b1a9aaab36e3b055b9",
+    "51dfa0971b0fbd9eebb56df8b17d367930ef7f997bc186ed4b5553960396757b",
+    "ffc340297d2b7e06e9b633581e3f9b23cb350d005c3a3b1302f8da9c4463d856",
+    "b060ba65b0767ebd3ebe7648ab7c65d5bed2b0aec4a69b6c25936f3d1502225a",
+    "30e96e3012137a31465b23083a0fbb23f904c12a79095ecd985b9f7ce07f6e42",
+    "624af02758619ceafa97670754359df1881d2e85690da6817eb408ab8fb5f71b",
+    "b56322a3462e6ed37b1da1aff2750a62fd349a6856ab6fc4dc3ec8a8baf1f3f0",
+    "66b4f0e5872a693240a02d7984e4878fbab04f1ed901d8b9c7989a3672dffe13",
+    "634c0511765f5046c54a92bcb876e103938ce48be62830d77775fa4304bc2b45",
+    "e648767d6fb25eae1d4115969540000c85837b1400c70ea3235f305ab86948aa",
+    "7e9e20cd2ea2350903b795c19fd3688711852713257dbe073ce2da2b6012cb6c",
+    "a17bdf9669846f2d63037baefa36d74e14b9f48706cc8eb094da7d0a0636105d",
+    "bb9437cbe3c996398c3c396998ce6509bbf1e2fe3f63d7dd7915a4942d9c83aa",
+    "91ed72cb2c7530984b8ef2b818016e81030c0237780bbcb7ca5913828adced60",
+    "2c076cd336a46d8d6f2cb3a3cc62b4aa4464ac483135e3f09b8acc50e2c21312",
+    "3e8e875c8a22a3e034caeba01faa92a4ccee7be1313d31d91685bdaa54ec284c",
+    "1ffc7f68cd1fc834b2744f212f122a1c9e1dd6b540d6b97c1652dd2a129f3cdb",
+    "ab39b705b825a58873f7feac01b03fa3203de741865d2427bd59208b1ddc2e10",
+    "e203c8c5ee5ff924a9abaea06cd80b7c7b6b1ba4c989c60809201b16959375a6",
+    "be6cb82a02d82200eaadcfb5116e0a044a7242da06fdaf9d5a51be0f6565ea5c",
+    "b12eb4d9890d6186918b1f13320d7fb611d648b5e8afa0077fd1bcfaf408e9ab",
+    "0bd2288dae560c9a4e1805ddb708b9a1e26f19f2aa5cc3dd640fc984e5ea909d",
+    "bb446309e9b851d20bc64f3d1de29ad8970dd98259f6ebde2a312dafd6388ca3",
+    "3896393eeef2196278800a99528dab36264f362f829f7a72841b1a3b75ca7e55",
+    "3101ef99dde260f562be59305df5ca1720c535ee7c8a97963c9f4f772fbfa754",
+    "84ddaf49d7658fdcdf808a09805dae151e48d716558db2fd941405bef134cb48",
+    "0edb6efa963de1ae255bce508b9eff0316677f7ce059975dfee1b205e2b503de",
+    "f0a2e4597707c853fd92544212ce1e8fc2b4066354072e8e416d9eda585c9bbe",
+    "87a22e47a45ac8d665c2ab3557f997e7f8e8ac7216f1f17fbc769ad0bef0e4f2",
+    "217e37fddb6245acad5960986990d261370498c996d81efc80415fbbf323c1f0",
+    "0ec0b03b7ab44f68a6592ff6b1d582ba4340ace2fef8a924ba0cb66b3c6615dd",
+    "6a35097c0e35ab68bd1274c1682ba07d5959183896141398a69c92f124d15d91",
+    "98aa867358638c158d1db6a7ef005a154046b5f3c9ccc15d86ec61dee452a808",
+    "84a401e0ae620da02a0eafc8acc9f13240b386893aa3e06f3af15f6e52c8fe74",
+    "6fe85d130436fb0da41867400081708cd6e5ea4d4ed333039c6db79a83c71144",
+    "7d8eebc8e727555036f4c93acf5b4f08e629631a884687de5c20ef52e3924b8a",
+    "41d7a57c7ed623f17fa06f335a24e55cbb6c83d91e8c2560a89c3fd5599bbe3f",
+    "2ac01c8c3ba9d1b379f8465c8c9d7028fec2c8fe6c3d46da256dd9d9fd6b04df",
+    "bafcc471b4b66f732df95ef7893d7101664a8a6a5560e3054eddb035f621528e",
+    "e19513d065adbe1b83347332e5a25554dbbf82a41f260c35c72181d09ffc74b2",
+    "f1dd0a863b90e69e5392d17ff59d56364b11d986958acc395d5dba5c933698da",
+    "4f010033b7d6b1d564566ffcd44b2ecc73b1224b3a4ab42daf2f21373a396bf2",
+    "a8aa1036f72f3d09e0551e729cb7d669fe301c5e0e3156123ea40db7a205ce85",
+    "96a6f82904551bb053a05a821ee8b12615f558b7d51e20e6cf252d7ce569a58c",
+    "f6aed7a227e589b984a39c726841d9c7bf40d53990a5f727719f115f9b584424",
+    "855f0492ba464bb647820b15119c939b2c05083d42c95955fcf1eab999e545ed",
+    "db329ef7b31bccdae0316b65fa61c408cf342f7d093a2dae3f7a86c017d1884d",
+    "03f92d36eaefcb8b392cc8fbce07ab6043f9c7ee4f16bb3d4836dff2afc1e358",
+    "8725fe275b7d2b2a9f5bef0f23c2a7c5a5476bef91a4a578d03b16c942a1d7da",
+    "1cc64ff28c46ce0d1cf8d2388dd805de80bf0571c036ebb3e7dcbe2dba464069",
+    "fc422317e80384fda9649bace10f77fa3721d526e4bf19283a7ff74fa6045429",
+    "3aa58706222c46e6d773cbbf2c626483c64a57f7a0092d40f846e5e6441a1b74",
+    "c505a84f68a7acfcec1e32d57da61adf11ae16f36730aa4458581463e99cb404",
+    "321c2f699d0f1c90a8c4ac17dee3ae968bff8737b775a8b77a750d5a0b6a6377",
+    "f5a1c65fcb4afe99799c3e563ecea6d7b08d38ba5774d2857ad465caa2b02fdd",
+    "37276ce8a8833754cf8800711348086bc97e2cb7d861efe0df57992714507ac6",
+    "e26570d41f43bdc9896721406ae85c0fa1efb32b329aa55670d579e10fbfdd6d",
+    "5ca79620501babe191c44816d9fc8024b2464a7bff747a83765dd0c78554cc8a",
+    "91dcc2ece168d6f2b360afe83c8264990f037f5e7c36265206694b30072dc894",
+    "5cff1310775b7b1bca76597c39235f4eb553a3b17e57deb715a81812f32360f7",
+    "afc84ac7eb3a102a0bd5351e081477d309010d72163d6484dd34495c12b09086",
+    "a1e67b2fe989ce6e2219b2cd14984a82487ea17d7ffe7b584518995c6e2dcbaf",
+    "cadd9c1a55c3d0bae2427b72f578263edd8726fc20f47d04fc1c37ecb6e97309",
+    "9c5e7c0d489f5bb2f532b15b5ebb6318835f99796ad3271c185242b8c7359083",
+    "2dad039ba6c6f9684c1b72b25f288f6c5b79b2368eb73ffb309a512a42ebd4d3",
+    "1e195d1de172017a9dba574639a01d40a90ccdd3f4627706b575f069cb132964",
+    "cd31703dba556c96dd8a6ea4331b1f404a1e42dd9b6caea0a7929ff129aad459",
+    "aaa1c619273e8f27b3ba24df1cda6091811a1322bd42e1826ea624bc58760dff",
+    "ec9a4325ed8ca9fe0e5403fa862cec86fae91c1f82601c0c1eb77138d54e4fa1",
+    "e8ef617fe0853bbe5210fd86ec88781342102d009c91346c31143b992ed80bde",
+    "4c44663b1562df1a81c05a671e1a4c735ddef9811b6c2771d1a2dd2bcec1b560",
+    "e8102135fb13c702a7825eb0bd008ddea6aa1f057e3baa4849c0c78b9779c056",
+    "6f1db4efd17c74873b46ac8ea4acd8a5769218a85e7679adb9e7dc2f73267b23",
+    "c677c0a256cf99954a86412de907821af554987a0e60519856fda0c097f21235",
+    "6b2561b7be1fa3dcc88c7037f24be27d1248dc306815a93c36a697c2675c4a2c",
+    "f933935e6bae3ee794d99315cad8802a4c0ef9a01935393e20b2e9dca6f970b5",
+    "69a9b7ec6f26faba9afddf1392bb9ef859cded4748314d0a43bdb98455c9354d",
+    "41f8dcc84d241fee612749f5214bb027953fa574ebc60708eafa4bb5742f0c11",
+    "135afd4c0a4841a2ac754d4e168db4809b49fa028ae9ab5259c1ff14837bd6e3",
+    "f382c343d3ea4df70579ea017357318efe8fb3bdc928d4cdd1e1378f43e9a63b",
+    "acc14567bea86ac50bc8065354f60d95f9b7bad93de9dc60d339b814aca9125c",
+    "a97e373cf68a8ecf3612c9f61aabf923b511679868ec1a33309c610b5d1f7152",
+    "fd30ba02a4a118d23a08405e1dafaa37d83bc4a342fb550c500c0628b4bc5a97",
+    "12955859788fba0a2c13902e04f09d9428a69ce0ba82d77059251c47b42b47d4",
+    "18a4c694ba348e6ce8ad84f88a647defc0b81a8d5f113bdd4caa1de79eaae243",
+    "605a7b85171966138141d4edf5fa2cd5719f054ac573a3e0e7a7b17193490d93",
+    "01ebdac4dcb6c1d97b31d0375ca6491e3be903bc7731f35147477233fa6539f1",
+    "e6ac835ea2793b7078488bcf8fee12f4e0f4457c509089fe291e5c4b6f91d681",
+    "1c9a82cdd6be15e8d97280169ded1804d56536129498bb49e639192c74714e3c",
+    "9ed7a72153be59ac0b660cd42d5785d720db5551b1df10147369c8028a3bd39f",
+    "cc88e43df44d3473b4dd10160ba733629309a49cf93bc70e8313b88973a3fefb",
+    "479f5d7fccf5ac119981f8fa2377e2beeac11da9dfb35e7fa7b97ff51382156a",
+    "a013692ed9c83316f11ce2c0939221175eb14a34f4914ea2f2653943a9abfbfb",
+    "785814946509dbaa56a31b3051a1bb5038b1ae86cccb2ea93bea223f360969ac",
+    "120b7c3aadc15b10b8ac618e9f4fafc115bb1c3e44184ad29d81ba6639577716",
+    "3535f342a01b5322c6392270197c891dcdec4bf5a306b27bc753aec082370df2",
+    "8b38e2cea15dbcd121144b0aab7c5c236687f58f45c109158b8a70a786fa2684",
+    "20fda80418ab34df045fcb4257a14ea41f9e5d0029b547a619d06a1e91d1987e",
+    "4029a285f5c9fb8e7f2e1e5356460ec79fdd355e4c2a18774614f9e9cd24784d",
+    "d40cf1390baf1d8af67b31ced87f63b20579b908bcd594b94cb61408ac1a66d5",
+    "a659b636f4245cb9b37ff74b6ef7f4dd0949a0c59b193f5cb73adf307dcef455",
+    "9a16542196ffbabf0ed0cac6ed1e22b77a098c94460cb8685a651ca0ba011863",
+    "e4677412faf5c6df9fd093863112bb8caabbd59c748dd9ee3a6d369339239fdc",
+    "fbba431b39c76cf3e8fe73f19f302e66f261c8d2ae240c2c858c7bd1d8232824",
+    "018e69c97e4c3123a2dd522eeccee9639c66370d17ff93bbfe1d7a018d4c6afd",
+    "5ddbc250d576f993eb6eb0f2751c7ee2ade950040696f477278613a424af0df8",
+    "643248af2288faabbdfc0d8a37907600021be657b096b71e4620203cc68517d5",
+    "5f9c4bb0133f81256ef2a374dceac498f53bd41c544eb8c16932ed87a3208529",
+    "e9fecba8b6f910ad9fde2d4612fe0b4e745aa9c00362d2811f08361a64f68457",
+    "dcf2172c2a1f1dcabd0cb84ffc355b965abb3548955daa98192136c612c1a2e7",
+    "f333fec5243a8aeb1585c72d2ef7e2c1003b00a0f0a0e4aaf233c0dfde59046a",
+    "ddc7e5a30f9bede4a774e587dbcc790ae68e441a36e37332b95fce6bef0df46e",
+    "9515240f15cf30be1f0303bed070a6dfb72d0539a676e702250ed56d24c44850",
+    "b26828e319b607b4f63a1fa1d7c506f35c47783ddaf6c7e4225caeb484671e4f",
+    "c456eea8a000603bf85880465420b3f2997d3b0f35a087ebf0a3f05bbf187b37",
+    "fc00a51790bbabe20ee693e363f1aa128908e0e438ec359e88956a69298a050a",
+    "606688c1ae960118d792d51efadac4ece096dfb0f572ee4165115e792ce43398",
+    "c0c487d68e82c61e1292a35605fc6303f40714993488bd7082de6062a1a7a9d0",
+    "aebd77f24053af4c8945bbbb128828b6cb156fa2aa20062485ca8731e692ac75",
+    "51dc9fce332c399fafa03bda7a97ef028660151288a45058307ab725cc06bb4a",
+    "739ac0730a1aa2204296027e425bb70a77c74e8ca11a2403fdc2ad46d0df2188",
+    "0650025f4551106e3e56db589ddbfd5cd1e4f1c6d437b51dfd9d693037d0746d",
+    "3eff5941bf82d4d4c321d03e1c052fdc40b864e06346221e0b2d0b7c59d286c8",
+    "bc80b83bbe7b830bf564f2c0fa2e62d271e6431752731924fe8e3b4d46bc6781",
+    "8b71af780882fe2a1cc86ae026e9ca356f9653b77be9f9213cf888de22dfa21e",
+    "6afaaa7e95a227fb3a5860ac2d6af899921f5cd5dfc5a7b8d0c17b4f13b17672",
+    "ecc5b836b3b0bbd12b3658318d44a93786ce93c3983948539b21ae15379281b1",
+    "3a14cd85fad6b18ad9c8661b083e2918d6c1a6a7de6b3a4b79b9481f860da7e8",
+    "7e5b72852be3291ecf62aeb6b963642f11b40d45c5a29c569ebd16f832760e36",
+    "7111be0030d0892376d81be08cfdf1c63d611d5a858d220b4c1027c80343de5b",
+    "3157fef2e0836b9988caa6455e58df38e15f41151ae9e7fda634e8412d13cd42"
+   ]
+  },
+  {
+   "index": 6,
+   "query_id": "Q7",
+   "agent": "Investigator",
+   "sql": "SELECT p.plot_id, p.supplier_id FROM plots p JOIN suppliers s ON p.supplier_id = s.supplier_id WHERE s.company_id = 'chocodurable' AND p.plot_id IN (SELECT plot_id FROM plots GROUP BY plot_id HAVING COUNT(*) > 1) ORDER BY p.plot_id, p.supplier_id",
+   "rows": [],
+   "rows_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+   "row_sha256": []
+  },
+  {
+   "index": 7,
+   "query_id": "Q4",
+   "agent": "Investigator",
+   "sql": "SELECT alert_id, lat, lon, alert_date, confidence FROM alerts WHERE lat BETWEEN 6.788278 AND 6.920628 AND lon BETWEEN -6.609989 AND -6.398076 ORDER BY alert_id",
+   "rows": [
+    {
+     "alert_id": "A-101",
+     "lat": 6.800631,
+     "lon": -6.586881,
+     "alert_date": "2020-12-06",
+     "confidence": "high"
+    },
+    {
+     "alert_id": "A-102",
+     "lat": 6.80044,
+     "lon": -6.560132,
+     "alert_date": "2021-04-14",
+     "confidence": "high"
+    },
+    {
+     "alert_id": "A-103",
+     "lat": 6.799007,
+     "lon": -6.532452,
+     "alert_date": "2025-01-23",
+     "confidence": "low"
+    },
+    {
+     "alert_id": "A-104",
+     "lat": 6.799946,
+     "lon": -6.505219,
+     "alert_date": "2024-01-11",
+     "confidence": "low"
+    },
+    {
+     "alert_id": "A-105",
+     "lat": 6.799131,
+     "lon": -6.477763,
+     "alert_date": "2019-11-03",
+     "confidence": "low"
+    },
+    {
+     "alert_id": "A-106",
+     "lat": 6.800455,
+     "lon": -6.450174,
+     "alert_date": "2018-01-09",
+     "confidence": "high"
+    },
+    {
+     "alert_id": "A-107",
+     "lat": 6.79923,
+     "lon": -6.424527,
+     "alert_date": "2024-11-03",
+     "confidence": "low"
+    },
+    {
+     "alert_id": "A-108",
+     "lat": 6.827089,
+     "lon": -6.585415,
+     "alert_date": "2018-10-27",
+     "confidence": "high"
+    },
+    {
+     "alert_id": "A-109",
+     "lat": 6.827531,
+     "lon": -6.559703,
+     "alert_date": "2023-08-05",
+     "confidence": "low"
+    },
+    {
+     "alert_id": "A-110",
+     "lat": 6.828023,
+     "lon": -6.531651,
+     "alert_date": "2023-02-11",
+     "confidence": "highest"
+    },
+    {
+     "alert_id": "A-111",
+     "lat": 6.827888,
+     "lon": -6.506128,
+     "alert_date": "2023-07-20",
+     "confidence": "high"
+    },
+    {
+     "alert_id": "A-112",
+     "lat": 6.826388,
+     "lon": -6.478344,
+     "alert_date": "2023-09-05",
+     "confidence": "highest"
+    },
+    {
+     "alert_id": "A-113",
+     "lat": 6.827557,
+     "lon": -6.450747,
+     "alert_date": "2021-07-08",
+     "confidence": "low"
+    },
+    {
+     "alert_id": "A-114",
+     "lat": 6.826372,
+     "lon": -6.423075,
+     "alert_date": "2021-11-28",
+     "confidence": "high"
+    },
+    {
+     "alert_id": "A-115",
+     "lat": 6.853941,
+     "lon": -6.587368,
+     "alert_date": "2024-05-09",
+     "confidence": "highest"
+    },
+    {
+     "alert_id": "A-116",
+     "lat": 6.853632,
+     "lon": -6.558379,
+     "alert_date": "2021-08-03",
+     "confidence": "high"
+    },
+    {
+     "alert_id": "A-117",
+     "lat": 6.853621,
+     "lon": -6.532027,
+     "alert_date": "2021-01-03",
+     "confidence": "low"
+    },
+    {
+     "alert_id": "A-118",
+     "lat": 6.854429,
+     "lon": -6.506032,
+     "alert_date": "2021-04-17",
+     "confidence": "highest"
+    },
+    {
+     "alert_id": "A-119",
+     "lat": 6.85399,
+     "lon": -6.477734,
+     "alert_date": "2021-09-10",
+     "confidence": "highest"
+    },
+    {
+     "alert_id": "A-120",
+     "lat": 6.854748,
+     "lon": -6.449581,
+     "alert_date": "2025-08-09",
+     "confidence": "highest"
+    },
+    {
+     "alert_id": "A-121",
+     "lat": 6.882111,
+     "lon": -6.586385,
+     "alert_date": "2022-10-05",
+     "confidence": "high"
+    },
+    {
+     "alert_id": "A-122",
+     "lat": 6.882541,
+     "lon": -6.55868,
+     "alert_date": "2018-02-13",
+     "confidence": "high"
+    },
+    {
+     "alert_id": "A-123",
+     "lat": 6.880391,
+     "lon": -6.531935,
+     "alert_date": "2024-11-10",
+     "confidence": "high"
+    },
+    {
+     "alert_id": "A-124",
+     "lat": 6.882347,
+     "lon": -6.477915,
+     "alert_date": "2018-02-18",
+     "confidence": "low"
+    },
+    {
+     "alert_id": "A-125",
+     "lat": 6.880365,
+     "lon": -6.422633,
+     "alert_date": "2021-01-05",
+     "confidence": "high"
+    },
+    {
+     "alert_id": "A-126",
+     "lat": 6.909313,
+     "lon": -6.586389,
+     "alert_date": "2024-12-26",
+     "confidence": "highest"
+    },
+    {
+     "alert_id": "A-127",
+     "lat": 6.909047,
+     "lon": -6.559184,
+     "alert_date": "2018-02-16",
+     "confidence": "low"
+    },
+    {
+     "alert_id": "A-128",
+     "lat": 6.909727,
+     "lon": -6.532946,
+     "alert_date": "2025-07-20",
+     "confidence": "low"
+    },
+    {
+     "alert_id": "A-129",
+     "lat": 6.908708,
+     "lon": -6.450154,
+     "alert_date": "2025-08-21",
+     "confidence": "highest"
+    },
+    {
+     "alert_id": "A-130",
+     "lat": 6.907245,
+     "lon": -6.422397,
+     "alert_date": "2018-07-02",
+     "confidence": "low"
+    },
+    {
+     "alert_id": "A-221",
+     "lat": 6.826695,
+     "lon": -6.464787,
+     "alert_date": "2022-03-14",
+     "confidence": "high"
+    }
+   ],
+   "rows_sha256": "e8cc940f8c3ae79ca0cb8641ce4c49517dfce149f20075a069eaa909c818e846",
+   "row_sha256": [
+    "f4f08b5e4269856af8d527a3e15e3083bc32a8b62557d9212fc33732a1767fad",
+    "fe40be8bcb8e37550262d2f0711bf728f2b0c43d06b3f7164cd151846a6a17bd",
+    "0b1c8a045b2159f43bd90e2522a8ba22c79062ab91a7b8f5f3d7680d8af741b6",
+    "9e41d9c1a9794680cbe5ff9ab7c8cbecbb1516444b2e318e2fd709cb1f794ad5",
+    "7b3bb6c0e986a16ba821f75046a15362aea5b834d59577258b79d4d5d84643a5",
+    "5ec1f79fbc5a03c0d7cf3c1defc6c0e1d17b2936415003ea9430bee4b1c08d5a",
+    "0f05f2e9565f7a5b6f7ab849fc25763020e3c0a306e4c7a8dce5c0bb088eee2b",
+    "4e530f103a84cc08c757e45fa868c8f9e1aa9f82f568d095eacfc61ef4efc18c",
+    "1f367b887f8d7378b2a7abaac82888f38376de132a086a7750e540f9bea35530",
+    "5557b109d69207fc0df6f680d650e9b3a03cef63e38f81339d7a51d74b28ae96",
+    "98e46aca5946709814037fef63c35ec58f0ceb20a44e67cdd1c260758653b2ce",
+    "96525226a09dcfe14a0dca32f924c448b861c2adb5ce14bbf3e1550c90e7a9e6",
+    "19a5db33f7e646977458b08b046b2cd06cc1f9fa1e03b33c007c74883fa15ac5",
+    "466b255cc1c31b37b52c32b926d4214c350b8ec887df9a467832694bcc369ccd",
+    "4a58f598f0a8b7a809b4a338b781d8c4b74b7dcdc4e51605b72430969384fcf5",
+    "1e874fff26218113b3e3b7e1b030ff0c68ca7cecfe0955b5a5646989ab727beb",
+    "63d6dbf8a6ec02aba355e45588ecd9004c0bb91528f2ba343fdeef42621b3b2d",
+    "9cfd00068958dc0c020f90ab2e5c5ab0f5e0972a050a1ac5f8bb6213240f8381",
+    "110327b3dc5beb757658365ca125edfe294f50306b0c8f3e299a406cd72ad0bf",
+    "f822b2d1716d5711fb4c0df2245224d303ffdf05a19702dce0eda7f1927934b3",
+    "56848ecd1c1b07681fe9375e7bef6a42caba874d1d795cef6e443c4f77b12b53",
+    "e0bb7fe464207d4128e5e1564b5a1d82997e4e87a6ea6983b8795705afa077ff",
+    "b753a839e9277b1aa313ea91e85f200171ad5e1af44c69be503a23d9ab342d3f",
+    "00c45ab17c46dc36ac953ee84d0a062b2a1bc7cd30b4ba7187e16a8b7c133567",
+    "6edca99115946429bc373c24e91e2f798874258ccb3562f291a14df1ca6996c4",
+    "c4afea3026b53f985ea10e21fbf6cfe37f60e7f4d701f4402a167f4d07100bfb",
+    "6c4c18303ba1edc73afffb217bcb5a9dada101fa9cb6fea541d825acf2f5c84c",
+    "6dd890de3955eecd9141e9277503c35d67691d36fd1d52b754eac08fb643d7df",
+    "a1824e2dbe67ca495fe7b38eaa18e9a803a45a6f4efca8ceee6ed34265cc703e",
+    "a294df2c55e466f8bc429dbbbb43b86040f3bfb534da5ebcd34589ba3bc7017a",
+    "b7c7feac21518e5482d1881534ded2841e4cd40d5bb54bdc005cafb1475ad9db"
+   ]
+  },
+  {
+   "index": 8,
+   "query_id": "Q5",
+   "agent": "Investigator",
+   "sql": "SELECT plot_id, year, tonnes, supplier_id FROM deliveries WHERE plot_id = 'P-014' ORDER BY year, supplier_id",
+   "rows": [
+    {
+     "plot_id": "P-014",
+     "year": 2021,
+     "tonnes": 2.4,
+     "supplier_id": "F-007"
+    },
+    {
+     "plot_id": "P-014",
+     "year": 2022,
+     "tonnes": 2.4,
+     "supplier_id": "F-007"
+    },
+    {
+     "plot_id": "P-014",
+     "year": 2023,
+     "tonnes": 2.4,
+     "supplier_id": "F-007"
+    },
+    {
+     "plot_id": "P-014",
+     "year": 2024,
+     "tonnes": 2.4,
+     "supplier_id": "F-007"
+    },
+    {
+     "plot_id": "P-014",
+     "year": 2025,
+     "tonnes": 2.4,
+     "supplier_id": "F-007"
+    }
+   ],
+   "rows_sha256": "c803093a1b06fbbfc7992136e40ff3792f49960ce6432a47fc80612fe5e2e276",
+   "row_sha256": [
+    "9fc48afc0c1861a911409f888f036dd8211e18fb60dd60db9fe2fd3dce2a78ba",
+    "b4e74386edfd252b6fb0c42a54d4c5b3f5cd9065f956537db5bad30ed87fd72b",
+    "568845e9d8a1ee4e959fd3707c3240a2178b2b1946ae7b657320d8bcc0aa4eb9",
+    "bf1ba02dc71bee18fbc8c725b69a96b1376ad3f65d19eee92691dc760205cd11",
+    "d00b68f71f6c847406d2d67fcb9ad1d5c67fe31a075030218bef783e152e1990"
+   ]
+  },
+  {
+   "index": 9,
+   "query_id": "Q9",
+   "agent": "Evaluator",
+   "sql": "SELECT alert_id, alert_date, confidence, system FROM alerts WHERE alert_id = 'A-221'",
+   "rows": [
+    {
+     "alert_id": "A-221",
+     "alert_date": "2022-03-14",
+     "confidence": "high",
+     "system": "GLAD-S2"
+    }
+   ],
+   "rows_sha256": "df02d4b35dab0b5fc5c18167f24f57b2e446ef24daadf5037f7ddbfd74139d67",
+   "row_sha256": [
+    "764abe9ab0da011c4638d49b62a936077a7e78c45ed5de665aeb4a0288aa2b33"
+   ]
+  },
+  {
+   "index": 10,
+   "query_id": "Q5",
+   "agent": "Evaluator",
+   "sql": "SELECT plot_id, year, tonnes, supplier_id FROM deliveries WHERE plot_id = 'P-014' ORDER BY year, supplier_id",
+   "rows": [
+    {
+     "plot_id": "P-014",
+     "year": 2021,
+     "tonnes": 2.4,
+     "supplier_id": "F-007"
+    },
+    {
+     "plot_id": "P-014",
+     "year": 2022,
+     "tonnes": 2.4,
+     "supplier_id": "F-007"
+    },
+    {
+     "plot_id": "P-014",
+     "year": 2023,
+     "tonnes": 2.4,
+     "supplier_id": "F-007"
+    },
+    {
+     "plot_id": "P-014",
+     "year": 2024,
+     "tonnes": 2.4,
+     "supplier_id": "F-007"
+    },
+    {
+     "plot_id": "P-014",
+     "year": 2025,
+     "tonnes": 2.4,
+     "supplier_id": "F-007"
+    }
+   ],
+   "rows_sha256": "c803093a1b06fbbfc7992136e40ff3792f49960ce6432a47fc80612fe5e2e276",
+   "row_sha256": [
+    "9fc48afc0c1861a911409f888f036dd8211e18fb60dd60db9fe2fd3dce2a78ba",
+    "b4e74386edfd252b6fb0c42a54d4c5b3f5cd9065f956537db5bad30ed87fd72b",
+    "568845e9d8a1ee4e959fd3707c3240a2178b2b1946ae7b657320d8bcc0aa4eb9",
+    "bf1ba02dc71bee18fbc8c725b69a96b1376ad3f65d19eee92691dc760205cd11",
+    "d00b68f71f6c847406d2d67fcb9ad1d5c67fe31a075030218bef783e152e1990"
+   ]
+  },
+  {
+   "index": 11,
+   "query_id": "Q3",
+   "agent": "Evaluator",
+   "sql": "SELECT plot_id, supplier_id, lat, lon, polygon_wkt, area_ha FROM plots WHERE supplier_id IN ('F-007') ORDER BY plot_id, supplier_id",
+   "rows": [
+    {
+     "plot_id": "P-013",
+     "supplier_id": "F-007",
+     "lat": 6.827481,
+     "lon": -6.493589,
+     "polygon_wkt": "POLYGON((-6.494531 6.826539, -6.492647 6.826539, -6.492647 6.828423, -6.494531 6.828423, -6.494531 6.826539))",
+     "area_ha": 4.34
+    },
+    {
+     "plot_id": "P-014",
+     "supplier_id": "F-007",
+     "lat": 6.826514,
+     "lon": -6.464651,
+     "polygon_wkt": "POLYGON((-6.465460 6.825705, -6.463842 6.825705, -6.463842 6.827323, -6.465460 6.827323, -6.465460 6.825705))",
+     "area_ha": 3.2
+    },
+    {
+     "plot_id": "P-015",
+     "supplier_id": "F-007",
+     "lat": 6.827519,
+     "lon": -6.437165,
+     "polygon_wkt": "POLYGON((-6.437800 6.826884, -6.436530 6.826884, -6.436530 6.828154, -6.437800 6.828154, -6.437800 6.826884))",
+     "area_ha": 1.97
+    },
+    {
+     "plot_id": "P-016",
+     "supplier_id": "F-007",
+     "lat": 6.82716,
+     "lon": -6.408887,
+     "polygon_wkt": "POLYGON((-6.409780 6.826267, -6.407994 6.826267, -6.407994 6.828053, -6.409780 6.828053, -6.409780 6.826267))",
+     "area_ha": 3.9
+    }
+   ],
+   "rows_sha256": "cd91c89b395e13d9b08cff830112e541afd5f03b942d42258113a946a635d62e",
+   "row_sha256": [
+    "7be3912d13bc50606e2449a7df27a1d6eaf055d2c837512e9e30dcf67575b45b",
+    "f8f342c6a30597e27d64230a609e9b6e0a8a31f09b2017fbab07352c5ea57850",
+    "f35e08f89875a4c459124348940ee2126f191eed4d9ebaea326886202ee8b8d5",
+    "1b015aa220ff8504983991580ad0cbc05a93646d059cbebca84ed60f481a8ef0"
+   ]
+  },
+  {
+   "index": 12,
+   "query_id": "Q9",
+   "agent": "Evaluator",
+   "sql": "SELECT alert_id, alert_date, confidence, system FROM alerts WHERE alert_id = 'A-221'",
+   "rows": [
+    {
+     "alert_id": "A-221",
+     "alert_date": "2022-03-14",
+     "confidence": "high",
+     "system": "GLAD-S2"
+    }
+   ],
+   "rows_sha256": "df02d4b35dab0b5fc5c18167f24f57b2e446ef24daadf5037f7ddbfd74139d67",
+   "row_sha256": [
+    "764abe9ab0da011c4638d49b62a936077a7e78c45ed5de665aeb4a0288aa2b33"
+   ]
+  },
+  {
+   "index": 13,
+   "query_id": "Q4",
+   "agent": "Evaluator",
+   "sql": "SELECT alert_id, lat, lon, alert_date, confidence FROM alerts WHERE lat BETWEEN 6.816514000000001 AND 6.836514 AND lon BETWEEN -6.474651 AND -6.454651 ORDER BY alert_id",
+   "rows": [
+    {
+     "alert_id": "A-221",
+     "lat": 6.826695,
+     "lon": -6.464787,
+     "alert_date": "2022-03-14",
+     "confidence": "high"
+    }
+   ],
+   "rows_sha256": "b3bb59ba80769e4be3c75cfe701c96eacb1eb54662bb653d03df5e0ccbbfc3c0",
+   "row_sha256": [
+    "b7c7feac21518e5482d1881534ded2841e4cd40d5bb54bdc005cafb1475ad9db"
+   ]
+  },
+  {
+   "index": 14,
+   "query_id": "Q9",
+   "agent": "Evaluator",
+   "sql": "SELECT alert_id, alert_date, confidence, system FROM alerts WHERE alert_id = 'A-221'",
+   "rows": [
+    {
+     "alert_id": "A-221",
+     "alert_date": "2022-03-14",
+     "confidence": "high",
+     "system": "GLAD-S2"
+    }
+   ],
+   "rows_sha256": "df02d4b35dab0b5fc5c18167f24f57b2e446ef24daadf5037f7ddbfd74139d67",
+   "row_sha256": [
+    "764abe9ab0da011c4638d49b62a936077a7e78c45ed5de665aeb4a0288aa2b33"
+   ]
+  },
+  {
+   "index": 15,
+   "query_id": "Q9",
+   "agent": "Evaluator",
+   "sql": "SELECT alert_id, alert_date, confidence, system FROM alerts WHERE alert_id = 'A-221'",
+   "rows": [
+    {
+     "alert_id": "A-221",
+     "alert_date": "2022-03-14",
+     "confidence": "high",
+     "system": "GLAD-S2"
+    }
+   ],
+   "rows_sha256": "df02d4b35dab0b5fc5c18167f24f57b2e446ef24daadf5037f7ddbfd74139d67",
+   "row_sha256": [
+    "764abe9ab0da011c4638d49b62a936077a7e78c45ed5de665aeb4a0288aa2b33"
+   ]
+  },
+  {
+   "index": 16,
+   "query_id": "Q6",
+   "agent": "Evaluator",
+   "sql": "SELECT d.delivery_id, d.supplier_id, d.plot_id, d.year, d.tonnes, d.certified FROM deliveries d JOIN suppliers s ON d.supplier_id = s.supplier_id WHERE s.company_id = 'chocodurable' AND d.year BETWEEN 2021 AND 2025 ORDER BY d.delivery_id",
+   "rows": [
+    {
+     "delivery_id": "D-0001",
+     "supplier_id": "F-002",
+     "plot_id": "P-001",
+     "year": 2021,
+     "tonnes": 1.31,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0002",
+     "supplier_id": "F-002",
+     "plot_id": "P-002",
+     "year": 2021,
+     "tonnes": 1.53,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0003",
+     "supplier_id": "F-002",
+     "plot_id": "P-003",
+     "year": 2021,
+     "tonnes": 1.3,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0004",
+     "supplier_id": "F-002",
+     "plot_id": "P-004",
+     "year": 2021,
+     "tonnes": 2.53,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0005",
+     "supplier_id": "F-005",
+     "plot_id": "P-005",
+     "year": 2021,
+     "tonnes": 1.74,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0006",
+     "supplier_id": "F-005",
+     "plot_id": "P-006",
+     "year": 2021,
+     "tonnes": 2.47,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0007",
+     "supplier_id": "F-005",
+     "plot_id": "P-007",
+     "year": 2021,
+     "tonnes": 2.78,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0008",
+     "supplier_id": "F-005",
+     "plot_id": "P-008",
+     "year": 2021,
+     "tonnes": 1.41,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0009",
+     "supplier_id": "F-011",
+     "plot_id": "P-009",
+     "year": 2021,
+     "tonnes": 0.83,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0010",
+     "supplier_id": "F-011",
+     "plot_id": "P-010",
+     "year": 2021,
+     "tonnes": 0.85,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0011",
+     "supplier_id": "F-011",
+     "plot_id": "P-011",
+     "year": 2021,
+     "tonnes": 1.51,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0012",
+     "supplier_id": "F-011",
+     "plot_id": "P-012",
+     "year": 2021,
+     "tonnes": 2.03,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0013",
+     "supplier_id": "F-007",
+     "plot_id": "P-013",
+     "year": 2021,
+     "tonnes": 3.28,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0014",
+     "supplier_id": "F-007",
+     "plot_id": "P-014",
+     "year": 2021,
+     "tonnes": 2.4,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0015",
+     "supplier_id": "F-007",
+     "plot_id": "P-015",
+     "year": 2021,
+     "tonnes": 1.23,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0016",
+     "supplier_id": "F-007",
+     "plot_id": "P-016",
+     "year": 2021,
+     "tonnes": 1.48,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0017",
+     "supplier_id": "F-014",
+     "plot_id": "P-017",
+     "year": 2021,
+     "tonnes": 1.2,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0018",
+     "supplier_id": "F-014",
+     "plot_id": "P-018",
+     "year": 2021,
+     "tonnes": 1.3,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0019",
+     "supplier_id": "F-014",
+     "plot_id": "P-019",
+     "year": 2021,
+     "tonnes": 1.78,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0020",
+     "supplier_id": "F-019",
+     "plot_id": "P-020",
+     "year": 2021,
+     "tonnes": 3.23,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0021",
+     "supplier_id": "F-019",
+     "plot_id": "P-021",
+     "year": 2021,
+     "tonnes": 3.28,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0022",
+     "supplier_id": "F-019",
+     "plot_id": "P-022",
+     "year": 2021,
+     "tonnes": 0.98,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0023",
+     "supplier_id": "F-023",
+     "plot_id": "P-023",
+     "year": 2021,
+     "tonnes": 1.93,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0024",
+     "supplier_id": "F-023",
+     "plot_id": "P-024",
+     "year": 2021,
+     "tonnes": 2.84,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0025",
+     "supplier_id": "F-023",
+     "plot_id": "P-025",
+     "year": 2021,
+     "tonnes": 2.98,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0026",
+     "supplier_id": "F-026",
+     "plot_id": "P-026",
+     "year": 2021,
+     "tonnes": 2.33,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0027",
+     "supplier_id": "F-026",
+     "plot_id": "P-027",
+     "year": 2021,
+     "tonnes": 1.53,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0028",
+     "supplier_id": "F-026",
+     "plot_id": "P-028",
+     "year": 2021,
+     "tonnes": 0.89,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0029",
+     "supplier_id": "F-031",
+     "plot_id": "P-029",
+     "year": 2021,
+     "tonnes": 3.32,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0030",
+     "supplier_id": "F-031",
+     "plot_id": "P-030",
+     "year": 2021,
+     "tonnes": 3.06,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0031",
+     "supplier_id": "F-031",
+     "plot_id": "P-031",
+     "year": 2021,
+     "tonnes": 2.92,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0032",
+     "supplier_id": "F-034",
+     "plot_id": "P-032",
+     "year": 2021,
+     "tonnes": 1.42,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0033",
+     "supplier_id": "F-034",
+     "plot_id": "P-033",
+     "year": 2021,
+     "tonnes": 0.77,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0034",
+     "supplier_id": "F-034",
+     "plot_id": "P-034",
+     "year": 2021,
+     "tonnes": 2.96,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0035",
+     "supplier_id": "F-038",
+     "plot_id": "P-035",
+     "year": 2021,
+     "tonnes": 1.21,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0036",
+     "supplier_id": "F-038",
+     "plot_id": "P-036",
+     "year": 2021,
+     "tonnes": 1.52,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0037",
+     "supplier_id": "F-038",
+     "plot_id": "P-037",
+     "year": 2021,
+     "tonnes": 1.21,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0038",
+     "supplier_id": "F-040",
+     "plot_id": "P-038",
+     "year": 2021,
+     "tonnes": 2.86,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0039",
+     "supplier_id": "F-040",
+     "plot_id": "P-039",
+     "year": 2021,
+     "tonnes": 0.43,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0040",
+     "supplier_id": "F-040",
+     "plot_id": "P-040",
+     "year": 2021,
+     "tonnes": 2.9,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0041",
+     "supplier_id": "F-002",
+     "plot_id": "P-001",
+     "year": 2022,
+     "tonnes": 1.44,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0042",
+     "supplier_id": "F-002",
+     "plot_id": "P-002",
+     "year": 2022,
+     "tonnes": 1.57,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0043",
+     "supplier_id": "F-002",
+     "plot_id": "P-003",
+     "year": 2022,
+     "tonnes": 1.34,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0044",
+     "supplier_id": "F-002",
+     "plot_id": "P-004",
+     "year": 2022,
+     "tonnes": 2.64,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0045",
+     "supplier_id": "F-005",
+     "plot_id": "P-005",
+     "year": 2022,
+     "tonnes": 1.6,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0046",
+     "supplier_id": "F-005",
+     "plot_id": "P-006",
+     "year": 2022,
+     "tonnes": 2.25,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0047",
+     "supplier_id": "F-005",
+     "plot_id": "P-007",
+     "year": 2022,
+     "tonnes": 2.77,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0048",
+     "supplier_id": "F-005",
+     "plot_id": "P-008",
+     "year": 2022,
+     "tonnes": 1.61,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0049",
+     "supplier_id": "F-011",
+     "plot_id": "P-009",
+     "year": 2022,
+     "tonnes": 0.88,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0050",
+     "supplier_id": "F-011",
+     "plot_id": "P-010",
+     "year": 2022,
+     "tonnes": 0.92,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0051",
+     "supplier_id": "F-011",
+     "plot_id": "P-011",
+     "year": 2022,
+     "tonnes": 1.47,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0052",
+     "supplier_id": "F-011",
+     "plot_id": "P-012",
+     "year": 2022,
+     "tonnes": 2.17,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0053",
+     "supplier_id": "F-007",
+     "plot_id": "P-013",
+     "year": 2022,
+     "tonnes": 3.41,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0054",
+     "supplier_id": "F-007",
+     "plot_id": "P-014",
+     "year": 2022,
+     "tonnes": 2.4,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0055",
+     "supplier_id": "F-007",
+     "plot_id": "P-015",
+     "year": 2022,
+     "tonnes": 1.23,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0056",
+     "supplier_id": "F-007",
+     "plot_id": "P-016",
+     "year": 2022,
+     "tonnes": 1.66,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0057",
+     "supplier_id": "F-014",
+     "plot_id": "P-017",
+     "year": 2022,
+     "tonnes": 1.19,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0058",
+     "supplier_id": "F-014",
+     "plot_id": "P-018",
+     "year": 2022,
+     "tonnes": 1.48,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0059",
+     "supplier_id": "F-014",
+     "plot_id": "P-019",
+     "year": 2022,
+     "tonnes": 1.92,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0060",
+     "supplier_id": "F-019",
+     "plot_id": "P-020",
+     "year": 2022,
+     "tonnes": 2.94,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0061",
+     "supplier_id": "F-019",
+     "plot_id": "P-021",
+     "year": 2022,
+     "tonnes": 3.08,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0062",
+     "supplier_id": "F-019",
+     "plot_id": "P-022",
+     "year": 2022,
+     "tonnes": 0.94,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0063",
+     "supplier_id": "F-023",
+     "plot_id": "P-023",
+     "year": 2022,
+     "tonnes": 2.09,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0064",
+     "supplier_id": "F-023",
+     "plot_id": "P-024",
+     "year": 2022,
+     "tonnes": 2.75,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0065",
+     "supplier_id": "F-023",
+     "plot_id": "P-025",
+     "year": 2022,
+     "tonnes": 2.56,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0066",
+     "supplier_id": "F-026",
+     "plot_id": "P-026",
+     "year": 2022,
+     "tonnes": 2.62,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0067",
+     "supplier_id": "F-026",
+     "plot_id": "P-027",
+     "year": 2022,
+     "tonnes": 1.54,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0068",
+     "supplier_id": "F-026",
+     "plot_id": "P-028",
+     "year": 2022,
+     "tonnes": 0.85,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0069",
+     "supplier_id": "F-031",
+     "plot_id": "P-029",
+     "year": 2022,
+     "tonnes": 3.35,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0070",
+     "supplier_id": "F-031",
+     "plot_id": "P-030",
+     "year": 2022,
+     "tonnes": 3.08,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0071",
+     "supplier_id": "F-031",
+     "plot_id": "P-031",
+     "year": 2022,
+     "tonnes": 2.95,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0072",
+     "supplier_id": "F-034",
+     "plot_id": "P-032",
+     "year": 2022,
+     "tonnes": 1.34,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0073",
+     "supplier_id": "F-034",
+     "plot_id": "P-033",
+     "year": 2022,
+     "tonnes": 0.72,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0074",
+     "supplier_id": "F-034",
+     "plot_id": "P-034",
+     "year": 2022,
+     "tonnes": 2.86,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0075",
+     "supplier_id": "F-038",
+     "plot_id": "P-035",
+     "year": 2022,
+     "tonnes": 1.34,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0076",
+     "supplier_id": "F-038",
+     "plot_id": "P-036",
+     "year": 2022,
+     "tonnes": 1.55,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0077",
+     "supplier_id": "F-038",
+     "plot_id": "P-037",
+     "year": 2022,
+     "tonnes": 1.31,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0078",
+     "supplier_id": "F-040",
+     "plot_id": "P-038",
+     "year": 2022,
+     "tonnes": 3.11,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0079",
+     "supplier_id": "F-040",
+     "plot_id": "P-039",
+     "year": 2022,
+     "tonnes": 0.47,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0080",
+     "supplier_id": "F-040",
+     "plot_id": "P-040",
+     "year": 2022,
+     "tonnes": 2.72,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0081",
+     "supplier_id": "F-002",
+     "plot_id": "P-001",
+     "year": 2023,
+     "tonnes": 1.4,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0082",
+     "supplier_id": "F-002",
+     "plot_id": "P-002",
+     "year": 2023,
+     "tonnes": 1.6,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0083",
+     "supplier_id": "F-002",
+     "plot_id": "P-003",
+     "year": 2023,
+     "tonnes": 1.29,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0084",
+     "supplier_id": "F-002",
+     "plot_id": "P-004",
+     "year": 2023,
+     "tonnes": 2.92,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0085",
+     "supplier_id": "F-005",
+     "plot_id": "P-005",
+     "year": 2023,
+     "tonnes": 1.53,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0086",
+     "supplier_id": "F-005",
+     "plot_id": "P-006",
+     "year": 2023,
+     "tonnes": 2.34,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0087",
+     "supplier_id": "F-005",
+     "plot_id": "P-007",
+     "year": 2023,
+     "tonnes": 2.49,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0088",
+     "supplier_id": "F-005",
+     "plot_id": "P-008",
+     "year": 2023,
+     "tonnes": 1.38,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0089",
+     "supplier_id": "F-011",
+     "plot_id": "P-009",
+     "year": 2023,
+     "tonnes": 0.81,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0090",
+     "supplier_id": "F-011",
+     "plot_id": "P-010",
+     "year": 2023,
+     "tonnes": 0.93,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0091",
+     "supplier_id": "F-011",
+     "plot_id": "P-011",
+     "year": 2023,
+     "tonnes": 1.64,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0092",
+     "supplier_id": "F-011",
+     "plot_id": "P-012",
+     "year": 2023,
+     "tonnes": 1.96,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0093",
+     "supplier_id": "F-007",
+     "plot_id": "P-013",
+     "year": 2023,
+     "tonnes": 2.86,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0094",
+     "supplier_id": "F-007",
+     "plot_id": "P-014",
+     "year": 2023,
+     "tonnes": 2.4,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0095",
+     "supplier_id": "F-007",
+     "plot_id": "P-015",
+     "year": 2023,
+     "tonnes": 1.14,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0096",
+     "supplier_id": "F-007",
+     "plot_id": "P-016",
+     "year": 2023,
+     "tonnes": 1.46,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0097",
+     "supplier_id": "F-014",
+     "plot_id": "P-017",
+     "year": 2023,
+     "tonnes": 1.15,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0098",
+     "supplier_id": "F-014",
+     "plot_id": "P-018",
+     "year": 2023,
+     "tonnes": 1.46,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0099",
+     "supplier_id": "F-014",
+     "plot_id": "P-019",
+     "year": 2023,
+     "tonnes": 1.91,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0100",
+     "supplier_id": "F-019",
+     "plot_id": "P-020",
+     "year": 2023,
+     "tonnes": 2.94,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0101",
+     "supplier_id": "F-019",
+     "plot_id": "P-021",
+     "year": 2023,
+     "tonnes": 3.5,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0102",
+     "supplier_id": "F-019",
+     "plot_id": "P-022",
+     "year": 2023,
+     "tonnes": 0.95,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0103",
+     "supplier_id": "F-023",
+     "plot_id": "P-023",
+     "year": 2023,
+     "tonnes": 2.12,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0104",
+     "supplier_id": "F-023",
+     "plot_id": "P-024",
+     "year": 2023,
+     "tonnes": 2.79,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0105",
+     "supplier_id": "F-023",
+     "plot_id": "P-025",
+     "year": 2023,
+     "tonnes": 3.01,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0106",
+     "supplier_id": "F-026",
+     "plot_id": "P-026",
+     "year": 2023,
+     "tonnes": 2.42,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0107",
+     "supplier_id": "F-026",
+     "plot_id": "P-027",
+     "year": 2023,
+     "tonnes": 1.44,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0108",
+     "supplier_id": "F-026",
+     "plot_id": "P-028",
+     "year": 2023,
+     "tonnes": 0.83,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0109",
+     "supplier_id": "F-031",
+     "plot_id": "P-029",
+     "year": 2023,
+     "tonnes": 3.34,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0110",
+     "supplier_id": "F-031",
+     "plot_id": "P-030",
+     "year": 2023,
+     "tonnes": 3.07,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0111",
+     "supplier_id": "F-031",
+     "plot_id": "P-031",
+     "year": 2023,
+     "tonnes": 2.94,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0112",
+     "supplier_id": "F-034",
+     "plot_id": "P-032",
+     "year": 2023,
+     "tonnes": 1.42,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0113",
+     "supplier_id": "F-034",
+     "plot_id": "P-033",
+     "year": 2023,
+     "tonnes": 0.81,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0114",
+     "supplier_id": "F-034",
+     "plot_id": "P-034",
+     "year": 2023,
+     "tonnes": 3.26,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0115",
+     "supplier_id": "F-038",
+     "plot_id": "P-035",
+     "year": 2023,
+     "tonnes": 1.2,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0116",
+     "supplier_id": "F-038",
+     "plot_id": "P-036",
+     "year": 2023,
+     "tonnes": 1.81,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0117",
+     "supplier_id": "F-038",
+     "plot_id": "P-037",
+     "year": 2023,
+     "tonnes": 1.23,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0118",
+     "supplier_id": "F-040",
+     "plot_id": "P-038",
+     "year": 2023,
+     "tonnes": 3.09,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0119",
+     "supplier_id": "F-040",
+     "plot_id": "P-039",
+     "year": 2023,
+     "tonnes": 0.44,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0120",
+     "supplier_id": "F-040",
+     "plot_id": "P-040",
+     "year": 2023,
+     "tonnes": 2.62,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0121",
+     "supplier_id": "F-002",
+     "plot_id": "P-001",
+     "year": 2024,
+     "tonnes": 1.41,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0122",
+     "supplier_id": "F-002",
+     "plot_id": "P-002",
+     "year": 2024,
+     "tonnes": 1.53,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0123",
+     "supplier_id": "F-002",
+     "plot_id": "P-003",
+     "year": 2024,
+     "tonnes": 1.47,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0124",
+     "supplier_id": "F-002",
+     "plot_id": "P-004",
+     "year": 2024,
+     "tonnes": 2.9,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0125",
+     "supplier_id": "F-005",
+     "plot_id": "P-005",
+     "year": 2024,
+     "tonnes": 1.48,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0126",
+     "supplier_id": "F-005",
+     "plot_id": "P-006",
+     "year": 2024,
+     "tonnes": 2.56,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0127",
+     "supplier_id": "F-005",
+     "plot_id": "P-007",
+     "year": 2024,
+     "tonnes": 2.52,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0128",
+     "supplier_id": "F-005",
+     "plot_id": "P-008",
+     "year": 2024,
+     "tonnes": 1.64,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0129",
+     "supplier_id": "F-011",
+     "plot_id": "P-009",
+     "year": 2024,
+     "tonnes": 0.83,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0130",
+     "supplier_id": "F-011",
+     "plot_id": "P-010",
+     "year": 2024,
+     "tonnes": 0.83,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0131",
+     "supplier_id": "F-011",
+     "plot_id": "P-011",
+     "year": 2024,
+     "tonnes": 1.58,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0132",
+     "supplier_id": "F-011",
+     "plot_id": "P-012",
+     "year": 2024,
+     "tonnes": 2.08,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0133",
+     "supplier_id": "F-007",
+     "plot_id": "P-013",
+     "year": 2024,
+     "tonnes": 2.92,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0134",
+     "supplier_id": "F-007",
+     "plot_id": "P-014",
+     "year": 2024,
+     "tonnes": 2.4,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0135",
+     "supplier_id": "F-007",
+     "plot_id": "P-015",
+     "year": 2024,
+     "tonnes": 1.16,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0136",
+     "supplier_id": "F-007",
+     "plot_id": "P-016",
+     "year": 2024,
+     "tonnes": 1.46,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0137",
+     "supplier_id": "F-014",
+     "plot_id": "P-017",
+     "year": 2024,
+     "tonnes": 1.08,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0138",
+     "supplier_id": "F-014",
+     "plot_id": "P-018",
+     "year": 2024,
+     "tonnes": 1.48,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0139",
+     "supplier_id": "F-014",
+     "plot_id": "P-019",
+     "year": 2024,
+     "tonnes": 1.81,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0140",
+     "supplier_id": "F-019",
+     "plot_id": "P-020",
+     "year": 2024,
+     "tonnes": 2.74,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0141",
+     "supplier_id": "F-019",
+     "plot_id": "P-021",
+     "year": 2024,
+     "tonnes": 3.36,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0142",
+     "supplier_id": "F-019",
+     "plot_id": "P-022",
+     "year": 2024,
+     "tonnes": 0.9,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0143",
+     "supplier_id": "F-023",
+     "plot_id": "P-023",
+     "year": 2024,
+     "tonnes": 2.01,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0144",
+     "supplier_id": "F-023",
+     "plot_id": "P-024",
+     "year": 2024,
+     "tonnes": 2.59,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0145",
+     "supplier_id": "F-023",
+     "plot_id": "P-025",
+     "year": 2024,
+     "tonnes": 2.73,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0146",
+     "supplier_id": "F-026",
+     "plot_id": "P-026",
+     "year": 2024,
+     "tonnes": 2.37,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0147",
+     "supplier_id": "F-026",
+     "plot_id": "P-027",
+     "year": 2024,
+     "tonnes": 1.41,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0148",
+     "supplier_id": "F-026",
+     "plot_id": "P-028",
+     "year": 2024,
+     "tonnes": 0.85,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0149",
+     "supplier_id": "F-031",
+     "plot_id": "P-029",
+     "year": 2024,
+     "tonnes": 3.28,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0150",
+     "supplier_id": "F-031",
+     "plot_id": "P-030",
+     "year": 2024,
+     "tonnes": 3.02,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0151",
+     "supplier_id": "F-031",
+     "plot_id": "P-031",
+     "year": 2024,
+     "tonnes": 2.88,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0152",
+     "supplier_id": "F-034",
+     "plot_id": "P-032",
+     "year": 2024,
+     "tonnes": 1.3,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0153",
+     "supplier_id": "F-034",
+     "plot_id": "P-033",
+     "year": 2024,
+     "tonnes": 0.75,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0154",
+     "supplier_id": "F-034",
+     "plot_id": "P-034",
+     "year": 2024,
+     "tonnes": 2.79,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0155",
+     "supplier_id": "F-038",
+     "plot_id": "P-035",
+     "year": 2024,
+     "tonnes": 1.11,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0156",
+     "supplier_id": "F-038",
+     "plot_id": "P-036",
+     "year": 2024,
+     "tonnes": 1.58,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0157",
+     "supplier_id": "F-038",
+     "plot_id": "P-037",
+     "year": 2024,
+     "tonnes": 1.26,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0158",
+     "supplier_id": "F-040",
+     "plot_id": "P-038",
+     "year": 2024,
+     "tonnes": 2.81,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0159",
+     "supplier_id": "F-040",
+     "plot_id": "P-039",
+     "year": 2024,
+     "tonnes": 0.43,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0160",
+     "supplier_id": "F-040",
+     "plot_id": "P-040",
+     "year": 2024,
+     "tonnes": 3.16,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0161",
+     "supplier_id": "F-002",
+     "plot_id": "P-001",
+     "year": 2025,
+     "tonnes": 1.39,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0162",
+     "supplier_id": "F-002",
+     "plot_id": "P-002",
+     "year": 2025,
+     "tonnes": 1.7,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0163",
+     "supplier_id": "F-002",
+     "plot_id": "P-003",
+     "year": 2025,
+     "tonnes": 1.36,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0164",
+     "supplier_id": "F-002",
+     "plot_id": "P-004",
+     "year": 2025,
+     "tonnes": 2.82,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0165",
+     "supplier_id": "F-005",
+     "plot_id": "P-005",
+     "year": 2025,
+     "tonnes": 1.75,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0166",
+     "supplier_id": "F-005",
+     "plot_id": "P-006",
+     "year": 2025,
+     "tonnes": 2.44,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0167",
+     "supplier_id": "F-005",
+     "plot_id": "P-007",
+     "year": 2025,
+     "tonnes": 2.49,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0168",
+     "supplier_id": "F-005",
+     "plot_id": "P-008",
+     "year": 2025,
+     "tonnes": 1.56,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0169",
+     "supplier_id": "F-011",
+     "plot_id": "P-009",
+     "year": 2025,
+     "tonnes": 0.87,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0170",
+     "supplier_id": "F-011",
+     "plot_id": "P-010",
+     "year": 2025,
+     "tonnes": 0.83,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0171",
+     "supplier_id": "F-011",
+     "plot_id": "P-011",
+     "year": 2025,
+     "tonnes": 1.61,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0172",
+     "supplier_id": "F-011",
+     "plot_id": "P-012",
+     "year": 2025,
+     "tonnes": 1.8,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0173",
+     "supplier_id": "F-007",
+     "plot_id": "P-013",
+     "year": 2025,
+     "tonnes": 3.47,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0174",
+     "supplier_id": "F-007",
+     "plot_id": "P-014",
+     "year": 2025,
+     "tonnes": 2.4,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0175",
+     "supplier_id": "F-007",
+     "plot_id": "P-015",
+     "year": 2025,
+     "tonnes": 1.38,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0176",
+     "supplier_id": "F-007",
+     "plot_id": "P-016",
+     "year": 2025,
+     "tonnes": 1.63,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0177",
+     "supplier_id": "F-014",
+     "plot_id": "P-017",
+     "year": 2025,
+     "tonnes": 1.19,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0178",
+     "supplier_id": "F-014",
+     "plot_id": "P-018",
+     "year": 2025,
+     "tonnes": 1.56,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0179",
+     "supplier_id": "F-014",
+     "plot_id": "P-019",
+     "year": 2025,
+     "tonnes": 1.9,
+     "certified": "yes"
+    },
+    {
+     "delivery_id": "D-0180",
+     "supplier_id": "F-019",
+     "plot_id": "P-020",
+     "year": 2025,
+     "tonnes": 2.96,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0181",
+     "supplier_id": "F-019",
+     "plot_id": "P-021",
+     "year": 2025,
+     "tonnes": 3.63,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0182",
+     "supplier_id": "F-019",
+     "plot_id": "P-022",
+     "year": 2025,
+     "tonnes": 1.01,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0183",
+     "supplier_id": "F-023",
+     "plot_id": "P-023",
+     "year": 2025,
+     "tonnes": 1.95,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0184",
+     "supplier_id": "F-023",
+     "plot_id": "P-024",
+     "year": 2025,
+     "tonnes": 2.91,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0185",
+     "supplier_id": "F-023",
+     "plot_id": "P-025",
+     "year": 2025,
+     "tonnes": 2.69,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0186",
+     "supplier_id": "F-026",
+     "plot_id": "P-026",
+     "year": 2025,
+     "tonnes": 2.36,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0187",
+     "supplier_id": "F-026",
+     "plot_id": "P-027",
+     "year": 2025,
+     "tonnes": 1.48,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0188",
+     "supplier_id": "F-026",
+     "plot_id": "P-028",
+     "year": 2025,
+     "tonnes": 0.86,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0189",
+     "supplier_id": "F-031",
+     "plot_id": "P-029",
+     "year": 2025,
+     "tonnes": 3.41,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0190",
+     "supplier_id": "F-031",
+     "plot_id": "P-030",
+     "year": 2025,
+     "tonnes": 3.14,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0191",
+     "supplier_id": "F-031",
+     "plot_id": "P-031",
+     "year": 2025,
+     "tonnes": 3.0,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0192",
+     "supplier_id": "F-034",
+     "plot_id": "P-032",
+     "year": 2025,
+     "tonnes": 1.35,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0193",
+     "supplier_id": "F-034",
+     "plot_id": "P-033",
+     "year": 2025,
+     "tonnes": 0.74,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0194",
+     "supplier_id": "F-034",
+     "plot_id": "P-034",
+     "year": 2025,
+     "tonnes": 3.08,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0195",
+     "supplier_id": "F-038",
+     "plot_id": "P-035",
+     "year": 2025,
+     "tonnes": 1.14,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0196",
+     "supplier_id": "F-038",
+     "plot_id": "P-036",
+     "year": 2025,
+     "tonnes": 1.79,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0197",
+     "supplier_id": "F-038",
+     "plot_id": "P-037",
+     "year": 2025,
+     "tonnes": 1.38,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0198",
+     "supplier_id": "F-040",
+     "plot_id": "P-038",
+     "year": 2025,
+     "tonnes": 3.14,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0199",
+     "supplier_id": "F-040",
+     "plot_id": "P-039",
+     "year": 2025,
+     "tonnes": 0.48,
+     "certified": "no"
+    },
+    {
+     "delivery_id": "D-0200",
+     "supplier_id": "F-040",
+     "plot_id": "P-040",
+     "year": 2025,
+     "tonnes": 3.02,
+     "certified": "no"
+    }
+   ],
+   "rows_sha256": "3d462c8a116bda92346b37899ed6d8472822ba24a2457aefbb3a899c0b7afa32",
+   "row_sha256": [
+    "938ee3662ba8f9018111c3ec7166befe3e4eae2d091e1752014aef3d3ca594df",
+    "a1a0e726b2cf919e8cfa14d586887af9e226c8563dbcc4c0fb04dc46d6fff964",
+    "87e8cbaaf1ea8da0d5900d80c3a1b4ec738cd2a68f0c646505b7f9a2fd329d48",
+    "04c92413f8a6d7e9e732beca34177317a3f83ff6e1a4dbfd8209d8899d3adae6",
+    "93d4c006beaae3b9d89bae0c00f64d7908512bac4e1b8bc20b0e3227e804d885",
+    "b563948af110b4bd366461a904d2e8ec3d0c508f327fed5a8864669046f89aa4",
+    "638164528a1927e38e4143c64961ddd6a49d022ef98aedf3f9e67d88c23884e2",
+    "a94734000c12249f3ba285ed6a700be627cf6ffaaf157cb5491101391e09b490",
+    "41565c74bc72e3be1430a4905c045cb39869d5cb13aeb4974e84cd1003641b8c",
+    "44fcd1876449a25aa0d55921de7882a593da6fa9b40aa18fa7e58616746bbf2d",
+    "97fbb77b9726588b9ae582562d5fb559f902e948aea9fe626c92d217eec0b4ae",
+    "4152eacb89cdc126d95e0669406d98f5d96f44d5f13d5447fbf459392bf49542",
+    "16c04662e03f65193b9cc94fa79eafa905d242fbd5f3c7afd48900c1d6aa10dd",
+    "0b237132e04e3f7e43ba1c026152d7368993d4b1d5d46e672c9f0da6cbf4a9bd",
+    "d7542bbd2f6515fc6e5dbb18240092af6388aeb2f8d28c44d2cac296d829daf1",
+    "f997db7d50370a928cf0a694131fdbf93afd7cb9a3c9a6e7295de4b9caaa13f2",
+    "82c4099bbadd997e4a80898f534995c5ed882aad7aff7d71c016c6e5ed02a4f7",
+    "6b227a320a6cd0acdcba4f21d2d13ca723bd1ff8cd62b2377354d21eb96654c2",
+    "abe41de62849482145290a4b4f341704f0d161d46c1e62ce84bb805d61de3410",
+    "a3f2207af084c2f43c28e7f7842ab484cf9704cc01eac798125ab570a041e363",
+    "081138e57b85985e9679a6c141032d2c73b9f7919bb28a47b8a431675bc98888",
+    "d9525cf7dd8a884beef6f4fcd31f032f21d8ee41c778b7e4c066ec863d626b2e",
+    "a3dc08d4373eec05e037e7c5ef26ba66b279eae2247d819a68a67e82551e1eea",
+    "b74afc0d0783d6b77b30c3d09d0819f71b14ccbf5d160755336dbef4971677df",
+    "c72c96e1f186417db6fa6cd30bd6ed5176081454ae604618b268e7b29e6308bc",
+    "0ee0d02ace4f0d2faa2221853dacabf80eb446cbdb2ccc089b2dd2875fa071aa",
+    "9928807a4a3022f7d2ca857894bb057ab44086d94369bcca1dff91ee9401231a",
+    "fd83726bb7e7090a44f3d2671a4e58e88e1d330108ea4a0c47b1abe7dbaac31d",
+    "a68b63238ffc5d7df7576c3ac49b8c1165e2e4159f44a5cf07fce5a2c235da9f",
+    "bea67be12dfad4250527bce8faabc658e835207957c19b27aff543c28f4d71d6",
+    "8c4b87bc7c1ddc7f8d1c1c97a69330f36c5fb5367fa659944de9e8cbbb6661a4",
+    "11edd25b2968d7ade8987918594e1f3ae8c846e5e0aa940379f1c8cb518ab2fa",
+    "d484a67448d446dd26014551dc84e473cfc5b580490c32c2a38d4f1f55d903e8",
+    "19c34c00a87d2c53a569a36c62515bccb0456ade9b676958d2b0b1ddbfe78d8c",
+    "959938f7ba6158701683efc86a273a50755576dbfd814a7ae447acbd502adaba",
+    "e18f9e99c0f6bbd957d468a0c19dc7c970b0abdd32653e27f325788139b0b754",
+    "9af80b53a3448a3604e22a78226945a5cffe9fe21ff2344240451b5edd899789",
+    "b43357b279ff4a6c104cb778a07463cb14a79d51d4848232747ac74200cc0f32",
+    "45d3934aa03aac213618a87e61eb24f2fb1c3087bc2153a9ba7fa2c45dc06ba8",
+    "57b0c4b7b32cc61c80a56afea2c782f198a9f83eaa1d80d35da938d6cc6c24ef",
+    "bf3e1107eb6a07cc770679e56e4941998b0428d40e199da3da26010f9cb9163e",
+    "b921caccef890acb0854ce40342df3e071e9e357b2c2549ae1a56ac7266bada0",
+    "16bea0c69c969b9dfe973127ff8e69f4fee2326e2c950561a9f5f9f6290e52c4",
+    "d252dcbab488aca4a3c39ae011d60d270eae3280711d28e758c7270b3450de7e",
+    "d41256058b54d381d9c416252a26d509662ab2d31387445cd560dabc11b0a586",
+    "2a54c8b1980144793d3a302453f5e568c621f1624f89f73a3beea88d983aa9f0",
+    "d72880da8b61aedf83dcf5a2858354fc53f3302bd45a4eeafaf3d4e68852d444",
+    "a5b5e8424ca6a784949a45d077a706850c74dd0fd94a89e427f25eaa87f9a975",
+    "ab9e5190e8ce073360ced763264f3e134cf4c6581c765b2fbc6910c3165b302d",
+    "0abcc250c54791cb6e18a9aaf8557b82fd1091a65bb82bf91df28c11ad3e7a86",
+    "4afe56bf8ccf9ad0ce29e396c7d1a71e0be66a3158b9deba2131bdf57a888613",
+    "ec9e321221d1d4c134a6485ac19a47ab1a078b28feb709669aa2afa2438d5303",
+    "d016823928a5bcfab22cc6ce7ad23ef217d6d5a3df6267488e8f53c09a048047",
+    "6a12fd6107d9feaf183725aa23af27674fd031b61a907e623ff46f4119b696c1",
+    "6cf92b3cedae00c9f4c105b0a001ae2194c3cf28a5049593e2acc942e473eb09",
+    "7413abc609ff1973524f6475114da121a47ae391a69a7c8a9745851b996eb2fb",
+    "bd8021f1f24aa28d77258971a6e4b6717240a416d5e742bffcdd9d5bb3995597",
+    "d48c77bbff512790dddf34d2278e77a9dc52f94a72609a416d0f18ce9acead14",
+    "9683d099094b253f4048dd2f71aeeaa99a35e288e9bf74dbfad669daecbdbf2d",
+    "1b31d4cf4005edb01bf923e8f99f610230a6fd7a7138fae7b85bca61ad10032b",
+    "4e1996a457c91a0ba48ab75ea7de83f285ea5293d825e339b58ba58d55f994f8",
+    "51a1a0c684932b952d61b7707548c9ddd4cba7675d17842d4173210138381517",
+    "7bb2bd70eca260a6bd3ffda67e0be049a3cd9124c3d62a18ae79151e3f3c1e40",
+    "c33e8c5a31dde2b15a9889f32349bd333a358fa423a5f5f19ef2678b8c40f6b0",
+    "4da2c0be563bee9d60971313a1edac2dcd09cbd192ed19720852ffcd17dadeec",
+    "95442b748c285e3798dba47e9aed87dd3099510fc13dbbb82050e5259b9482f0",
+    "5a9e4419d84a22b7c9034e948bef90a823cf6add75f08fd85e2660ba34884699",
+    "dbab5465435ca13b598cf318d60a81b7635805b9d6994babe76ff0c8092da636",
+    "52058d3324fef36939836cb8cf92acfcbb84091e25e887c19fd12b37f49819b9",
+    "736c815540f4d7e04d8a86109f3e9aa4f1f04412d5bae1b1a9aaab36e3b055b9",
+    "51dfa0971b0fbd9eebb56df8b17d367930ef7f997bc186ed4b5553960396757b",
+    "ffc340297d2b7e06e9b633581e3f9b23cb350d005c3a3b1302f8da9c4463d856",
+    "b060ba65b0767ebd3ebe7648ab7c65d5bed2b0aec4a69b6c25936f3d1502225a",
+    "30e96e3012137a31465b23083a0fbb23f904c12a79095ecd985b9f7ce07f6e42",
+    "624af02758619ceafa97670754359df1881d2e85690da6817eb408ab8fb5f71b",
+    "b56322a3462e6ed37b1da1aff2750a62fd349a6856ab6fc4dc3ec8a8baf1f3f0",
+    "66b4f0e5872a693240a02d7984e4878fbab04f1ed901d8b9c7989a3672dffe13",
+    "634c0511765f5046c54a92bcb876e103938ce48be62830d77775fa4304bc2b45",
+    "e648767d6fb25eae1d4115969540000c85837b1400c70ea3235f305ab86948aa",
+    "7e9e20cd2ea2350903b795c19fd3688711852713257dbe073ce2da2b6012cb6c",
+    "a17bdf9669846f2d63037baefa36d74e14b9f48706cc8eb094da7d0a0636105d",
+    "bb9437cbe3c996398c3c396998ce6509bbf1e2fe3f63d7dd7915a4942d9c83aa",
+    "91ed72cb2c7530984b8ef2b818016e81030c0237780bbcb7ca5913828adced60",
+    "2c076cd336a46d8d6f2cb3a3cc62b4aa4464ac483135e3f09b8acc50e2c21312",
+    "3e8e875c8a22a3e034caeba01faa92a4ccee7be1313d31d91685bdaa54ec284c",
+    "1ffc7f68cd1fc834b2744f212f122a1c9e1dd6b540d6b97c1652dd2a129f3cdb",
+    "ab39b705b825a58873f7feac01b03fa3203de741865d2427bd59208b1ddc2e10",
+    "e203c8c5ee5ff924a9abaea06cd80b7c7b6b1ba4c989c60809201b16959375a6",
+    "be6cb82a02d82200eaadcfb5116e0a044a7242da06fdaf9d5a51be0f6565ea5c",
+    "b12eb4d9890d6186918b1f13320d7fb611d648b5e8afa0077fd1bcfaf408e9ab",
+    "0bd2288dae560c9a4e1805ddb708b9a1e26f19f2aa5cc3dd640fc984e5ea909d",
+    "bb446309e9b851d20bc64f3d1de29ad8970dd98259f6ebde2a312dafd6388ca3",
+    "3896393eeef2196278800a99528dab36264f362f829f7a72841b1a3b75ca7e55",
+    "3101ef99dde260f562be59305df5ca1720c535ee7c8a97963c9f4f772fbfa754",
+    "84ddaf49d7658fdcdf808a09805dae151e48d716558db2fd941405bef134cb48",
+    "0edb6efa963de1ae255bce508b9eff0316677f7ce059975dfee1b205e2b503de",
+    "f0a2e4597707c853fd92544212ce1e8fc2b4066354072e8e416d9eda585c9bbe",
+    "87a22e47a45ac8d665c2ab3557f997e7f8e8ac7216f1f17fbc769ad0bef0e4f2",
+    "217e37fddb6245acad5960986990d261370498c996d81efc80415fbbf323c1f0",
+    "0ec0b03b7ab44f68a6592ff6b1d582ba4340ace2fef8a924ba0cb66b3c6615dd",
+    "6a35097c0e35ab68bd1274c1682ba07d5959183896141398a69c92f124d15d91",
+    "98aa867358638c158d1db6a7ef005a154046b5f3c9ccc15d86ec61dee452a808",
+    "84a401e0ae620da02a0eafc8acc9f13240b386893aa3e06f3af15f6e52c8fe74",
+    "6fe85d130436fb0da41867400081708cd6e5ea4d4ed333039c6db79a83c71144",
+    "7d8eebc8e727555036f4c93acf5b4f08e629631a884687de5c20ef52e3924b8a",
+    "41d7a57c7ed623f17fa06f335a24e55cbb6c83d91e8c2560a89c3fd5599bbe3f",
+    "2ac01c8c3ba9d1b379f8465c8c9d7028fec2c8fe6c3d46da256dd9d9fd6b04df",
+    "bafcc471b4b66f732df95ef7893d7101664a8a6a5560e3054eddb035f621528e",
+    "e19513d065adbe1b83347332e5a25554dbbf82a41f260c35c72181d09ffc74b2",
+    "f1dd0a863b90e69e5392d17ff59d56364b11d986958acc395d5dba5c933698da",
+    "4f010033b7d6b1d564566ffcd44b2ecc73b1224b3a4ab42daf2f21373a396bf2",
+    "a8aa1036f72f3d09e0551e729cb7d669fe301c5e0e3156123ea40db7a205ce85",
+    "96a6f82904551bb053a05a821ee8b12615f558b7d51e20e6cf252d7ce569a58c",
+    "f6aed7a227e589b984a39c726841d9c7bf40d53990a5f727719f115f9b584424",
+    "855f0492ba464bb647820b15119c939b2c05083d42c95955fcf1eab999e545ed",
+    "db329ef7b31bccdae0316b65fa61c408cf342f7d093a2dae3f7a86c017d1884d",
+    "03f92d36eaefcb8b392cc8fbce07ab6043f9c7ee4f16bb3d4836dff2afc1e358",
+    "8725fe275b7d2b2a9f5bef0f23c2a7c5a5476bef91a4a578d03b16c942a1d7da",
+    "1cc64ff28c46ce0d1cf8d2388dd805de80bf0571c036ebb3e7dcbe2dba464069",
+    "fc422317e80384fda9649bace10f77fa3721d526e4bf19283a7ff74fa6045429",
+    "3aa58706222c46e6d773cbbf2c626483c64a57f7a0092d40f846e5e6441a1b74",
+    "c505a84f68a7acfcec1e32d57da61adf11ae16f36730aa4458581463e99cb404",
+    "321c2f699d0f1c90a8c4ac17dee3ae968bff8737b775a8b77a750d5a0b6a6377",
+    "f5a1c65fcb4afe99799c3e563ecea6d7b08d38ba5774d2857ad465caa2b02fdd",
+    "37276ce8a8833754cf8800711348086bc97e2cb7d861efe0df57992714507ac6",
+    "e26570d41f43bdc9896721406ae85c0fa1efb32b329aa55670d579e10fbfdd6d",
+    "5ca79620501babe191c44816d9fc8024b2464a7bff747a83765dd0c78554cc8a",
+    "91dcc2ece168d6f2b360afe83c8264990f037f5e7c36265206694b30072dc894",
+    "5cff1310775b7b1bca76597c39235f4eb553a3b17e57deb715a81812f32360f7",
+    "afc84ac7eb3a102a0bd5351e081477d309010d72163d6484dd34495c12b09086",
+    "a1e67b2fe989ce6e2219b2cd14984a82487ea17d7ffe7b584518995c6e2dcbaf",
+    "cadd9c1a55c3d0bae2427b72f578263edd8726fc20f47d04fc1c37ecb6e97309",
+    "9c5e7c0d489f5bb2f532b15b5ebb6318835f99796ad3271c185242b8c7359083",
+    "2dad039ba6c6f9684c1b72b25f288f6c5b79b2368eb73ffb309a512a42ebd4d3",
+    "1e195d1de172017a9dba574639a01d40a90ccdd3f4627706b575f069cb132964",
+    "cd31703dba556c96dd8a6ea4331b1f404a1e42dd9b6caea0a7929ff129aad459",
+    "aaa1c619273e8f27b3ba24df1cda6091811a1322bd42e1826ea624bc58760dff",
+    "ec9a4325ed8ca9fe0e5403fa862cec86fae91c1f82601c0c1eb77138d54e4fa1",
+    "e8ef617fe0853bbe5210fd86ec88781342102d009c91346c31143b992ed80bde",
+    "4c44663b1562df1a81c05a671e1a4c735ddef9811b6c2771d1a2dd2bcec1b560",
+    "e8102135fb13c702a7825eb0bd008ddea6aa1f057e3baa4849c0c78b9779c056",
+    "6f1db4efd17c74873b46ac8ea4acd8a5769218a85e7679adb9e7dc2f73267b23",
+    "c677c0a256cf99954a86412de907821af554987a0e60519856fda0c097f21235",
+    "6b2561b7be1fa3dcc88c7037f24be27d1248dc306815a93c36a697c2675c4a2c",
+    "f933935e6bae3ee794d99315cad8802a4c0ef9a01935393e20b2e9dca6f970b5",
+    "69a9b7ec6f26faba9afddf1392bb9ef859cded4748314d0a43bdb98455c9354d",
+    "41f8dcc84d241fee612749f5214bb027953fa574ebc60708eafa4bb5742f0c11",
+    "135afd4c0a4841a2ac754d4e168db4809b49fa028ae9ab5259c1ff14837bd6e3",
+    "f382c343d3ea4df70579ea017357318efe8fb3bdc928d4cdd1e1378f43e9a63b",
+    "acc14567bea86ac50bc8065354f60d95f9b7bad93de9dc60d339b814aca9125c",
+    "a97e373cf68a8ecf3612c9f61aabf923b511679868ec1a33309c610b5d1f7152",
+    "fd30ba02a4a118d23a08405e1dafaa37d83bc4a342fb550c500c0628b4bc5a97",
+    "12955859788fba0a2c13902e04f09d9428a69ce0ba82d77059251c47b42b47d4",
+    "18a4c694ba348e6ce8ad84f88a647defc0b81a8d5f113bdd4caa1de79eaae243",
+    "605a7b85171966138141d4edf5fa2cd5719f054ac573a3e0e7a7b17193490d93",
+    "01ebdac4dcb6c1d97b31d0375ca6491e3be903bc7731f35147477233fa6539f1",
+    "e6ac835ea2793b7078488bcf8fee12f4e0f4457c509089fe291e5c4b6f91d681",
+    "1c9a82cdd6be15e8d97280169ded1804d56536129498bb49e639192c74714e3c",
+    "9ed7a72153be59ac0b660cd42d5785d720db5551b1df10147369c8028a3bd39f",
+    "cc88e43df44d3473b4dd10160ba733629309a49cf93bc70e8313b88973a3fefb",
+    "479f5d7fccf5ac119981f8fa2377e2beeac11da9dfb35e7fa7b97ff51382156a",
+    "a013692ed9c83316f11ce2c0939221175eb14a34f4914ea2f2653943a9abfbfb",
+    "785814946509dbaa56a31b3051a1bb5038b1ae86cccb2ea93bea223f360969ac",
+    "120b7c3aadc15b10b8ac618e9f4fafc115bb1c3e44184ad29d81ba6639577716",
+    "3535f342a01b5322c6392270197c891dcdec4bf5a306b27bc753aec082370df2",
+    "8b38e2cea15dbcd121144b0aab7c5c236687f58f45c109158b8a70a786fa2684",
+    "20fda80418ab34df045fcb4257a14ea41f9e5d0029b547a619d06a1e91d1987e",
+    "4029a285f5c9fb8e7f2e1e5356460ec79fdd355e4c2a18774614f9e9cd24784d",
+    "d40cf1390baf1d8af67b31ced87f63b20579b908bcd594b94cb61408ac1a66d5",
+    "a659b636f4245cb9b37ff74b6ef7f4dd0949a0c59b193f5cb73adf307dcef455",
+    "9a16542196ffbabf0ed0cac6ed1e22b77a098c94460cb8685a651ca0ba011863",
+    "e4677412faf5c6df9fd093863112bb8caabbd59c748dd9ee3a6d369339239fdc",
+    "fbba431b39c76cf3e8fe73f19f302e66f261c8d2ae240c2c858c7bd1d8232824",
+    "018e69c97e4c3123a2dd522eeccee9639c66370d17ff93bbfe1d7a018d4c6afd",
+    "5ddbc250d576f993eb6eb0f2751c7ee2ade950040696f477278613a424af0df8",
+    "643248af2288faabbdfc0d8a37907600021be657b096b71e4620203cc68517d5",
+    "5f9c4bb0133f81256ef2a374dceac498f53bd41c544eb8c16932ed87a3208529",
+    "e9fecba8b6f910ad9fde2d4612fe0b4e745aa9c00362d2811f08361a64f68457",
+    "dcf2172c2a1f1dcabd0cb84ffc355b965abb3548955daa98192136c612c1a2e7",
+    "f333fec5243a8aeb1585c72d2ef7e2c1003b00a0f0a0e4aaf233c0dfde59046a",
+    "ddc7e5a30f9bede4a774e587dbcc790ae68e441a36e37332b95fce6bef0df46e",
+    "9515240f15cf30be1f0303bed070a6dfb72d0539a676e702250ed56d24c44850",
+    "b26828e319b607b4f63a1fa1d7c506f35c47783ddaf6c7e4225caeb484671e4f",
+    "c456eea8a000603bf85880465420b3f2997d3b0f35a087ebf0a3f05bbf187b37",
+    "fc00a51790bbabe20ee693e363f1aa128908e0e438ec359e88956a69298a050a",
+    "606688c1ae960118d792d51efadac4ece096dfb0f572ee4165115e792ce43398",
+    "c0c487d68e82c61e1292a35605fc6303f40714993488bd7082de6062a1a7a9d0",
+    "aebd77f24053af4c8945bbbb128828b6cb156fa2aa20062485ca8731e692ac75",
+    "51dc9fce332c399fafa03bda7a97ef028660151288a45058307ab725cc06bb4a",
+    "739ac0730a1aa2204296027e425bb70a77c74e8ca11a2403fdc2ad46d0df2188",
+    "0650025f4551106e3e56db589ddbfd5cd1e4f1c6d437b51dfd9d693037d0746d",
+    "3eff5941bf82d4d4c321d03e1c052fdc40b864e06346221e0b2d0b7c59d286c8",
+    "bc80b83bbe7b830bf564f2c0fa2e62d271e6431752731924fe8e3b4d46bc6781",
+    "8b71af780882fe2a1cc86ae026e9ca356f9653b77be9f9213cf888de22dfa21e",
+    "6afaaa7e95a227fb3a5860ac2d6af899921f5cd5dfc5a7b8d0c17b4f13b17672",
+    "ecc5b836b3b0bbd12b3658318d44a93786ce93c3983948539b21ae15379281b1",
+    "3a14cd85fad6b18ad9c8661b083e2918d6c1a6a7de6b3a4b79b9481f860da7e8",
+    "7e5b72852be3291ecf62aeb6b963642f11b40d45c5a29c569ebd16f832760e36",
+    "7111be0030d0892376d81be08cfdf1c63d611d5a858d220b4c1027c80343de5b",
+    "3157fef2e0836b9988caa6455e58df38e15f41151ae9e7fda634e8412d13cd42"
+   ]
+  }
+ ],
+ "documents": [],
+ "extracted": {
+  "scope": "all",
+  "admissions": [],
+  "mentions": []
+ },
+ "declared_plot": null,
+ "what_if": [],
+ "verdict": {
+  "overall": "CONTRADICTED",
+  "parts": [
+   {
+    "claim_part": "coverage",
+    "verdict": "PROVEN",
+    "rule": 4,
+    "codes": []
+   },
+   {
+    "claim_part": "no_deforestation",
+    "verdict": "CONTRADICTED",
+    "rule": 2,
+    "codes": [
+     "confirmed_alert_in_delivering_plot"
+    ]
+   },
+   {
+    "claim_part": "plausibility",
+    "verdict": "PROVEN",
+    "rule": 4,
+    "codes": []
+   },
+   {
+    "claim_part": "scope",
+    "verdict": "PROVEN",
+    "rule": 4,
+    "codes": []
+   }
+  ],
+  "findings": [
+   {
+    "code": "confirmed_alert_in_delivering_plot",
+    "rule": 2,
+    "verdict": "CONTRADICTED",
+    "refs": [
+     "alert:A-221",
+     "plot:P-014"
+    ],
+    "derived_from": [
+     "Q4#7 row 30",
+     "Q3#4 row 13"
+    ]
+   }
+  ],
+  "unreviewed_cards": []
+ },
+ "flip": {
+  "tried": [
+   {
+    "change": {
+     "entity": "alert:A-221",
+     "field": "alert_date",
+     "from": "2022-03-14",
+     "to": "2020-12-31"
+    },
+    "verdict": "PROVEN"
+   },
+   {
+    "change": {
+     "entity": "alert:A-221",
+     "field": "confidence",
+     "from": "high",
+     "to": "low"
+    },
+    "verdict": "UNVERIFIABLE"
+   },
+   {
+    "change": {
+     "entity": "plot:P-014",
+     "field": "tonnes_after_2020",
+     "from": 12.0,
+     "to": 0
+    },
+    "verdict": "PROVEN"
+   },
+   {
+    "change": {
+     "entity": "plot:P-014",
+     "field": "position",
+     "from": [
+      6.826514,
+      -6.464651
+     ],
+     "to": [
+      6.822175,
+      -6.461391
+     ],
+     "relative_to": "alert:A-221"
+    },
+    "verdict": "PROVEN"
+   }
+  ],
+  "first_flip": 0,
+  "sentence": "The claim would be PROVEN if alert A-221 were dated 2020-12-31."
+ },
+ "model_calls": [],
+ "verdict_sha256": "24035b459821721e168619c808d35a6a03819b9feb113dac3ffabca4cba56eb0"
+}

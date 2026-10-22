@@ -14,3 +14,6 @@ meterless/reference/node_modules
 meterless/.world
 design
 logs
+data/raw
+output_examples
+docs

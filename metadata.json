@@ -1,0 +1,98 @@
+{
+  "project": "GreenTrace",
+  "tagline": "Checks a deforestation-free claim against the evidence and explains why, down to the row; every verdict ships with a receipt re-derived offline.",
+  "hackathon": "Open Agent Hackathon 2026",
+  "track": "The Agent That Can Explain Why",
+  "team": {
+    "type": "solo",
+    "members": [
+      {
+        "name": "Amir Ogan",
+        "role": "founder, author"
+      }
+    ]
+  },
+  "repository_entry_points": {
+    "api_and_cli": "run.py",
+    "agents": "app/agents/",
+    "orchestrator": "app/orchestrator.py",
+    "verdict_rules": "app/rules.py",
+    "receipt_verifier": "verify.py",
+    "interface": "app/web/"
+  },
+  "sponsor_technology": {
+    "zetaris": {
+      "used_for": "the only data access of the agents: Unified Semantic Layer eudr, native data-quality rules, queries Q0-Q10",
+      "code": [
+        "app/adapters/zetaris.py",
+        "app/queries.py",
+        "data/usl_eudr.sql",
+        "data/dq_rules.json",
+        "scripts/load_zetaris.py"
+      ]
+    },
+    "meterless": {
+      "used_for": "World Model reference implementation (unmodified, conformance 8/8) as the agents' shared memory; Meterless Runtime provider coded to its contract",
+      "code": [
+        "meterless/reference/",
+        "meterless/server.ts",
+        "app/memory/world_model.py",
+        "app/adapters/llm.py"
+      ]
+    },
+    "nvidia": {
+      "used_for": "Nemotron 3.5 on two pinned lanes (fast, deep): reading reports, planning, proposing refutations; the rules decide",
+      "models": [
+        "nvidia/nemotron-3.5-lightning-30b-a3b",
+        "nvidia/nemotron-3.5-super-vl-120b-a12b"
+      ],
+      "code": [
+        "app/adapters/llm.py"
+      ]
+    },
+    "cursor": {
+      "used_for": "build (free plan), logged honestly",
+      "log": "docs/CURSOR_LOG.md"
+    }
+  },
+  "run": {
+    "docker_sample_mode": [
+      "docker build -t greentrace .",
+      "docker run --rm -p 8000:8000 greentrace"
+    ],
+    "one_case": "python run.py --input examples/01_contradicted.json",
+    "bench": "python -m scripts.bench",
+    "verify_a_receipt": "python verify.py output_examples/01_contradicted_receipt.json",
+    "tests": "pytest -q",
+    "live_mode": [
+      "cp .env.example .env  (then fill it in)",
+      "python -m scripts.load_zetaris",
+      "docker run --rm -p 8000:8000 --env-file .env -e SAMPLE_MODE=false greentrace"
+    ]
+  },
+  "sample_mode": "SAMPLE_MODE=true (default): no key, no network, same agents and rules on a synthetic company and real forest maps",
+  "examples": {
+    "inputs": "examples/",
+    "real_outputs": "output_examples/"
+  },
+  "bench": {
+    "cases": 21,
+    "rules_alone_sample_mode": "18/21",
+    "with_nemotron": "21/21, measured on 2026-10-22"
+  },
+  "data": {
+    "synthetic": "company, suppliers, deliveries, reports, alerts",
+    "real": [
+      "EU JRC Global Forest Cover 2020 v4",
+      "Hansen/UMD Global Forest Change v1.12",
+      "Copernicus Sentinel-2 L2A (map backgrounds)"
+    ]
+  },
+  "ai_usage": "Claude Code alongside Cursor, per the AI Usage Policy; Nemotron at run time",
+  "pre_existing_work": [
+    "build kit and interface mockups (design/), written before 2026-10-22",
+    "pitch deck and presentation video",
+    "technical probes of 2026-10-21",
+    "official smoke_test.py and commit 5e37dee (2026-10-17)"
+  ]
+}
