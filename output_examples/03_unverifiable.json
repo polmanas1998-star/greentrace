@@ -36,6 +36,7 @@
   "findings": [
     {
       "claim_part": "coverage",
+      "code": "volume_not_traced",
       "finding": "88.0% of 2025 volume traced to a plot (needs 99%)",
       "verdict": "UNVERIFIABLE",
       "rule": 3,
@@ -1322,9 +1323,9 @@
   "fingerprints": {
     "input_sha256": "4bc5c760b9d954e966c2cc15d0f268531195ce77e54973b0a853f06e510d4072",
     "data_sha256": "fdc38e7d0d1f2a9216a601c0a024596c7e110618d8048b3054bcf2fc09d253de",
-    "rules_version": "2026-10-22.2",
-    "rules_sha256": "4ad87565994cd7d1b111f7c07da79475f3ccf62e7d0158af1af3fb1b9f977f7b"
+    "rules_version": "2026-10-23.1",
+    "rules_sha256": "20e72cd320c9b6aac97edfbbcf677a1a1afc9fd02f3469ad326dcddc4c7c8f49"
   },
   "log_file": "logs/example-03.jsonl",
-  "execution_time_seconds": 0.04
+  "execution_time_seconds": 0.03
 }

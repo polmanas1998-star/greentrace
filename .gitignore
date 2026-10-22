@@ -17,3 +17,6 @@ data/raw/
 
 # H-MEM notes between investigations (app/memory/hmem.py): local, erasable, never committed
 data/memory/
+
+# Satellite time machine: scenes fetched on demand in live mode (app/timelapse.py)
+data/cache/

@@ -74,6 +74,7 @@ def write(ctx: RunContext, decision: dict, cards: list[dict], reviews: dict[str,
 def _finding(card: dict, review: dict | None) -> dict:
     return {
         "claim_part": card["part"],
+        "code": card["code"],
         "finding": card["detail"],
         "verdict": card["verdict"],
         "rule": card["rule"],

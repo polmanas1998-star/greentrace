@@ -1,5 +1,5 @@
 {
-  "run_id": "8126070328da47e4",
+  "run_id": "fa79487159444ad6",
   "status": "success",
   "mode": "sample",
   "degraded": true,
@@ -36,6 +36,7 @@
   "findings": [
     {
       "claim_part": "no_deforestation",
+      "code": "confirmed_alert_in_delivering_plot",
       "finding": "alert A-221 (2022-03-14, high) lies inside P-014, which delivered in 2022 or later",
       "verdict": "CONTRADICTED",
       "rule": 2,
@@ -1472,9 +1473,9 @@
   "fingerprints": {
     "input_sha256": "176a8acab860f5fb9a12faa2b7223eeaac6d33992efdc5bf4e7af7bd1b319cbc",
     "data_sha256": "8cfad32bd910d2dc64f337934ed4eb4a907349cb658cebcc96e39bd46573ddfe",
-    "rules_version": "2026-10-22.2",
-    "rules_sha256": "4ad87565994cd7d1b111f7c07da79475f3ccf62e7d0158af1af3fb1b9f977f7b"
+    "rules_version": "2026-10-23.1",
+    "rules_sha256": "20e72cd320c9b6aac97edfbbcf677a1a1afc9fd02f3469ad326dcddc4c7c8f49"
   },
-  "log_file": "logs/8126070328da47e4.jsonl",
-  "execution_time_seconds": 0.07
+  "log_file": "logs/fa79487159444ad6.jsonl",
+  "execution_time_seconds": 0.06
 }

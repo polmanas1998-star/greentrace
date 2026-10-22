@@ -28,6 +28,8 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Callable, Mapping, Optional
 
+from app.explain.suppliers import concerned_suppliers
+
 SOURCE = "greentrace:writer"
 TTL_DAYS = 90  # a supplier check older than a quarter is stale: investigate again before relying on it
 TIMEOUT_S = 5.0
@@ -130,17 +132,9 @@ def from_env(env: Mapping[str, str] = os.environ) -> Optional[HMem]:
 
 def notes_for(evidence: Any, decision: dict, run_id: str, seal: str, run_date: date) -> list[Note]:
     """One note per supplier that a finding concerns: through a supplier ref, a plot ref, or untraced volume."""
-    owners: dict[str, set[str]] = {}
-    for plot in evidence.plots:
-        owners.setdefault(plot["plot_id"], set()).add(plot["supplier_id"])
     by_supplier: dict[str, list[dict]] = {}
     for finding in decision["findings"]:
-        concerned = set()
-        for kind, _, key in (ref.partition(":") for ref in finding["refs"]):
-            concerned |= {key} if kind == "supplier" else owners.get(key, set()) if kind == "plot" else set()
-        if finding["code"] == "volume_not_traced":
-            concerned |= _untraced_suppliers(evidence)
-        for supplier_id in concerned:
+        for supplier_id in concerned_suppliers(evidence, finding):
             by_supplier.setdefault(supplier_id, []).append(finding)
 
     expires = (run_date + timedelta(days=TTL_DAYS)).isoformat()
@@ -187,12 +181,6 @@ def _because(finding: dict) -> str:
         if keys:
             return ", ".join(keys)
     return finding["code"]
-
-
-def _untraced_suppliers(evidence: Any) -> set[str]:
-    known, year = {p["plot_id"] for p in evidence.plots}, evidence.company["fiscal_year"]
-    return {d["supplier_id"] for d in evidence.deliveries
-            if d["year"] == year and d["plot_id"] not in known and d["tonnes"] > 0}
 
 
 def _note(record: dict) -> Optional[Note]:
