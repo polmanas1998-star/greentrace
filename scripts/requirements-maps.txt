@@ -1,0 +1,2 @@
+# Only for python -m scripts.fetch_reference_maps (reads the GeoTIFF tiles). The app never needs it.
+rasterio==1.4.4
