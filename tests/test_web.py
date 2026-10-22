@@ -44,7 +44,7 @@ def start(client, **options):
 def test_the_page_is_served_with_its_own_fonts_and_no_cdn(client):
     page = client.get("/")
     assert page.status_code == 200 and page.headers["content-type"].startswith("text/html")
-    for needed in ("Run the demo case", CLAIM, 'aria-live="polite"', "Try to fool it", "Human review required"):
+    for needed in ("Run the demo case", CLAIM, 'aria-live="polite"', "Try to fool it", "What would change its mind"):
         assert needed in page.text
     for path in ("app.css", "app.js", "mark.svg", "fonts/Geist-Variable.woff2", "fonts/GeistMono-Variable.woff2",
                  "fonts/OFL.txt"):
@@ -52,7 +52,8 @@ def test_the_page_is_served_with_its_own_fonts_and_no_cdn(client):
     assert "SIL Open Font License" in (STATIC / "fonts" / "OFL.txt").read_text(encoding="utf-8")
     # The jury runs SAMPLE_MODE without network: the page must not fetch anything from elsewhere.
     for name in ("index.html", "app.css", "app.js"):
-        assert not re.search(r"(https?:)?//[a-z0-9.-]+\.[a-z]{2,}/", (STATIC / name).read_text(encoding="utf-8")), name
+        text = (STATIC / name).read_text(encoding="utf-8").replace("http://www.w3.org/2000/svg", "")  # a name, not a fetch
+        assert not re.search(r"(https?:)?//[a-z0-9.-]+\.[a-z]{2,}/", text), name
 
 
 def test_setup_is_read_from_the_code(client):
@@ -133,3 +134,86 @@ def test_the_stream_publishes_whole_lines_only():
     run.finish(output={"verdict": "PROVEN"})
     assert run.lines == ['{"a": 1}', '{"b": 2}']
     assert [block.split("\n")[0] for block in run.events()] == ["id: 0", "id: 1", "event: result"]
+
+
+# ---- the home map, the reliability tests, the evidence files list ---------------------------------
+
+def test_the_page_has_the_mockup_tabs_and_no_silent_button(client):
+    page = client.get("/").text
+    for tab in ("Check a claim", "Evidence files", "Reliability tests", "Download audit package",
+                "Or paste your supplier's claim", "Check this claim"):
+        assert tab in page
+    # Upload and drawing are not wired to the pipeline yet: they are disabled and say so.
+    for button in re.findall(r"<button[^>]*id=\"plot-(?:upload|draw)\"[^>]*>.*?</button>", page):
+        assert " disabled" in button and "coming" in button
+    examples = client.get("/ui/setup").json()["examples"]
+    assert [(e["label"], e["case"]) for e in examples] == [("A clean supply chain", 1),
+                                                           ("An admission hidden in an annex", 18)]
+
+
+def test_the_map_is_measured_from_the_committed_cells(client):
+    from app.checks.landcover import measure, plot_box, read_cells
+    from app.web.maps import PLOTS
+
+    data = client.get("/api/plot-map", params={"plot": "P-042"}).json()
+    plot = {"polygon_wkt": PLOTS["P-042"].polygon_wkt}
+    expected = measure(plot, read_cells(*plot_box(plot)))
+    m = data["measure"]
+    assert (m["forest_2020_ha"], m["loss_after_2020_ha"]) == (expected["forest_2020_ha"], expected["loss_after_2020_ha"])
+    assert m["forest_2020_ha"] == pytest.approx(4.62, abs=0.01) and m["loss_after_2020_ha"] == pytest.approx(3.42, abs=0.01)
+    assert m["outline_ha"] == pytest.approx(10.0, abs=0.01) and m["main_loss_year"] == 2021
+    w = data["window"]
+    assert all(w["lat_min"] <= lat <= w["lat_max"] and w["lon_min"] <= lon <= w["lon_max"] for lat, lon, _, _ in data["cells"])
+    assert len(data["plot"]["vertices"]) == 4 and data["image"] is None
+
+    honest = client.get("/api/plot-map", params={"plot": "P-041"}).json()["measure"]
+    assert honest["forest_2020_ha"] == 0 and honest["loss_after_2020_ha"] == 0
+    assert client.get("/api/plot-map", params={"plot": "P-999"}).status_code == 404
+
+
+def test_a_background_image_is_shown_only_when_it_exists(client, monkeypatch, tmp_path):
+    from app.web import maps
+
+    monkeypatch.setattr(maps, "MAPS_DIR", tmp_path)
+    assert client.get("/api/plot-map", params={"plot": "P-041"}).json()["image"] is None
+    (tmp_path / "P-041.jpg").write_bytes(b"\xff\xd8\xff")
+    assert client.get("/api/plot-map", params={"plot": "P-041"}).json()["image"] == "/static/maps/P-041.jpg"
+
+
+def test_the_reliability_tests_give_what_scripts_bench_gives(client):
+    from scripts.bench import run_all
+
+    expected = {r["case"]: r["got"] for r in run_all()}
+    rows = [client.post(f"/ui/bench/{case}").json() for case in sorted(expected)]
+    assert {r["case"]: r["got"] for r in rows} == expected
+    assert all(r["ok"] == (r["got"] == r["expected"]) and r["mode"] == "sample" for r in rows)
+    assert client.get(f"/runs/{rows[1]['run_id']}").json()["verdict"] == rows[1]["got"]  # its evidence file opens
+    assert client.post("/ui/bench/99").status_code == 404
+
+
+def test_evidence_files_lists_the_runs_kept(client):
+    run_id = start(client, case=2)
+    events(client, run_id)
+    listed = {r["run_id"]: r for r in client.get("/ui/runs").json()}
+    assert listed[run_id]["claim"] == CLAIM and listed[run_id]["verdict"] == "CONTRADICTED"
+
+
+def test_the_map_route_defaults_to_p042_and_draws_only_real_cells(client):
+    default = client.get("/api/plot-map").json()
+    assert default["plot"]["id"] == "P-042" and default["measure"]["covered"]
+    grid = default["grid"]
+    # Every cell drawn is EU forest in 2020 or carries a Hansen loss year, as the file says.
+    assert all(forest >= grid["forest_from"] or 2001 <= year <= 2024 for _, _, forest, year in default["cells"])
+    assert client.get("/api/plot-map", params={"plot": "x" * 40}).status_code == 422
+
+
+def test_the_visual_rules_hold_in_the_stylesheet():
+    css = (STATIC / "app.css").read_text(encoding="utf-8")
+    assert "gradient(" not in css and "backdrop-filter" not in css  # no gradient, no glass
+    assert "infinite" not in css  # no permanent animation
+    motion = css.split("@media (prefers-reduced-motion: no-preference)", 1)
+    assert len(motion) == 2 and "animation" not in motion[0]  # motion only for people who did not turn it off
+    sizes = {int(n) for n in re.findall(r"font-size:\s*(\d+)px", css)}
+    assert sizes <= {12, 14, 15, 16, 20, 24, 40, 64}, sizes  # 15: the trace rows, the system's one exception
+    radii = {int(n) for n in re.findall(r"border-radius:\s*(\d+)px", css)}
+    assert radii <= {6, 10, 16, 20, 999}, radii  # 999: the status pill of mockup 3
