@@ -8,7 +8,7 @@ covers, and a cell's area follows its latitude. The plot is its polygon, or the 
 its area around its point, as in app/checks/geometry.py.
 
 Measures only: the verdict stays in app/rules.py. A plot that is not entirely covered by
-the cells gives "no reference data for this area", never zero. Loss is given twice by
+the cells gives "no reference map for this area yet", never zero. Loss is given twice by
 year: on every cell, and on the cells the EU map counted as forest in 2020 (the only
 loss the EUDR's cut-off is about). Cells read where no EU 2020 forest map exists (Global
 Forest Watch tiles, app/checks/gfw.py) carry forest_fraction_2020 None: the measure then
@@ -34,7 +34,7 @@ CELL_DEG = 0.00025  # the Hansen grid: 40 000 cells over a 10 degree tile
 GRID_ORIGIN = (10.0, -10.0)  # top-left corner (lat, lon) of Hansen tile 10N_010W
 FOREST_FROM = 0.5  # a cell is forest in 2020 when the EU map saw at least half of it as forest
 CUTOFF_YEAR = 2020
-NO_DATA = "no reference data for this area"
+NO_DATA = "no reference map for this area yet"
 DISK_SEGMENTS = 64  # a point-declared plot is a disk drawn with 4 x 64 segments
 DECIMALS = 6
 UNCOVERED = {"covered": False, "reason": NO_DATA, "forest_2020_ha": None, "loss_ha_by_year": None,

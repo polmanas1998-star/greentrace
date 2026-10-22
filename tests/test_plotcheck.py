@@ -74,7 +74,7 @@ def test_outside_the_maps_points_and_multipolygons():
         "type": "MultiPolygon", "coordinates": [P042["geometry"]["coordinates"], P041["geometry"]["coordinates"]]}}
     out = {r["plot_id"]: r for r in check(collection(far, point, no_area, big_point, multi))["plots"]}
     assert (out["FAR"]["verdict"], out["FAR"]["code"]) == (UNVERIFIABLE, "no_reference_data")
-    assert out["FAR"]["sentence"] == "FAR: no reference data for this area."
+    assert out["FAR"]["sentence"] == "FAR: no reference map for this area yet."
     assert (out["NA"]["code"], out["BIG"]["code"]) == ("area_missing", "polygon_missing")
     assert out["PT"]["measure"]["covered"] is True
     assert out["MULTI"]["verdict"] == CONTRADICTED  # the P-042 part alone contradicts
