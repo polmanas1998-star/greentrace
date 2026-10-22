@@ -86,11 +86,11 @@ def test_meterless_answers_first_on_a_pinned_lane_with_replayable_settings(trace
     fakes = {"meterless": FakeClient(GOOD, GOOD, model=FAST), "nvidia": FakeClient()}
     models = gate(env(), fakes, traced)
 
-    value, info = models.complete_json("Extractor", "Split the claim.", BLOCKS, SCHEMA)
+    value, info = models.complete_json("Writer", "Word the verdict.", BLOCKS, SCHEMA)
     models.complete_json("Evaluator", "Refute it.", BLOCKS, SCHEMA)
 
     assert value == ANSWER
-    assert info == {"agent": "Extractor", "lane": "fast", "provider": "meterless", "model": FAST,
+    assert info == {"agent": "Writer", "lane": "fast", "provider": "meterless", "model": FAST,
                     "requested_model": "meterless/fast", "attempts": 1, "fallbacks": [],
                     "output_sha256": sha256_of(ANSWER)}
     first, second = fakes["meterless"].calls

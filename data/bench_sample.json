@@ -1,5 +1,5 @@
 {
-  "score": 20,
+  "score": 18,
   "results": [
     {
       "case": 1,
@@ -7,7 +7,8 @@
       "expected": "PROVEN",
       "got": "PROVEN",
       "ok": true,
-      "verdict_sha256": "509901c785c2d42e6f00c08a823104fdbf42500b58de2243017c62bf6f9bdafa"
+      "verdict_sha256": "509901c785c2d42e6f00c08a823104fdbf42500b58de2243017c62bf6f9bdafa",
+      "degraded": true
     },
     {
       "case": 2,
@@ -15,7 +16,8 @@
       "expected": "CONTRADICTED",
       "got": "CONTRADICTED",
       "ok": true,
-      "verdict_sha256": "24035b459821721e168619c808d35a6a03819b9feb113dac3ffabca4cba56eb0"
+      "verdict_sha256": "24035b459821721e168619c808d35a6a03819b9feb113dac3ffabca4cba56eb0",
+      "degraded": true
     },
     {
       "case": 3,
@@ -23,7 +25,8 @@
       "expected": "PROVEN",
       "got": "PROVEN",
       "ok": true,
-      "verdict_sha256": "509901c785c2d42e6f00c08a823104fdbf42500b58de2243017c62bf6f9bdafa"
+      "verdict_sha256": "509901c785c2d42e6f00c08a823104fdbf42500b58de2243017c62bf6f9bdafa",
+      "degraded": true
     },
     {
       "case": 4,
@@ -31,7 +34,8 @@
       "expected": "CONTRADICTED",
       "got": "CONTRADICTED",
       "ok": true,
-      "verdict_sha256": "24035b459821721e168619c808d35a6a03819b9feb113dac3ffabca4cba56eb0"
+      "verdict_sha256": "24035b459821721e168619c808d35a6a03819b9feb113dac3ffabca4cba56eb0",
+      "degraded": true
     },
     {
       "case": 5,
@@ -39,7 +43,8 @@
       "expected": "PROVEN",
       "got": "PROVEN",
       "ok": true,
-      "verdict_sha256": "509901c785c2d42e6f00c08a823104fdbf42500b58de2243017c62bf6f9bdafa"
+      "verdict_sha256": "509901c785c2d42e6f00c08a823104fdbf42500b58de2243017c62bf6f9bdafa",
+      "degraded": true
     },
     {
       "case": 6,
@@ -47,7 +52,8 @@
       "expected": "UNVERIFIABLE",
       "got": "UNVERIFIABLE",
       "ok": true,
-      "verdict_sha256": "353d190be9d629f7d95d2ed23abc960a97f7b243315cd00d8d7e950349230d03"
+      "verdict_sha256": "353d190be9d629f7d95d2ed23abc960a97f7b243315cd00d8d7e950349230d03",
+      "degraded": true
     },
     {
       "case": 7,
@@ -55,7 +61,8 @@
       "expected": "UNVERIFIABLE",
       "got": "UNVERIFIABLE",
       "ok": true,
-      "verdict_sha256": "b4f47296ba38bd732dacaff70e8a6ecccae44626a97d19fd5e3f744587d8c8f8"
+      "verdict_sha256": "b4f47296ba38bd732dacaff70e8a6ecccae44626a97d19fd5e3f744587d8c8f8",
+      "degraded": true
     },
     {
       "case": 8,
@@ -63,7 +70,8 @@
       "expected": "UNVERIFIABLE",
       "got": "UNVERIFIABLE",
       "ok": true,
-      "verdict_sha256": "e69f9c692a1e2c8e57f379e58a58dcaf42e3fa4a25ff1932d263640c5634687e"
+      "verdict_sha256": "e69f9c692a1e2c8e57f379e58a58dcaf42e3fa4a25ff1932d263640c5634687e",
+      "degraded": true
     },
     {
       "case": 9,
@@ -71,7 +79,8 @@
       "expected": "UNVERIFIABLE",
       "got": "UNVERIFIABLE",
       "ok": true,
-      "verdict_sha256": "cf3fca98cff9edf74c8acd49e12fd46c96e8430769fc5c21960acb50ff6b44fc"
+      "verdict_sha256": "cf3fca98cff9edf74c8acd49e12fd46c96e8430769fc5c21960acb50ff6b44fc",
+      "degraded": true
     },
     {
       "case": 10,
@@ -79,7 +88,8 @@
       "expected": "UNVERIFIABLE",
       "got": "UNVERIFIABLE",
       "ok": true,
-      "verdict_sha256": "e7511098a094795258d80b0873a026c74094a47c5a47b3664335a92e6c3e00d9"
+      "verdict_sha256": "e7511098a094795258d80b0873a026c74094a47c5a47b3664335a92e6c3e00d9",
+      "degraded": true
     },
     {
       "case": 11,
@@ -87,7 +97,8 @@
       "expected": "PROVEN",
       "got": "PROVEN",
       "ok": true,
-      "verdict_sha256": "509901c785c2d42e6f00c08a823104fdbf42500b58de2243017c62bf6f9bdafa"
+      "verdict_sha256": "509901c785c2d42e6f00c08a823104fdbf42500b58de2243017c62bf6f9bdafa",
+      "degraded": true
     },
     {
       "case": 12,
@@ -95,7 +106,8 @@
       "expected": "UNVERIFIABLE",
       "got": "PROVEN",
       "ok": false,
-      "verdict_sha256": "509901c785c2d42e6f00c08a823104fdbf42500b58de2243017c62bf6f9bdafa"
+      "verdict_sha256": "509901c785c2d42e6f00c08a823104fdbf42500b58de2243017c62bf6f9bdafa",
+      "degraded": true
     },
     {
       "case": 13,
@@ -103,7 +115,8 @@
       "expected": "CONTRADICTED",
       "got": "CONTRADICTED",
       "ok": true,
-      "verdict_sha256": "24035b459821721e168619c808d35a6a03819b9feb113dac3ffabca4cba56eb0"
+      "verdict_sha256": "24035b459821721e168619c808d35a6a03819b9feb113dac3ffabca4cba56eb0",
+      "degraded": true
     },
     {
       "case": 14,
@@ -111,7 +124,8 @@
       "expected": "UNVERIFIABLE",
       "got": "UNVERIFIABLE",
       "ok": true,
-      "verdict_sha256": "506f464af45a13fbfde09f2b87f236e2e02492a0fbc1bbc4d00c3dc5f3e34d39"
+      "verdict_sha256": "506f464af45a13fbfde09f2b87f236e2e02492a0fbc1bbc4d00c3dc5f3e34d39",
+      "degraded": true
     },
     {
       "case": 15,
@@ -119,7 +133,8 @@
       "expected": "PROVEN",
       "got": "PROVEN",
       "ok": true,
-      "verdict_sha256": "509901c785c2d42e6f00c08a823104fdbf42500b58de2243017c62bf6f9bdafa"
+      "verdict_sha256": "509901c785c2d42e6f00c08a823104fdbf42500b58de2243017c62bf6f9bdafa",
+      "degraded": true
     },
     {
       "case": 16,
@@ -127,23 +142,26 @@
       "expected": "UNVERIFIABLE",
       "got": "UNVERIFIABLE",
       "ok": true,
-      "verdict_sha256": "2fefecdb400ee41b2c27a6738cd383322e92fba0de5588a3d81dac197fa635dc"
+      "verdict_sha256": "2fefecdb400ee41b2c27a6738cd383322e92fba0de5588a3d81dac197fa635dc",
+      "degraded": true
     },
     {
       "case": 17,
       "slug": "certified_scope_only",
       "expected": "UNVERIFIABLE",
-      "got": "UNVERIFIABLE",
-      "ok": true,
-      "verdict_sha256": "75621c29d695a128cf907262d39ba56b33fb0650aec005d75405bea0f92cba59"
+      "got": "PROVEN",
+      "ok": false,
+      "verdict_sha256": "509901c785c2d42e6f00c08a823104fdbf42500b58de2243017c62bf6f9bdafa",
+      "degraded": true
     },
     {
       "case": 18,
       "slug": "annex_admission",
       "expected": "CONTRADICTED",
-      "got": "CONTRADICTED",
-      "ok": true,
-      "verdict_sha256": "85b61fef2ee1b5f0f6e5d4b05cf6ced7cf0d0e7855b5454a4cf0b31905500a74"
+      "got": "PROVEN",
+      "ok": false,
+      "verdict_sha256": "509901c785c2d42e6f00c08a823104fdbf42500b58de2243017c62bf6f9bdafa",
+      "degraded": true
     },
     {
       "case": 19,
@@ -151,7 +169,8 @@
       "expected": "CONTRADICTED",
       "got": "CONTRADICTED",
       "ok": true,
-      "verdict_sha256": "e31226345c161aca730b1a2092edd37276a92bfd5db21f77ca5e8e19f616b094"
+      "verdict_sha256": "e31226345c161aca730b1a2092edd37276a92bfd5db21f77ca5e8e19f616b094",
+      "degraded": true
     },
     {
       "case": 20,
@@ -159,7 +178,8 @@
       "expected": "UNVERIFIABLE",
       "got": "UNVERIFIABLE",
       "ok": true,
-      "verdict_sha256": "0d0dbbbf7783bc392707b30e045405963bbf165e2e4fb917cfdf6f96871a4b3a"
+      "verdict_sha256": "0d0dbbbf7783bc392707b30e045405963bbf165e2e4fb917cfdf6f96871a4b3a",
+      "degraded": true
     },
     {
       "case": 21,
@@ -167,7 +187,8 @@
       "expected": "UNVERIFIABLE",
       "got": "UNVERIFIABLE",
       "ok": true,
-      "verdict_sha256": "cbd2fcc17facececc9ffa678c6f8648f68afdecd4c8d25781b35737e03576c8d"
+      "verdict_sha256": "cbd2fcc17facececc9ffa678c6f8648f68afdecd4c8d25781b35737e03576c8d",
+      "degraded": true
     }
   ]
 }

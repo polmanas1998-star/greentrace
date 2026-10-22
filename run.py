@@ -12,6 +12,8 @@ import json
 import os
 import sys
 
+from dotenv import load_dotenv
+
 from app.pipeline import run_case
 
 
@@ -39,6 +41,7 @@ def serve() -> int:
 
 
 def main(argv: list[str]) -> int:
+    load_dotenv()  # keys and SAMPLE_MODE from .env; never committed
     parser = argparse.ArgumentParser(description="GreenTrace: checks a deforestation-free claim and explains why.")
     parser.add_argument("--input", metavar="FILE", help="case JSON file, or - for stdin; omit to serve the API")
     args = parser.parse_args(argv)

@@ -13,6 +13,7 @@ import time
 from pathlib import Path
 from typing import Any, Optional
 
+from app.adapters.llm import ModelGate
 from app.agents import evaluator, extractor, investigator, planner, writer
 from app.agents.context import RunContext
 from app.canonical import sha256_of
@@ -46,12 +47,18 @@ def investigate(request: dict, run_id: str, *, log, memory_engine=None, zetaris=
         from app.adapters.zetaris import Zetaris
         engine = ZetarisEngine(zetaris or Zetaris.from_env())
 
+    # Sample mode makes no model call, unless use_model asks for the model on the sample world (the bench).
+    use_model = bool(options.get("use_model", not sample))
+    models = ModelGate(run_id, env={**os.environ, "SAMPLE_MODE": "false" if use_model else "true"}, log=log)
+
     ctx = RunContext(
         run_id=run_id, gate=DataGate(engine, run_id, log=log), company_id=company_id, log=log,
         memory=WorldModel(run_id, engine=memory_engine, log_dir=log_dir, stream=stream),
+        model=models if models.providers else None,
         max_rounds=int(options.get("max_rounds", 3)),
     )
-    ctx.step("Pipeline", "receive_case", f"claim on {company_id}", f"mode {'sample' if sample else 'live'}",
+    ctx.step("Pipeline", "receive_case", f"claim on {company_id}",
+             f"data {'sample' if sample else 'live'}; model chain {' > '.join(models.chain)}",
              target="Extractor", status="success")
 
     parsed, extracted = extractor.extract(ctx, claim)

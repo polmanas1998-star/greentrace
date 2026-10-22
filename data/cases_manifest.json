@@ -260,7 +260,7 @@
     {
       "case": 17,
       "slug": "certified_scope_only",
-      "change": "Report says 100% of our CERTIFIED cocoa; certified is about 40 %",
+      "change": "Report's 100% only covers cocoa from its labelled programme (about 40 %)",
       "expected": "UNVERIFIABLE",
       "rules_only_forecast": "fail",
       "unavailable_sources": [],
@@ -271,12 +271,12 @@
         "alerts": 30,
         "report_paragraphs": 20
       },
-      "world_sha256": "e7386271a51f2fa70b73293162aebe1253bae2670c9f54fa1f7ea2fb75721315"
+      "world_sha256": "ac393b91ea2027219d93a54614332dc61c3a0e6d23b61820d6d669fd8b30ad20"
     },
     {
       "case": 18,
       "slug": "annex_admission",
-      "change": "Annex admits 3 plots cleared in spring 2022",
+      "change": "Annex admits 3 plots 'opened for new cocoa' in 2022",
       "expected": "CONTRADICTED",
       "rules_only_forecast": "fail",
       "unavailable_sources": [],
@@ -287,7 +287,7 @@
         "alerts": 30,
         "report_paragraphs": 21
       },
-      "world_sha256": "fed2f8bd3b932726798c99b66ef748ca6c1ff0f62ba5cc78c761c9c06a551098"
+      "world_sha256": "2d4779156612be8a3a01c1f0b4a431c0268382eb9c4131db4b03886f7907a91b"
     },
     {
       "case": 19,

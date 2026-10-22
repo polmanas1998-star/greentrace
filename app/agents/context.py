@@ -24,10 +24,11 @@ class RunContext:
 
     def step(self, agent: str, action: str, input_summary: str, output_summary: str, *,
              target: Optional[str] = None, confidence: Optional[float] = None,
-             status: str = "success", provider: Optional[str] = None, rows: Optional[int] = None) -> None:
+             status: str = "success", provider: Optional[str] = None, model: Optional[str] = None,
+             rows: Optional[int] = None) -> None:
         self.log({
             "timestamp": now_utc(), "run_id": self.run_id, "agent_name": agent, "action": action,
             "input_summary": input_summary[:300], "output_summary": output_summary[:300],
             "target_agent": target, "confidence": confidence, "retry_count": 0, "status": status,
-            "provider": provider or ("rules" if self.degraded else None), "model": None, "rows": rows,
+            "provider": provider or ("rules" if self.degraded else "code"), "model": model, "rows": rows,
         })

@@ -171,8 +171,8 @@ def _conflicting_mentions(e: Evidence, already_contradicted: set[str]) -> list[F
             continue
         matches = [s for s in e.suppliers
                    if (s["supplier_id"] == mention["supplier_id"] if mention.get("supplier_id")
-                       else s["name"] == mention["supplier_name"])
-                   and mention.get("cooperative_group") in (None, s["cooperative_group"])]
+                       else _words(s["name"]) == _words(mention["supplier_name"]))
+                   and _same_group(mention.get("cooperative_group"), s["cooperative_group"])]
         named = sorted(s["supplier_id"] for s in matches if s["supplier_id"] in delivering)
         if named and not set(named) & already_contradicted:
             found.append(Finding("no_deforestation", 3, UNVERIFIABLE, "sources_in_conflict",
@@ -181,6 +181,18 @@ def _conflicting_mentions(e: Evidence, already_contradicted: set[str]) -> list[F
                                  tuple(f"supplier:{s}" for s in named)
                                  + (f"doc:{mention['doc']}:main:{mention['paragraph_no']}",)))
     return found
+
+
+_FILLER = {"the", "union", "of", "cooperative", "coop", "group", "des", "cooperatives", "de", "la", "known", "as"}
+
+
+def _words(text: str | None) -> set[str]:
+    return {w for w in "".join(c.lower() if c.isalnum() else " " for c in text or "").split() if w not in _FILLER}
+
+
+def _same_group(said: str | None, registered: str) -> bool:
+    """No group given matches any group; a given group must name the registered one."""
+    return not _words(said) or _words(said) <= _words(registered)
 
 
 # ---- plausibility: could the declared plots have produced the volume? -----------------------

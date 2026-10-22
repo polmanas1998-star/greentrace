@@ -1,10 +1,12 @@
 """HTTP API: GET /health, POST /run (JSON in, JSON out)."""
 from typing import Any
 
+from dotenv import load_dotenv
 from fastapi import Body, FastAPI, HTTPException
 
 from app.pipeline import run_case
 
+load_dotenv()  # keys and SAMPLE_MODE from .env; never committed
 app = FastAPI(title="GreenTrace", version="0.1.0")
 
 
