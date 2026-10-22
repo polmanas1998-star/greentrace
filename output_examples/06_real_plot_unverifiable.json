@@ -1,0 +1,1454 @@
+{
+  "run_id": "example-06",
+  "status": "success",
+  "mode": "sample",
+  "degraded": true,
+  "verdict": "UNVERIFIABLE",
+  "summary": "The claim cannot be confirmed or refuted from the data: P-041: 0.51 ha of tree cover lost in 2021, 2024; tree cover was lost, but the EU 2020 map did not count this land as forest: confirm in the field.",
+  "parts": [
+    {
+      "claim_part": "coverage",
+      "verdict": "PROVEN",
+      "rule": 4,
+      "codes": []
+    },
+    {
+      "claim_part": "no_deforestation",
+      "verdict": "UNVERIFIABLE",
+      "rule": 3,
+      "codes": [
+        "tree_cover_loss_outside_2020_forest"
+      ]
+    },
+    {
+      "claim_part": "plausibility",
+      "verdict": "PROVEN",
+      "rule": 4,
+      "codes": []
+    },
+    {
+      "claim_part": "scope",
+      "verdict": "PROVEN",
+      "rule": 4,
+      "codes": []
+    }
+  ],
+  "findings": [
+    {
+      "claim_part": "no_deforestation",
+      "finding": "P-041: 0.51 ha of tree cover lost in 2021, 2024; tree cover was lost, but the EU 2020 map did not count this land as forest: confirm in the field",
+      "verdict": "UNVERIFIABLE",
+      "rule": 3,
+      "evidence": [
+        {
+          "source": "plot",
+          "id": "P-041"
+        },
+        {
+          "source": "cells",
+          "id": "P-041"
+        }
+      ],
+      "checked_by": [
+        "investigator",
+        "evaluator"
+      ],
+      "refutations_tried": []
+    }
+  ],
+  "untested_factors": [
+    "No field visit of P-041; the EU 2020 map may have missed forest there."
+  ],
+  "recommended_actions": [
+    "Ask the supplier for a field report on P-041."
+  ],
+  "limitations": [
+    "Synthetic company and alerts, placed on real places. A satellite alert is not legal proof.",
+    "The verdict is computed by fixed rules from the rows listed; a human must review it before any decision.",
+    "Plot P-041 was drawn by the analyst and declared for F-007: it is not a row of the registry.",
+    "Reference maps: forest in 2020 from the EU JRC GFC2020 v4, tree cover loss by year from Hansen/UMD/Google/USGS/NASA (GFC v1.12), on 30 m cells around Soubre."
+  ],
+  "human_review": "Required before any decision.",
+  "flip": "The claim would be PROVEN if plot P-041 had delivered nothing after 2020.",
+  "flip_tried": [
+    {
+      "change": {
+        "entity": "plot:P-041",
+        "field": "tonnes_after_2020",
+        "from": 7.5,
+        "to": 0
+      },
+      "verdict": "PROVEN"
+    }
+  ],
+  "blocked_cards": [],
+  "eudr_export": {
+    "plots_no_issue_found": {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.600841,
+                  6.797426
+                ],
+                [
+                  -6.599137,
+                  6.797426
+                ],
+                [
+                  -6.599137,
+                  6.79913
+                ],
+                [
+                  -6.600841,
+                  6.79913
+                ],
+                [
+                  -6.600841,
+                  6.797426
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-001",
+            "supplier_id": "F-002",
+            "area_ha": 3.55,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.575356,
+                  6.800929
+                ],
+                [
+                  -6.573958,
+                  6.800929
+                ],
+                [
+                  -6.573958,
+                  6.802327
+                ],
+                [
+                  -6.575356,
+                  6.802327
+                ],
+                [
+                  -6.575356,
+                  6.800929
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-002",
+            "supplier_id": "F-002",
+            "area_ha": 2.39,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.546247,
+                  6.799674
+                ],
+                [
+                  -6.544681,
+                  6.799674
+                ],
+                [
+                  -6.544681,
+                  6.80124
+                ],
+                [
+                  -6.546247,
+                  6.80124
+                ],
+                [
+                  -6.546247,
+                  6.799674
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-003",
+            "supplier_id": "F-002",
+            "area_ha": 3.0,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.518503,
+                  6.799249
+                ],
+                [
+                  -6.516569,
+                  6.799249
+                ],
+                [
+                  -6.516569,
+                  6.801183
+                ],
+                [
+                  -6.518503,
+                  6.801183
+                ],
+                [
+                  -6.518503,
+                  6.799249
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-004",
+            "supplier_id": "F-002",
+            "area_ha": 4.57,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.491757,
+                  6.800426
+                ],
+                [
+                  -6.490339,
+                  6.800426
+                ],
+                [
+                  -6.490339,
+                  6.801844
+                ],
+                [
+                  -6.491757,
+                  6.801844
+                ],
+                [
+                  -6.491757,
+                  6.800426
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-005",
+            "supplier_id": "F-005",
+            "area_ha": 2.46,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              -6.46606,
+              6.800516
+            ]
+          },
+          "properties": {
+            "plot_id": "P-006",
+            "supplier_id": "F-005",
+            "area_ha": 3.32,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.436666,
+                  6.798841
+                ],
+                [
+                  -6.434804,
+                  6.798841
+                ],
+                [
+                  -6.434804,
+                  6.800703
+                ],
+                [
+                  -6.436666,
+                  6.800703
+                ],
+                [
+                  -6.436666,
+                  6.798841
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-007",
+            "supplier_id": "F-005",
+            "area_ha": 4.24,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.412046,
+                  6.800095
+                ],
+                [
+                  -6.410612,
+                  6.800095
+                ],
+                [
+                  -6.410612,
+                  6.801527
+                ],
+                [
+                  -6.412046,
+                  6.801527
+                ],
+                [
+                  -6.412046,
+                  6.800095
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-008",
+            "supplier_id": "F-005",
+            "area_ha": 2.51,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.598698,
+                  6.828662
+                ],
+                [
+                  -6.597418,
+                  6.828662
+                ],
+                [
+                  -6.597418,
+                  6.82994
+                ],
+                [
+                  -6.598698,
+                  6.82994
+                ],
+                [
+                  -6.598698,
+                  6.828662
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-009",
+            "supplier_id": "F-011",
+            "area_ha": 2.0,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.573407,
+                  6.828783
+                ],
+                [
+                  -6.572189,
+                  6.828783
+                ],
+                [
+                  -6.572189,
+                  6.829999
+                ],
+                [
+                  -6.573407,
+                  6.829999
+                ],
+                [
+                  -6.573407,
+                  6.828783
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-010",
+            "supplier_id": "F-011",
+            "area_ha": 1.81,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.546199,
+                  6.82567
+                ],
+                [
+                  -6.544721,
+                  6.82567
+                ],
+                [
+                  -6.544721,
+                  6.827148
+                ],
+                [
+                  -6.546199,
+                  6.827148
+                ],
+                [
+                  -6.546199,
+                  6.82567
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-011",
+            "supplier_id": "F-011",
+            "area_ha": 2.67,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              -6.516876,
+              6.826939
+            ]
+          },
+          "properties": {
+            "plot_id": "P-012",
+            "supplier_id": "F-011",
+            "area_ha": 3.03,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.494531,
+                  6.826539
+                ],
+                [
+                  -6.492647,
+                  6.826539
+                ],
+                [
+                  -6.492647,
+                  6.828423
+                ],
+                [
+                  -6.494531,
+                  6.828423
+                ],
+                [
+                  -6.494531,
+                  6.826539
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-013",
+            "supplier_id": "F-007",
+            "area_ha": 4.34,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.46546,
+                  6.825705
+                ],
+                [
+                  -6.463842,
+                  6.825705
+                ],
+                [
+                  -6.463842,
+                  6.827323
+                ],
+                [
+                  -6.46546,
+                  6.827323
+                ],
+                [
+                  -6.46546,
+                  6.825705
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-014",
+            "supplier_id": "F-007",
+            "area_ha": 3.2,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.4378,
+                  6.826884
+                ],
+                [
+                  -6.43653,
+                  6.826884
+                ],
+                [
+                  -6.43653,
+                  6.828154
+                ],
+                [
+                  -6.4378,
+                  6.828154
+                ],
+                [
+                  -6.4378,
+                  6.826884
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-015",
+            "supplier_id": "F-007",
+            "area_ha": 1.97,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.40978,
+                  6.826267
+                ],
+                [
+                  -6.407994,
+                  6.826267
+                ],
+                [
+                  -6.407994,
+                  6.828053
+                ],
+                [
+                  -6.40978,
+                  6.828053
+                ],
+                [
+                  -6.40978,
+                  6.826267
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-016",
+            "supplier_id": "F-007",
+            "area_ha": 3.9,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.598835,
+                  6.853503
+                ],
+                [
+                  -6.597395,
+                  6.853503
+                ],
+                [
+                  -6.597395,
+                  6.854941
+                ],
+                [
+                  -6.598835,
+                  6.854941
+                ],
+                [
+                  -6.598835,
+                  6.853503
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-017",
+            "supplier_id": "F-014",
+            "area_ha": 2.53,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              -6.570932,
+              6.8539
+            ]
+          },
+          "properties": {
+            "plot_id": "P-018",
+            "supplier_id": "F-014",
+            "area_ha": 2.45,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.548567,
+                  6.853643
+                ],
+                [
+                  -6.547165,
+                  6.853643
+                ],
+                [
+                  -6.547165,
+                  6.855045
+                ],
+                [
+                  -6.548567,
+                  6.855045
+                ],
+                [
+                  -6.548567,
+                  6.853643
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-019",
+            "supplier_id": "F-014",
+            "area_ha": 2.4,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.52156,
+                  6.851645
+                ],
+                [
+                  -6.51968,
+                  6.851645
+                ],
+                [
+                  -6.51968,
+                  6.853525
+                ],
+                [
+                  -6.52156,
+                  6.853525
+                ],
+                [
+                  -6.52156,
+                  6.851645
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-020",
+            "supplier_id": "F-019",
+            "area_ha": 4.32,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.494345,
+                  6.854903
+                ],
+                [
+                  -6.492129,
+                  6.854903
+                ],
+                [
+                  -6.492129,
+                  6.857119
+                ],
+                [
+                  -6.494345,
+                  6.857119
+                ],
+                [
+                  -6.494345,
+                  6.854903
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-021",
+            "supplier_id": "F-019",
+            "area_ha": 6.0,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.465084,
+                  6.853424
+                ],
+                [
+                  -6.463676,
+                  6.853424
+                ],
+                [
+                  -6.463676,
+                  6.85483
+                ],
+                [
+                  -6.465084,
+                  6.85483
+                ],
+                [
+                  -6.465084,
+                  6.853424
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-022",
+            "supplier_id": "F-019",
+            "area_ha": 2.42,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.437412,
+                  6.855182
+                ],
+                [
+                  -6.43576,
+                  6.855182
+                ],
+                [
+                  -6.43576,
+                  6.856832
+                ],
+                [
+                  -6.437412,
+                  6.856832
+                ],
+                [
+                  -6.437412,
+                  6.855182
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-023",
+            "supplier_id": "F-023",
+            "area_ha": 3.33,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              -6.408076,
+              6.854124
+            ]
+          },
+          "properties": {
+            "plot_id": "P-024",
+            "supplier_id": "F-023",
+            "area_ha": 3.77,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.600655,
+                  6.880676
+                ],
+                [
+                  -6.598805,
+                  6.880676
+                ],
+                [
+                  -6.598805,
+                  6.882524
+                ],
+                [
+                  -6.600655,
+                  6.882524
+                ],
+                [
+                  -6.600655,
+                  6.880676
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-025",
+            "supplier_id": "F-023",
+            "area_ha": 4.18,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.572352,
+                  6.879677
+                ],
+                [
+                  -6.570656,
+                  6.879677
+                ],
+                [
+                  -6.570656,
+                  6.881371
+                ],
+                [
+                  -6.572352,
+                  6.881371
+                ],
+                [
+                  -6.572352,
+                  6.879677
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-026",
+            "supplier_id": "F-026",
+            "area_ha": 3.51,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.544793,
+                  6.880485
+                ],
+                [
+                  -6.543167,
+                  6.880485
+                ],
+                [
+                  -6.543167,
+                  6.882111
+                ],
+                [
+                  -6.544793,
+                  6.882111
+                ],
+                [
+                  -6.544793,
+                  6.880485
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-027",
+            "supplier_id": "F-026",
+            "area_ha": 3.23,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.520202,
+                  6.879887
+                ],
+                [
+                  -6.519046,
+                  6.879887
+                ],
+                [
+                  -6.519046,
+                  6.881041
+                ],
+                [
+                  -6.520202,
+                  6.881041
+                ],
+                [
+                  -6.520202,
+                  6.879887
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-028",
+            "supplier_id": "F-026",
+            "area_ha": 1.63,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.492011,
+                  6.881086
+                ],
+                [
+                  -6.489987,
+                  6.881086
+                ],
+                [
+                  -6.489987,
+                  6.883108
+                ],
+                [
+                  -6.492011,
+                  6.883108
+                ],
+                [
+                  -6.492011,
+                  6.881086
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-029",
+            "supplier_id": "F-031",
+            "area_ha": 5.0,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.465316,
+                  6.880527
+                ],
+                [
+                  -6.463376,
+                  6.880527
+                ],
+                [
+                  -6.463376,
+                  6.882467
+                ],
+                [
+                  -6.465316,
+                  6.882467
+                ],
+                [
+                  -6.465316,
+                  6.880527
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-030",
+            "supplier_id": "F-031",
+            "area_ha": 4.6,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.438173,
+                  6.87936
+                ],
+                [
+                  -6.436275,
+                  6.87936
+                ],
+                [
+                  -6.436275,
+                  6.881258
+                ],
+                [
+                  -6.438173,
+                  6.881258
+                ],
+                [
+                  -6.438173,
+                  6.87936
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-031",
+            "supplier_id": "F-031",
+            "area_ha": 4.4,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.409499,
+                  6.881995
+                ],
+                [
+                  -6.407751,
+                  6.881995
+                ],
+                [
+                  -6.407751,
+                  6.883741
+                ],
+                [
+                  -6.409499,
+                  6.883741
+                ],
+                [
+                  -6.409499,
+                  6.881995
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-032",
+            "supplier_id": "F-034",
+            "area_ha": 3.73,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              -6.598501,
+              6.910366
+            ]
+          },
+          "properties": {
+            "plot_id": "P-033",
+            "supplier_id": "F-034",
+            "area_ha": 2.0,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.57561,
+                  6.909476
+                ],
+                [
+                  -6.573742,
+                  6.909476
+                ],
+                [
+                  -6.573742,
+                  6.911342
+                ],
+                [
+                  -6.57561,
+                  6.911342
+                ],
+                [
+                  -6.57561,
+                  6.909476
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-034",
+            "supplier_id": "F-034",
+            "area_ha": 4.26,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.546474,
+                  6.908991
+                ],
+                [
+                  -6.544828,
+                  6.908991
+                ],
+                [
+                  -6.544828,
+                  6.910637
+                ],
+                [
+                  -6.546474,
+                  6.910637
+                ],
+                [
+                  -6.546474,
+                  6.908991
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-035",
+            "supplier_id": "F-038",
+            "area_ha": 3.31,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              -6.516466,
+              6.910628
+            ]
+          },
+          "properties": {
+            "plot_id": "P-036",
+            "supplier_id": "F-038",
+            "area_ha": 3.39,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.494135,
+                  6.907705
+                ],
+                [
+                  -6.492685,
+                  6.907705
+                ],
+                [
+                  -6.492685,
+                  6.909155
+                ],
+                [
+                  -6.494135,
+                  6.909155
+                ],
+                [
+                  -6.494135,
+                  6.907705
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-037",
+            "supplier_id": "F-038",
+            "area_ha": 2.57,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.467082,
+                  6.907559
+                ],
+                [
+                  -6.465164,
+                  6.907559
+                ],
+                [
+                  -6.465164,
+                  6.909475
+                ],
+                [
+                  -6.467082,
+                  6.909475
+                ],
+                [
+                  -6.467082,
+                  6.907559
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-038",
+            "supplier_id": "F-040",
+            "area_ha": 4.49,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              -6.437387,
+              6.908124
+            ]
+          },
+          "properties": {
+            "plot_id": "P-039",
+            "supplier_id": "F-040",
+            "area_ha": 1.24,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -6.410688,
+                  6.905231
+                ],
+                [
+                  -6.408618,
+                  6.905231
+                ],
+                [
+                  -6.408618,
+                  6.907299
+                ],
+                [
+                  -6.410688,
+                  6.907299
+                ],
+                [
+                  -6.410688,
+                  6.905231
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "plot_id": "P-040",
+            "supplier_id": "F-040",
+            "area_ha": 5.23,
+            "status": "no issue found by GreenTrace",
+            "checked": "alerts after 2020-12-31, coordinates, polygon, yield, double declaration"
+          }
+        }
+      ]
+    },
+    "excluded": [
+      {
+        "plot": "P-041",
+        "reason": "P-041: 0.51 ha of tree cover lost in 2021, 2024; tree cover was lost, but the EU 2020 map did not count this land as forest: confirm in the field"
+      }
+    ]
+  },
+  "supplier_letters": [
+    {
+      "supplier_id": "F-007",
+      "name": "Agnibi",
+      "letter": "DRAFT prepared by GreenTrace, to be reviewed by our compliance team before sending.\n\n[date]\n\nDear Agnibi (F-007),\n\nAs part of our review of the cocoa we bought in 2025, our checks found the following points about the plots and volumes in our records for you:\n\n- P-041: 0.51 ha of tree cover lost in 2021, 2024; tree cover was lost, but the EU 2020 map did not count this land as forest: confirm in the field.\n\nThese points come from public satellite data and from our own registry. They may have a simple explanation, and we would like to understand them with you.\n\nTo complete our file, could you send us:\n\n- A field report on P-041.\n\nThank you for your help.\n\nKind regards,\n\n[name, compliance team]\n"
+    }
+  ],
+  "verdict_sha256": "6361727d93e7c33505db27d1f5e8519620a7a86a01dbfd45fb0535762f1831d4",
+  "fingerprints": {
+    "input_sha256": "8482ead63d9cbbe0c5303bcb06a973190b35006fe86e691ab60e83a72edd5889",
+    "data_sha256": "c51a4b0faa8464dde1089e3d6ef924d7ab07cfb4036ca1c976fd456e205018a9",
+    "rules_version": "2026-10-22.2",
+    "rules_sha256": "4ad87565994cd7d1b111f7c07da79475f3ccf62e7d0158af1af3fb1b9f977f7b"
+  },
+  "log_file": "logs/example-06.jsonl",
+  "execution_time_seconds": 0.06
+}

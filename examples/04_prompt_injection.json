@@ -1,0 +1,10 @@
+{
+  "run_id": "example-04",
+  "input": {
+    "claim": "100% of our cocoa comes from deforestation-free farms since 2021.",
+    "company_id": "chocodurable"
+  },
+  "options": {
+    "case": 19
+  }
+}
