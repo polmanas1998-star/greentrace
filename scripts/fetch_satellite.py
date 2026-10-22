@@ -300,10 +300,10 @@ def fetch(plot_id: str, out_dir: Path = MAPS_DIR, season: Optional[dict] = None)
 
 
 def fetch_scene(key: str, lat: float, lon: float, season: dict, out_dir: Path, name: str,
-                quiet: bool = False) -> dict[str, Any]:
-    """The best scene of a season on the frame around (lat, lon), written as <out_dir>/<name>.jpg and .json."""
+                quiet: bool = False, box: Optional[dict] = None) -> dict[str, Any]:
+    """The best scene of a season on a frame (the map's around (lat, lon) by default), as <out_dir>/<name>.jpg."""
     plot_id = key
-    box = frame(lat, lon)
+    box = box or frame(lat, lon)
     items = search(lat, lon, season=season)
     if not quiet:
         print(f"{plot_id}: {len(items)} scene(s) of {season['label']} under {season['max_cloud']} % cloud")

@@ -2,10 +2,12 @@
 was lost that year.
 
 For each year from 2019 to the current one: the least cloudy clean frame of that year's dry
-season (December of the year before to March), on the frame the home map draws (1200 x 800 m,
-EPSG:4326, 960 x 640 pixels: scripts/fetch_satellite.py), and the Hansen/UMD tree cover loss
-of that same year inside the frame, read from data/reference_cells.csv.gz (cells whose centre
-lies in the frame; also on the land the EU map counted as forest in 2020).
+season (December of the year before to March), on a frame around the plot (1200 x 800 m at
+least, 3:2, EPSG:4326, 960 x 640 pixels: scripts/fetch_satellite.py), and the Hansen/UMD tree
+cover loss of that same year inside the frame, cell by cell (cells whose centre lies in the
+frame), to paint over the image: from data/reference_cells.csv.gz around Soubre (with the EU
+2020 forest), elsewhere from the Global Forest Watch tiles in live mode (app/checks/gfw.py,
+tree cover only), nowhere else in sample mode, which says so.
 
 Where the scenes come from, in this order, and nothing else:
   data/timelapse/          committed, precomputed by python -m scripts.fetch_satellite --timelapse
@@ -25,7 +27,8 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable, Optional
 
-from app.checks import landcover
+from app.checks import gfw, landcover
+from app.world import geo
 from app.tracing import now_utc, trace
 from scripts import fetch_satellite as sat
 
@@ -44,27 +47,45 @@ _NAME = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
 _lock = threading.Lock()  # one fetch at a time: a second visitor waits rather than fetching twice
 
 
-class OutsideMaps(ValueError):
-    """The time machine covers the area of the reference maps only."""
+NO_LOSS_MAP = ("no loss map here in sample mode: the committed maps cover Soubre only; live mode reads the "
+               "Hansen/UMD loss anywhere from Global Forest Watch tiles")
+MARGIN = 1.3  # the frame shows the plot and a little around it
 
 
-def place(plot: Optional[str], lat: Optional[float], lon: Optional[float]) -> tuple[str, Optional[str], float, float]:
-    """(file key, plot id or None, lat, lon) of the frame asked for: a demo plot, or a point in the maps."""
+def place(plot: Optional[str], lat: Optional[float], lon: Optional[float],
+          outline: Any = None) -> tuple[str, Optional[str], float, float, dict]:
+    """(file key, demo plot id or None, lat, lon, frame): a demo plot, a point, or an outline of any size."""
     if plot is not None:
         if plot not in sat.PLOTS:
             raise ValueError(f"no time machine for {plot!r}; plots: {sorted(sat.PLOTS)}, or give lat and lon")
-        return plot, plot, *sat.PLOTS[plot]
+        return plot, plot, *sat.PLOTS[plot], sat.frame(*sat.PLOTS[plot])
     if lat is None or lon is None or not (math.isfinite(lat) and math.isfinite(lon)):
         raise ValueError("give plot=P-042, or lat and lon")
-    box, extent = sat.frame(lat, lon), landcover.load_meta()["extent"]
-    if not (extent["lat_min"] <= box["lat_min"] and box["lat_max"] <= extent["lat_max"]
-            and extent["lon_min"] <= box["lon_min"] and box["lon_max"] <= extent["lon_max"]):
-        raise OutsideMaps(f"the frame around {lat}, {lon} leaves the reference maps "
-                          f"({extent['lat_min']}-{extent['lat_max']} N, {extent['lon_min']}-{extent['lon_max']})")
-    for plot_id, centre in sat.PLOTS.items():  # a click on a demo plot's centre is that plot
-        if (round(lat, 6), round(lon, 6)) == centre:
-            return plot_id, plot_id, lat, lon
-    return f"{lat:.5f}_{lon:.5f}", None, round(lat, 6), round(lon, 6)
+    if not (-60.0 <= lat <= 75.0 and -180.0 <= lon <= 180.0):
+        raise ValueError(f"{lat}, {lon} is outside the area Sentinel-2 and Hansen cover")
+    box = _fit(lat, lon, outline)
+    for plot_id, centre in sat.PLOTS.items():  # a plot centred on a demo plot, small enough, uses its scenes
+        if abs(lat - centre[0]) < 1e-5 and abs(lon - centre[1]) < 1e-5 and box == sat.frame(*centre):
+            return plot_id, plot_id, *centre, box
+    key = f"{lat:.5f}_{lon:.5f}" + ("" if box["width_m"] == sat.WINDOW_M[0] else f"_{box['width_m']:.0f}m")
+    return key, None, round(lat, 6), round(lon, 6), box
+
+
+def _fit(lat: float, lon: float, outline: Any) -> dict:
+    """The map's frame around (lat, lon), grown in 3:2 to hold the outline with a margin."""
+    box = sat.frame(lat, lon)
+    if outline is None:
+        return box
+    west, south, east, north = outline.bounds
+    half_w = max(abs(east - lon), abs(lon - west)) * geo.m_per_deg_lon(lat) * MARGIN
+    half_h = max(abs(north - lat), abs(lat - south)) * geo.M_PER_DEG_LAT * MARGIN
+    width = max(sat.WINDOW_M[0], 2 * half_w, 2 * half_h * 1.5)
+    if width == sat.WINDOW_M[0]:
+        return box
+    height = width / 1.5
+    d_lat, d_lon = height / 2 / geo.M_PER_DEG_LAT, width / 2 / geo.m_per_deg_lon(lat)
+    return {"lat_min": round(lat - d_lat, 6), "lat_max": round(lat + d_lat, 6), "lon_min": round(lon - d_lon, 6),
+            "lon_max": round(lon + d_lon, 6), "width_m": round(width), "height_m": round(height)}
 
 
 def season_year(day: str) -> int:
@@ -73,21 +94,45 @@ def season_year(day: str) -> int:
     return when.year + 1 if when.month == 12 else when.year
 
 
-def hansen_by_year(box: dict[str, float]) -> dict[int, dict[str, Any]]:
-    """year -> loss inside the frame: cells whose centre lies in it, their area, and how much was 2020 forest."""
-    cells = landcover.read_cells(box["lat_min"], box["lat_max"], box["lon_min"], box["lon_max"])
+def inside_committed_maps(box: dict) -> bool:
+    extent = landcover.load_meta()["extent"]
+    return (extent["lat_min"] <= box["lat_min"] and box["lat_max"] <= extent["lat_max"]
+            and extent["lon_min"] <= box["lon_min"] and box["lon_max"] <= extent["lon_max"])
+
+
+def loss_cells(box: dict, remote: Optional[gfw.Tiles]) -> tuple[Optional[list[dict]], str]:
+    """The map cells of the frame and where they come from; None (with why) when no loss map reaches it."""
+    if inside_committed_maps(box):
+        return (landcover.read_cells(box["lat_min"], box["lat_max"], box["lon_min"], box["lon_max"]),
+                "Hansen/UMD/Google/USGS/NASA GFC v1.12 and EU JRC GFC2020, data/reference_cells.csv.gz")
+    if remote is None:
+        return None, NO_LOSS_MAP
+    try:
+        return remote.cells(box["lat_min"], box["lat_max"], box["lon_min"], box["lon_max"]).cells, gfw.SOURCE
+    except gfw.GfwUnavailable as error:
+        return None, f"the Global Forest Watch tiles did not answer: {error}"
+
+
+def hansen_by_year(cells: list[dict]) -> dict[int, dict[str, Any]]:
+    """year -> loss in the frame: the cells, their area, how much was EU 2020 forest (None where no EU map)."""
     out: dict[int, dict[str, Any]] = {}
     for cell in cells:
         year = cell["loss_year"]
         if not year:
             continue
-        entry = out.setdefault(year, {"cells": 0, "ha": 0.0, "ha_on_2020_forest": 0.0})
+        fraction = cell["forest_fraction_2020"]
+        entry = out.setdefault(year, {"cells": 0, "ha": 0.0, "ha_on_2020_forest": 0.0, "lost": []})
         area = landcover.cell_area_ha(cell["lat"])
         entry["cells"] += 1
         entry["ha"] += area
-        if cell["forest_fraction_2020"] >= landcover.FOREST_FROM:
+        if fraction is None:
+            entry["ha_on_2020_forest"] = None
+        elif fraction >= landcover.FOREST_FROM and entry["ha_on_2020_forest"] is not None:
             entry["ha_on_2020_forest"] += area
-    return {y: {**e, "ha": round(e["ha"], 4), "ha_on_2020_forest": round(e["ha_on_2020_forest"], 4)}
+        on_forest = None if fraction is None else fraction >= landcover.FOREST_FROM
+        entry["lost"].append([cell["lat"], cell["lon"], on_forest])  # [lat, lon, was EU 2020 forest] to paint
+    return {y: {**e, "ha": round(e["ha"], 4),
+                "ha_on_2020_forest": None if e["ha_on_2020_forest"] is None else round(e["ha_on_2020_forest"], 4)}
             for y, e in out.items()}
 
 
@@ -127,15 +172,17 @@ def _stale(info: dict, today: date) -> bool:
 
 
 def timelapse(plot: Optional[str] = None, lat: Optional[float] = None, lon: Optional[float] = None, *,
-              sample: bool = True, today: Optional[date] = None, fetcher: Optional[Callable] = None,
+              outline: Any = None, sample: bool = True, today: Optional[date] = None,
+              fetcher: Optional[Callable] = None, remote: Optional[gfw.Tiles] = None,
               cache_dir: Optional[Path] = None, shipped_dir: Optional[Path] = None, budget_s: float = BUDGET_S,
               log: Optional[Callable[[dict], Any]] = None) -> dict[str, Any]:
-    key, plot_id, lat, lon = place(plot, lat, lon)
+    """One scene a year and that year's loss cells, on a demo plot, a point, or an analyst's outline."""
+    key, plot_id, lat, lon, box = place(plot, lat, lon, outline)
     cache_dir, shipped_dir = cache_dir or CACHE_DIR, shipped_dir or SHIPPED_DIR
     log = log or (lambda record: trace(record, stream=_Null()))
     today = today or datetime.now(timezone.utc).date()
-    box = sat.frame(lat, lon)
-    hansen = hansen_by_year(box)
+    cells, hansen_source = loss_cells(box, None if sample else remote)
+    hansen = hansen_by_year(cells) if cells is not None else None
     directories = (shipped_dir, cache_dir)
     started, fetched, years = time.monotonic(), 0, []
 
@@ -146,7 +193,7 @@ def timelapse(plot: Optional[str] = None, lat: Optional[float] = None, lon: Opti
             if time.monotonic() - started > budget_s:
                 status = f"not fetched yet: the {budget_s:.0f} s budget of this request is spent; ask again"
             else:
-                info = _fetch(key, lat, lon, year, cache_dir, today, fetcher, log)
+                info = _fetch(key, lat, lon, year, cache_dir, today, fetcher, log, box)
                 fetched += 1
                 status = "scene" if info.get("_image") else info["status"]
         elif info is None:
@@ -158,23 +205,28 @@ def timelapse(plot: Optional[str] = None, lat: Optional[float] = None, lon: Opti
          "input_summary": f"{plot_id or key}: frame {box['lat_min']}-{box['lat_max']} N, "
                           f"{box['lon_min']}-{box['lon_max']}", "target_agent": None, "confidence": None,
          "output_summary": f"{with_scene} of {len(years)} year(s) with a scene ({fetched} fetched now); "
-                           f"Hansen loss in {len(hansen)} year(s) of the frame", "retry_count": 0,
+                           + (f"Hansen loss in {len(hansen)} year(s) of the frame" if hansen is not None
+                              else hansen_source), "retry_count": 0,
          "status": "success", "provider": "code" if sample else "earth-search", "model": None, "rows": None})
     return {
         "key": key, "plot": plot_id, "centre": [lat, lon], "frame": box, "pixels": list(sat.MAP_PX),
         "mode": "sample" if sample else "live",
-        "hansen": {"source": "Hansen/UMD/Google/USGS/NASA GFC v1.12, data/reference_cells.csv.gz",
-                   "counted": "cells of 30 m whose centre lies in the frame", "last_year": HANSEN_LAST_YEAR},
+        "hansen": {"source": hansen_source if hansen is not None else None,
+                   "note": None if hansen is not None else hansen_source,
+                   "counted": "cells of 30 m whose centre lies in the frame", "last_year": HANSEN_LAST_YEAR,
+                   "cell_deg": landcover.CELL_DEG},
         "years": years,
     }
 
 
-def _year(year: int, info: Optional[dict], status: str, hansen: dict, today: date) -> dict[str, Any]:
+def _year(year: int, info: Optional[dict], status: str, hansen: Optional[dict], today: date) -> dict[str, Any]:
     season = sat.dry_season(year)
-    if year > HANSEN_LAST_YEAR:
+    if hansen is None:
+        loss, note = None, "no loss map for this frame"
+    elif year > HANSEN_LAST_YEAR:
         loss, note = None, f"Hansen v1.12 maps loss up to {HANSEN_LAST_YEAR}"
     else:
-        loss = hansen.get(year, {"cells": 0, "ha": 0.0, "ha_on_2020_forest": 0.0})
+        loss = hansen.get(year, {"cells": 0, "ha": 0.0, "ha_on_2020_forest": 0.0, "lost": []})
         note = None
     return {
         "year": year,
@@ -189,13 +241,13 @@ def _year(year: int, info: Optional[dict], status: str, hansen: dict, today: dat
 
 
 def _fetch(key: str, lat: float, lon: float, year: int, cache_dir: Path, today: date,
-           fetcher: Optional[Callable], log: Callable[[dict], Any]) -> dict:
+           fetcher: Optional[Callable], log: Callable[[dict], Any], box: Optional[dict] = None) -> dict:
     """One year, from the public catalogue, into the cache; a failure is written down, never invented around."""
     name = f"{key}_{year}"
     with _lock:
         try:
             fetch = fetcher or sat.fetch_scene
-            fetch(key, lat, lon, sat.dry_season(year), cache_dir, name, quiet=True)
+            fetch(key, lat, lon, sat.dry_season(year), cache_dir, name, quiet=True, box=box)
             info = json.loads((cache_dir / f"{name}.json").read_text(encoding="utf-8"))
             info.update(_image=cache_dir / f"{name}.jpg", _dir=cache_dir)
             outcome, status = f"{info['scene_id']} of {info['date']}", "success"

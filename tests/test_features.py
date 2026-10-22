@@ -213,7 +213,7 @@ def test_a_shipped_year_and_its_image_route(tmp_path, monkeypatch):
 def test_live_mode_fetches_the_missing_years_once_and_writes_failures_down(tmp_path):
     calls = []
 
-    def fetcher(key, lat, lon, season, out_dir, name, quiet=False):
+    def fetcher(key, lat, lon, season, out_dir, name, quiet=False, box=None):
         calls.append(season["year"])
         if season["year"] == 2023:
             raise sat.SatelliteError("no Sentinel-2 L2A scene of the 2022-2023 dry season under 50 % cloud")
@@ -246,16 +246,17 @@ def test_live_mode_says_when_it_cannot_fetch(tmp_path):
     assert all(y["status"].startswith("not fetched yet") for y in spent["years"] if not y["image"])
 
 
-def test_points_inside_the_maps_only_and_a_plot_centre_is_that_plot():
+def test_any_point_and_a_plot_centre_is_that_plot():
     point = quiet(lat=5.72, lon=-6.60, sample=True)
     assert point["plot"] is None and not any(y["image"] for y in point["years"])
     assert any(y["hansen_loss"] and y["hansen_loss"]["cells"] for y in point["years"])
     assert quiet(lat=5.73, lon=-6.522, sample=True)["plot"] == "P-042"
-    with pytest.raises(tl.OutsideMaps):
-        quiet(lat=6.80, lon=-6.60, sample=True)
+    away = quiet(lat=6.80, lon=-6.60, sample=True)  # outside Soubre: sample mode has no loss map there
+    assert away["hansen"]["note"] == tl.NO_LOSS_MAP and all(y["hansen_loss"] is None for y in away["years"])
     client = TestClient(app)
     assert client.get("/api/timelapse?plot=P-042").json()["mode"] == "sample"
-    assert client.get("/api/timelapse?lat=6.8&lon=-6.6").status_code == 422
+    assert client.get("/api/timelapse?lat=6.8&lon=-6.6").status_code == 200
+    assert client.get("/api/timelapse?lat=89&lon=-6.6").status_code == 422
     assert client.get("/api/timelapse").status_code == 422
 
 

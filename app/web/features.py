@@ -6,6 +6,7 @@ GET  /api/timelapse             one Sentinel-2 scene a year and that year's Hans
 GET  /api/timelapse/image/{name} a time-machine JPEG, from data/timelapse or data/cache/timelapse only
 POST /api/check-plots           the analyst's own plot file (GeoJSON): every plot checked, app/plotcheck.py
 GET  /api/check-plots/{id}[/plots_no_issue_found.geojson | /findings.csv | /receipt | /package]
+GET  /api/check-plots/{id}/plots/{plot_id}/timelapse   the time machine on one of the analyst's plots
 
 Mounted by app/api.py. Nothing here decides a verdict: each route reads a finished run, runs the
 real pipeline, or reads the maps and the scenes.
@@ -16,10 +17,11 @@ import sqlite3
 
 from fastapi import APIRouter, Body, HTTPException, Query, Response
 from fastapi.responses import FileResponse
+from shapely.geometry import mapping
 
 from app import citizen, orchestrator, plotcheck, plotfile, timelapse, userdocs
 from app.adapters.llm import ModelGate
-from app.checks import gfw
+from app.checks import gfw, landcover
 from app.explain.suppliers import rank
 from app.pipeline import new_run_id, run_case
 from app.queries import SQLiteEngine, ZetarisEngine
@@ -51,7 +53,8 @@ def ask_as_a_citizen(body: Any = Body(...)) -> dict[str, Any]:
 def satellite_time_machine(plot: Optional[str] = Query(None, max_length=16), lat: Optional[float] = None,
                            lon: Optional[float] = None) -> dict[str, Any]:
     try:
-        return timelapse.timelapse(plot, lat, lon, sample=orchestrator.sample_mode({}))
+        sample = orchestrator.sample_mode({})
+        return timelapse.timelapse(plot, lat, lon, sample=sample, remote=None if sample else gfw.Tiles())
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
@@ -132,3 +135,20 @@ def plot_check_receipt(batch_id: str) -> dict[str, Any]:
 def plot_check_package(batch_id: str) -> Response:
     return Response(plotcheck.package_zip(_batch(batch_id)), media_type="application/zip",
                     headers={"Content-Disposition": f'attachment; filename="greentrace-{batch_id}.zip"'})
+
+
+@router.get("/api/check-plots/{batch_id}/plots/{plot_id}/timelapse")
+def plot_time_machine(batch_id: str, plot_id: str) -> dict[str, Any]:
+    """One scene a year on the frame around one of the analyst's plots, with that year's loss cells."""
+    plot = next((p for p in _batch(batch_id).plots if p["plot_id"] == plot_id), None)
+    if plot is None:
+        raise HTTPException(status_code=404, detail=f"no plot {plot_id!r} in {batch_id}")
+    outline = landcover.outline(plot) if plot["polygon_wkt"] or plot["area_ha"] else None
+    sample = orchestrator.sample_mode({})
+    try:
+        out = timelapse.timelapse(None, plot["lat"], plot["lon"], outline=outline, sample=sample,
+                                  remote=None if sample else gfw.Tiles())
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    return {"batch_id": batch_id, "plot_id": plot_id,
+            "outline": None if outline is None else mapping(outline), **out}
