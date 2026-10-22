@@ -1,0 +1,43 @@
+{
+  "plot_id": "P-042",
+  "before": {
+    "scene_id": "S2B_29NQG_20200103_1_L2A",
+    "date": "2020-01-03",
+    "licence": "Contains modified Copernicus Sentinel data 2020",
+    "jpg_sha256": "e5b36f0ba86d57f99d67971d37003a1ea1fd4af23b394f5825123c8a4c6ca947"
+  },
+  "after": {
+    "scene_id": "S2B_29NQG_20260312_0_L2A",
+    "date": "2026-03-12",
+    "licence": "Contains modified Copernicus Sentinel data 2026",
+    "jpg_sha256": "a730fbada3c28dc5bef587688f831cba2ef79c60470749d436661a7589b1d359"
+  },
+  "frame": {
+    "lat_min": 5.726383,
+    "lat_max": 5.733617,
+    "lon_min": -6.527417,
+    "lon_max": -6.516583,
+    "width_m": 1200.0,
+    "height_m": 800.0
+  },
+  "layout": {
+    "pixels": [
+      1024,
+      336
+    ],
+    "half": [
+      504,
+      336
+    ],
+    "gap": 16,
+    "left": "before",
+    "right": "after",
+    "grid": "3 x 3 on each half: columns A-C west to east, rows 1-3 north to south",
+    "labels": "cell name, small, in the top-left corner of each cell"
+  },
+  "jpeg_quality": 90,
+  "jpg_bytes": 43523,
+  "jpg_sha256": "30f6dc5d543f3ea1ca1ac58a3882ce670cb4e280613c3f32c365ab14ccff5b84",
+  "made_by": "scripts/fetch_satellite.py",
+  "made_on": "2026-10-22"
+}
