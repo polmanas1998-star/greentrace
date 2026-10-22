@@ -92,6 +92,8 @@ def ask(body: dict, investigate: Callable[[dict], dict], run_id: str) -> dict[st
 
     out = investigate({"run_id": run_id, "input": {"claim": promise, "company_id": COMPANY_ID},
                        "options": {"case": case}})
+    if out.get("status") == "out_of_scope":
+        return {"answer": None, "sentence": out["summary"], "reasons": [], "evidence_file": None}
     if out.get("status") == "too_vague":
         answer, reasons = ANSWERS[UNVERIFIABLE], ["The promise does not say anything that data can check.",
                                                   "Ask about deforestation, the farms or where the cocoa comes from."]
