@@ -48,7 +48,8 @@ judges. The build plan and the exact specs (agents, rules R1-R9, queries Q0-Q10,
   In `SAMPLE_MODE` the lens says "AI lens needs a model"; never replay a saved model answer.
 - `SAMPLE_MODE=true` must run the **real agent logic** on local data from a fresh clone with no key and no network.
   Never return a pre-written output: judges test with their own inputs.
-- I/O is JSON (`POST /run`, `run.py`). Traces are JSONL in `logs/` and on stdout with at least: trace_id,
+- I/O is JSON (`POST /run`, `run.py`). Traces are JSONL in `logs/` and on stdout (stderr for `run.py`, whose stdout is
+  the result JSON) through `app/tracing.py` only, with exactly: timestamp, run_id,
   agent_name, action, input_summary, output_summary, target_agent, confidence, retry_count, status, provider,
   model, rows.
 - Use one `canonical_json()` everywhere (sorted keys, numbers rounded to 6 decimals, no timestamps) so two runs of

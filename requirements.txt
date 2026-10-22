@@ -1,3 +1,6 @@
 openai
 python-dotenv
 requests
+fastapi==0.136.1
+uvicorn==0.47.0
+pytest==9.1.0

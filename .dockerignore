@@ -1,0 +1,10 @@
+.env
+.env.*
+!.env.example
+.git
+.cursor
+.venv
+__pycache__
+*.pyc
+logs/*.jsonl
+tests
