@@ -388,6 +388,7 @@ def test_the_tour_has_five_bubbles_and_can_be_closed_from_the_keyboard():
     tour = script.split("const TOUR = [", 1)[1].split("];", 1)[0]
     targets = re.findall(r'target: "([\w-]+)"', tour)
     assert targets == ["drop", "plots-table", "batch-map-card", "plot-plain-box", "why"]
+    assert re.search(r'<button[^>]*id="tour-start"[^>]*\shidden>', page)  # built, not offered for now
     for target in targets:
         assert f'id="{target}"' in page, target
     assert not re.search(r"\d", tour)  # no number written in advance: the run shows its own
