@@ -1,0 +1,421 @@
+<script>document.documentElement.setAttribute('data-theme','dark')</script>
+<title>GreenTrace Desktop</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: the desktop app as a surveying instrument. One hero window (the investigation), two smaller windows under it, on a contour-line stage. */
+:root{
+  --bg:#F3F5F1; --stage:#E6ECE3; --contour:rgba(20,64,43,.09);
+  --win:#FBFCFA; --panel:#FFFFFF; --sunk:#EEF2EC; --line:#E1E5DE; --line-2:#D3DACF;
+  --ink:#0E1A14; --ink-2:#3F4A43; --ink-3:#66716A;
+  --side:#0F2A1D; --side-ink:#DDE9E1; --side-ink-2:#8FA899; --side-on:#1C3D2C;
+  --forest:#14402B; --forest-ink:#FFFFFF; --mint:#9BE3B4; --signal:#D9622B;
+  --proven:#1F6F4A; --proven-bg:#E3F1E7;
+  --contra:#B4441C; --contra-bg:#FDEBE1;
+  --unver:#4A535E; --unver-bg:#ECEEF0;
+  --zetaris:#2B4C7E; --zetaris-bg:#EAF0FB;
+  --meter:#5B3FA8; --meter-bg:#F1ECFB;
+  --sans:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'Geist Mono',ui-monospace,'Cascadia Mono',Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0A120D; --stage:#0E1913; --contour:rgba(155,227,180,.06);
+  --win:#111B15; --panel:#15211A; --sunk:#1B2820; --line:#24332A; --line-2:#2E3F35;
+  --ink:#E7EEE9; --ink-2:#B6C2BA; --ink-3:#8A978F;
+  --side:#08130D; --side-ink:#DDE9E1; --side-ink-2:#7F978A; --side-on:#16301F;
+  --forest:#2E7A52; --forest-ink:#FFFFFF; --mint:#9BE3B4; --signal:#F08A55;
+  --proven:#7FD3A0; --proven-bg:#163325;
+  --contra:#F39B72; --contra-bg:#3A2017;
+  --unver:#B8C1CA; --unver-bg:#252C33;
+  --zetaris:#9DB8E8; --zetaris-bg:#1A2638;
+  --meter:#C3B1F2; --meter-bg:#261E3A;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0A120D; --stage:#0E1913; --contour:rgba(155,227,180,.06);
+  --win:#111B15; --panel:#15211A; --sunk:#1B2820; --line:#24332A; --line-2:#2E3F35;
+  --ink:#E7EEE9; --ink-2:#B6C2BA; --ink-3:#8A978F;
+  --side:#08130D; --side-ink:#DDE9E1; --side-ink-2:#7F978A; --side-on:#16301F;
+  --forest:#2E7A52; --forest-ink:#FFFFFF; --mint:#9BE3B4; --signal:#F08A55;
+  --proven:#7FD3A0; --proven-bg:#163325;
+  --contra:#F39B72; --contra-bg:#3A2017;
+  --unver:#B8C1CA; --unver-bg:#252C33;
+  --zetaris:#9DB8E8; --zetaris-bg:#1A2638;
+  --meter:#C3B1F2; --meter-bg:#261E3A;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5}
+.page{max-width:1640px;margin:0 auto;padding-block:48px 72px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:36px}
+.intro{display:flex;flex-wrap:wrap;gap:16px 48px;align-items:flex-end;justify-content:space-between}
+.intro > div{display:flex;flex-direction:column;gap:10px;max-width:720px;min-width:0}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--proven)}
+h1{margin:0;font-size:clamp(36px,5.6vw,60px);line-height:1;letter-spacing:-.045em;font-weight:600;text-wrap:balance}
+.lead{margin:0;font-size:18px;color:var(--ink-2);max-width:62ch}
+.flag{font-size:12.5px;color:var(--ink-3);border:1px dashed var(--line-2);border-radius:8px;padding:6px 10px;max-width:420px}
+
+.stage{position:relative;border-radius:28px;background:var(--stage);border:1px solid var(--line);overflow:hidden;padding:48px 40px 56px;display:flex;flex-direction:column;gap:40px}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+@media (max-width:700px){.stage{padding:20px 12px 28px;border-radius:20px}}
+
+/* Window */
+.win{position:relative;background:var(--win);border-radius:14px;overflow:hidden;box-shadow:0 0 0 1px var(--line-2),0 50px 100px -40px rgba(6,24,14,.45),0 18px 36px -18px rgba(6,24,14,.28)}
+.chrome{display:flex;align-items:center;gap:12px;height:38px;padding:0 14px;border-bottom:1px solid var(--line);background:var(--win)}
+.lights{display:flex;gap:7px}.lights i{width:11px;height:11px;border-radius:50%;background:var(--line-2)}
+.chrome .ttl{flex:1;text-align:center;font-size:12px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chrome .ttl b{color:var(--ink-2);font-weight:500}
+.scroll-x{overflow-x:auto}
+.app{display:grid;grid-template-columns:216px minmax(0,1fr);min-width:1180px}
+
+/* Sidebar */
+.side{background:var(--side);color:var(--side-ink);padding:16px 12px;display:flex;flex-direction:column;gap:18px}
+.brand{display:flex;align-items:center;gap:10px;padding:2px 6px 6px}
+.brand b{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;color:var(--side-ink-2);text-decoration:none;font-size:13px}
+.nav a.on{background:var(--side-on);color:var(--side-ink)}
+.nav a .k{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--side-ink-2)}
+.nav svg{flex:none}
+.side .grp{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--side-ink-2);padding:0 10px}
+.runs{display:flex;flex-direction:column;gap:2px}
+.runs div{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;font-size:12.5px;color:var(--side-ink-2)}
+.runs div.on{color:var(--side-ink)}
+.dot{width:7px;height:7px;border-radius:50%;flex:none}
+.side .foot{margin-top:auto;border-top:1px solid var(--side-on);padding:12px 10px 2px;display:flex;flex-direction:column;gap:6px;font-size:11.5px;color:var(--side-ink-2)}
+.side .foot span{display:flex;justify-content:space-between}
+.side .foot b{font-weight:500;color:var(--side-ink)}
+
+/* Main */
+.main{display:flex;flex-direction:column;min-width:0}
+.top{display:flex;align-items:center;gap:16px;padding:14px 22px;border-bottom:1px solid var(--line)}
+.top .claim{display:flex;flex-direction:column;min-width:0}
+.top .claim b{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.top .claim span{font-size:12px;color:var(--ink-3)}
+.seg{margin-left:auto;display:flex;background:var(--sunk);border-radius:9px;padding:3px}
+.seg span{padding:5px 12px;border-radius:7px;font-size:12.5px;color:var(--ink-3)}
+.seg span.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(14,26,20,.08)}
+.btn{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 14px;border-radius:9px;font-size:13px;font-weight:600;white-space:nowrap}
+.btn.pri{background:var(--forest);color:var(--forest-ink)}
+.btn.sec{border:1px solid var(--line-2);color:var(--ink);background:var(--panel)}
+
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:0;flex:1}
+.work{padding:20px 22px 22px;display:flex;flex-direction:column;gap:16px;border-right:1px solid var(--line);min-width:0}
+
+/* Survey map */
+.survey{position:relative;border-radius:12px;overflow:hidden;background:#1d2a20;aspect-ratio:3/2;max-width:100%}
+.survey img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.survey .loss{image-rendering:pixelated;mix-blend-mode:normal}
+.survey svg.ov{position:absolute;inset:0;width:100%;height:100%}
+.chip{position:absolute;display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;background:rgba(10,18,13,.72);backdrop-filter:blur(8px);color:#EAF2EC;font-size:11.5px;font-family:var(--mono)}
+.chip.c-tl{top:12px;left:12px}.chip.c-bl{bottom:12px;left:12px}.chip.c-br{bottom:12px;right:12px}
+.legend{position:absolute;right:12px;top:52px;display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:10px;background:rgba(10,18,13,.72);backdrop-filter:blur(8px);color:#EAF2EC;font-size:11.5px}
+.legend span{display:flex;align-items:center;gap:8px}
+.sw{width:12px;height:12px;border-radius:3px;flex:none}
+
+/* Timeline */
+.tl{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px 12px;display:flex;flex-direction:column;gap:8px}
+.tl .h{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.tl .h b{font-size:13.5px;font-weight:600}
+.tl .h span{font-size:11.5px;color:var(--ink-3)}
+.tl svg{display:block;width:100%;height:auto}
+
+/* Lanes */
+.lanes{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px 14px;display:flex;flex-direction:column;gap:6px}
+.lanes .h{display:flex;justify-content:space-between;align-items:baseline}
+.lanes .h b{font-size:13.5px;font-weight:600}
+.lanes .h span{font-size:11.5px;color:var(--ink-3);font-family:var(--mono)}
+.lane{display:grid;grid-template-columns:96px minmax(0,1fr);align-items:center;gap:10px;height:28px}
+.lane > span{font-size:12px;color:var(--ink-2)}
+.track{position:relative;height:100%;border-bottom:1px dashed var(--line)}
+.ev{position:absolute;top:50%;transform:translateY(-50%);height:18px;border-radius:5px;padding:0 7px;font-size:10.5px;font-family:var(--mono);display:flex;align-items:center;white-space:nowrap}
+.ev.z{background:var(--zetaris-bg);color:var(--zetaris)}
+.ev.m{background:var(--meter-bg);color:var(--meter)}
+.ev.x{background:var(--contra);color:#FFFFFF}
+.ev.ok{background:var(--proven-bg);color:var(--proven)}
+.ev.n{background:var(--sunk);color:var(--ink-2)}
+.arrow{position:absolute;border-left:1.5px solid var(--contra);}
+.axis{display:grid;grid-template-columns:96px minmax(0,1fr);gap:10px}
+.axis div{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;color:var(--ink-3)}
+
+/* Right rail */
+.rail{padding:20px 20px 22px;display:flex;flex-direction:column;gap:14px;background:var(--win)}
+.vlabel{align-self:flex-start;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--contra);background:var(--contra-bg);padding:4px 8px;border-radius:6px}
+.verdict{margin:0;font-size:46px;line-height:.95;letter-spacing:-.05em;font-weight:600;color:var(--contra)}
+.vsub{margin:0;font-size:13.5px;color:var(--ink-2)}
+.claims{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow:hidden}
+.claims div{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:8px;align-items:center;padding:10px 12px;border-top:1px solid var(--line);font-size:12.5px}
+.claims div:first-child{border-top:0}
+.claims .id{font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.pill{font-size:10.5px;font-weight:700;letter-spacing:.02em;padding:3px 6px;border-radius:5px;white-space:nowrap}
+.p-proven{color:var(--proven);background:var(--proven-bg)}
+.p-contra{color:var(--contra);background:var(--contra-bg)}
+.p-unver{color:var(--unver);background:var(--unver-bg)}
+.flip{border-radius:12px;background:var(--side);color:var(--side-ink);padding:14px;display:flex;flex-direction:column;gap:8px}
+.flip .k{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--mint);font-weight:600}
+.flip p{margin:0;font-size:15px;line-height:1.3;font-weight:600;letter-spacing:-.01em}
+.flip small{font-size:11.5px;color:var(--side-ink-2);line-height:1.45}
+.ask{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.ask .k{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+.ask p{margin:0;font-size:13px;font-weight:500}
+.ask small{font-size:11.5px;color:var(--ink-3)}
+.src{display:flex;flex-wrap:wrap;gap:6px}
+.tag{font-family:var(--mono);font-size:10.5px;padding:3px 6px;border-radius:5px}
+.tag.z{background:var(--zetaris-bg);color:var(--zetaris)}
+.tag.m{background:var(--meter-bg);color:var(--meter)}
+.tag.e{background:var(--sunk);color:var(--ink-2)}
+.rail .acts{margin-top:auto;display:flex;flex-direction:column;gap:8px}
+.rail .acts .btn{justify-content:center;height:40px}
+
+/* Secondary windows */
+.pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,560px),1fr));gap:32px;position:relative}
+.mini{min-width:640px}
+.home{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;padding:28px 26px}
+.home h2{margin:0;font-size:34px;line-height:1.02;letter-spacing:-.045em;font-weight:600;text-wrap:balance}
+.home p{margin:0;font-size:13.5px;color:var(--ink-2)}
+.home .l{display:flex;flex-direction:column;gap:14px;min-width:0}
+.field{border:1px solid var(--line-2);border-radius:10px;padding:10px 12px;font-size:13px;background:var(--panel)}
+.row2{display:flex;flex-wrap:wrap;gap:6px}
+.opt{font-size:12px;border:1px solid var(--line);border-radius:8px;padding:5px 9px;color:var(--ink-2);background:var(--panel)}
+.home .r{position:relative;border-radius:12px;overflow:hidden;aspect-ratio:3/2;max-width:100%;align-self:start}
+.home .r img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.bench{padding:22px 24px;display:flex;flex-direction:column;gap:14px}
+.bench .h{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.bench h2{margin:0;font-size:22px;letter-spacing:-.03em;font-weight:600}
+.bench .h span{font-size:12px;color:var(--ink-3)}
+.cases{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.case{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:9px 10px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.case .t{display:flex;justify-content:space-between;align-items:center}
+.case .n{font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.case p{margin:0;font-size:11.5px;color:var(--ink-2);line-height:1.35;height:31px;overflow:hidden}
+.case .res{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;color:var(--ink-3);border-top:1px dashed var(--line);padding-top:5px}
+.case.ai{box-shadow:0 0 0 1.5px var(--forest) inset}
+.bench .foot{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:12px;color:var(--ink-3);align-items:center}
+.bench .foot i{display:inline-block;width:12px;height:12px;border-radius:3px;box-shadow:0 0 0 1.5px var(--forest) inset;vertical-align:-2px;margin-right:6px}
+
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px}
+.notes div{display:flex;flex-direction:column;gap:6px;min-width:0}
+.notes b{font-size:15px;font-weight:600}
+.notes p{margin:0;font-size:14px;color:var(--ink-2)}
+@media (prefers-reduced-motion:no-preference){.live{animation:live 1.8s ease-in-out infinite}@keyframes live{50%{opacity:.3}}}
+</style>
+
+<div class="page">
+  <header class="intro">
+    <div>
+      <span class="eyebrow">GreenTrace · application PC · maquette</span>
+      <h1>GreenTrace Desktop</h1>
+      <p class="lead">L'écran d'enquête, celui qu'on montre aux jurés : la vraie parcelle sur la vraie image satellite, quand la forêt est partie, ce que chaque agent a fait, et le verdict avec ce qui le ferait changer.</p>
+    </div>
+    <span class="flag">Image Sentinel-2 et perte de forêt réelles (14 km à l'ouest de Soubré). Entreprise, fournisseurs et parcelle P-041 fictifs. Durées et compteurs = exemple de trace.</span>
+  </header>
+
+  <div class="stage">
+    <canvas id="topo" aria-hidden="true"></canvas>
+
+    <!-- HERO WINDOW: investigation -->
+    <div class="win">
+      <div class="chrome"><div class="lights"><i></i><i></i><i></i></div><div class="ttl"><b>GreenTrace</b> · Investigation demo-002</div><div style="width:47px"></div></div>
+      <div class="scroll-x">
+      <div class="app">
+        <aside class="side">
+          <div class="brand">
+            <svg width="26" height="26" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="8" fill="#1F6F4A"/><path d="M6.5 8.5 L19.5 6.5 L21.5 19.5 L8 21.5 Z" fill="none" stroke="#9BE3B4" stroke-width="1.8" stroke-linejoin="round"/><rect x="14" y="9.5" width="4" height="4" fill="#D9622B"/></svg>
+            <b>GreenTrace</b>
+          </div>
+          <nav class="nav" aria-label="App">
+            <a href="#"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>New investigation<span class="k">N</span></a>
+            <a href="#" class="on"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.2 10.2L13.5 13.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Investigations</a>
+            <a href="#"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4.5h10M3 8h7M3 11.5h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Action plan<span class="k">7</span></a>
+            <a href="#"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="2.5" width="4.5" height="4.5" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2.5" width="4.5" height="4.5" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="2.5" y="9" width="4.5" height="4.5" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="4.5" height="4.5" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>Test bench<span class="k">20</span></a>
+            <a href="#"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><ellipse cx="8" cy="4" rx="5" ry="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>Sources</a>
+            <a href="#"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="4" cy="8" r="2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="4" r="2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M5.8 7l4.4-2.2M5.8 9l4.4 2.2" stroke="currentColor" stroke-width="1.5"/></svg>Memory</a>
+            <a href="#"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 12l3.5-4 3 2.5L14 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Traces</a>
+          </nav>
+          <div class="grp">Recent</div>
+          <div class="runs">
+            <div class="on"><span class="dot" style="background:var(--signal)"></span>ChocoDurable · cocoa</div>
+            <div><span class="dot" style="background:var(--mint)"></span>Clean supply chain</div>
+            <div><span class="dot" style="background:var(--side-ink-2)"></span>Annex admission</div>
+          </div>
+          <div class="foot">
+            <span>Mode <b>Live</b></span>
+            <span>Data <b>Zetaris · eudr</b></span>
+            <span>Memory <b>Meterless WM</b></span>
+          </div>
+        </aside>
+
+        <div class="main">
+          <div class="top">
+            <div class="claim"><b>“Zero deforestation since 2021” · ChocoDurable SA</b><span>Cocoa importer · 41 plots · 12 suppliers · claim from the 2025 CSR report, p. 14</span></div>
+            <div class="seg"><span class="on">Map</span><span>Evidence file</span><span>Trace</span></div>
+            <span class="btn sec">Try to break it</span>
+            <span class="btn pri">Audit package</span>
+          </div>
+
+          <div class="grid">
+            <div class="work">
+              <div class="survey">
+                <img src="images/map_base.jpg" alt="Image Sentinel-2 sans nuages, cultures et forêt à 14 km à l'ouest de Soubré">
+                <img class="loss" src="images/map_loss.png" alt="" aria-hidden="true">
+                <svg class="ov" viewBox="0 0 960 640" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Contour de la parcelle P-041, 10,6 ha, dont 4,7 ha de couvert forestier perdu en 2023">
+                  <g stroke="rgba(255,255,255,.55)" stroke-width="1">
+                    <path d="M0 0v640M960 0v640"/>
+                    <path d="M0 80h10M0 160h16M0 240h10M0 320h16M0 400h10M0 480h16M0 560h10"/>
+                    <path d="M960 80h-10M960 160h-16M960 240h-10M960 320h-16M960 400h-10M960 480h-16M960 560h-10"/>
+                    <path d="M120 0v10M240 0v16M360 0v10M480 0v16M600 0v10M720 0v16M840 0v10"/>
+                    <path d="M120 640v-10M240 640v-16M360 640v-10M480 640v-16M600 640v-10M720 640v-16M840 640v-10"/>
+                  </g>
+                  <g stroke="rgba(255,255,255,.14)" stroke-width="1" stroke-dasharray="2 6"><path d="M240 0v640M480 0v640M720 0v640M0 160h960M0 320h960M0 480h960"/></g>
+                  <polygon points="343,293 507,283 539,361 489,425 366,421 329,366" fill="none" stroke="rgba(8,16,11,.55)" stroke-width="8" stroke-linejoin="round"/>
+                  <polygon points="343,293 507,283 539,361 489,425 366,421 329,366" fill="rgba(255,255,255,.07)" stroke="#FFFFFF" stroke-width="2.4" stroke-linejoin="round"/>
+                  <g fill="#FFFFFF" stroke="#0E1A14" stroke-width="1.5"><circle cx="343" cy="293" r="4.5"/><circle cx="507" cy="283" r="4.5"/><circle cx="539" cy="361" r="4.5"/><circle cx="489" cy="425" r="4.5"/><circle cx="366" cy="421" r="4.5"/><circle cx="329" cy="366" r="4.5"/></g>
+                  <path d="M539 361 L640 330" stroke="#FFFFFF" stroke-width="1.2"/>
+                  <rect x="640" y="308" width="176" height="44" rx="8" fill="rgba(10,18,13,.78)"/>
+                  <text x="652" y="326" font-family="Geist, sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">P-041 · supplier F-007</text>
+                  <text x="652" y="343" font-family="Geist Mono, monospace" font-size="11.5" fill="#F3B48F">4.7 ha lost in 2023</text>
+                </svg>
+                <span class="chip c-tl"><span class="dot live" style="background:var(--mint)"></span>5.7052° N · 6.7244° W</span>
+                <span class="chip c-bl"><svg width="52" height="8" viewBox="0 0 52 8" aria-hidden="true"><path d="M1 1v6M51 1v6M1 4h50" stroke="#EAF2EC" stroke-width="1.4"/></svg>100 m</span>
+                <span class="chip c-br">Sentinel-2 · EOX cloudless 2021 · UMD loss</span>
+                <div class="legend">
+                  <span><i class="sw" style="box-shadow:0 0 0 2px #FFFFFF inset"></i>Declared outline · 10.6 ha</span>
+                  <span><i class="sw" style="background:#D9622B"></i>Tree cover lost after 2020</span>
+                </div>
+              </div>
+
+              <div class="tl">
+                <div class="h"><b>When the forest went, inside P-041</b><span>UMD loss-year, real · hectares per year</span></div>
+                <svg viewBox="0 0 760 120" role="img" aria-label="Perte de couvert par an : 0,45 ha en 2014, 4,66 ha en 2023, presque rien les autres années">
+                  <rect x="446" y="4" width="314" height="92" fill="var(--contra-bg)" opacity=".6"/>
+<line x1="446" y1="0" x2="446" y2="98" stroke="var(--ink)" stroke-width="1.2" stroke-dasharray="3 3"/>
+<text x="438" y="18" text-anchor="end" font-family="Geist, sans-serif" font-size="11" fill="var(--ink-2)">EUDR cut-off · 31 Dec 2020</text>
+<g fill="var(--line-2)"><rect x="88" y="94" width="34" height="2"/><rect x="150" y="94" width="34" height="2"/><rect x="212" y="94" width="34" height="2"/><rect x="274" y="94" width="34" height="2"/><rect x="336" y="94" width="34" height="2"/><rect x="398" y="94" width="34" height="2"/><rect x="460" y="94" width="34" height="2"/><rect x="522" y="94" width="34" height="2"/><rect x="646" y="94" width="34" height="2"/><rect x="708" y="94" width="34" height="2"/></g>
+<rect x="26" y="86" width="34" height="10" rx="2" fill="var(--ink-3)"/>
+<text x="43" y="80" text-anchor="middle" font-family="Geist Mono, monospace" font-size="10.5" fill="var(--ink-2)">0.45</text>
+<rect x="584" y="26" width="34" height="70" rx="2" fill="var(--signal)"/>
+<text x="601" y="20" text-anchor="middle" font-family="Geist Mono, monospace" font-size="12" font-weight="600" fill="var(--contra)">4.66 ha</text>
+<line x1="0" y1="96" x2="760" y2="96" stroke="var(--line-2)"/>
+<g font-family="Geist Mono, monospace" font-size="10.5" fill="var(--ink-3)" text-anchor="middle"><text x="43" y="113">2014</text><text x="105" y="113">2015</text><text x="167" y="113">2016</text><text x="229" y="113">2017</text><text x="291" y="113">2018</text><text x="353" y="113">2019</text><text x="415" y="113">2020</text><text x="477" y="113">2021</text><text x="539" y="113">2022</text><text x="601" y="113" fill="var(--contra)">2023</text><text x="663" y="113">2024</text><text x="725" y="113">2025</text></g>
+</svg>
+              </div>
+
+              <div class="lanes">
+                <div class="h"><b>Who did what</b><span>00:00 → 00:41 · read from logs/trace.jsonl</span></div>
+                <div class="lane"><span>Extractor</span><div class="track"><span class="ev m" style="left:2%">split claim A1–A3 · meterless</span></div></div>
+                <div class="lane"><span>Planner</span><div class="track"><span class="ev n" style="left:12%">plan A2</span><span class="ev n" style="left:50%">revise: test delivery year</span></div></div>
+                <div class="lane"><span>Investigator</span><div class="track"><span class="ev z" style="left:22%">Q3 · 41 rows · zetaris</span></div></div>
+                <div class="lane"><span>Evaluator</span><div class="track"><span class="ev x" style="left:40%">reject E-01 · R3</span><span class="ev z" style="left:72%">own query Q10 · 118 cells</span></div></div>
+                <div class="lane"><span>Writer</span><div class="track"><span class="ev m" style="left:88%">evidence file</span></div></div>
+                <div class="axis"><span></span><div><span>00:00</span><span>00:10</span><span>00:20</span><span>00:30</span><span>00:41</span></div></div>
+              </div>
+            </div>
+
+            <aside class="rail">
+              <span class="vlabel">Verdict · human review</span>
+              <h2 class="verdict">Contra&shy;dicted.</h2>
+              <p class="vsub">One delivering plot lost 4.7 ha of tree cover in 2023. The rest of the claim holds.</p>
+              <div class="claims">
+                <div><span class="id">A1</span><span>All volume traced to plots</span><span class="pill p-proven">PROVEN</span></div>
+                <div><span class="id">A2</span><span>No forest cleared after 2020</span><span class="pill p-contra">CONTRADICTED</span></div>
+                <div><span class="id">A3</span><span>Yields are plausible</span><span class="pill p-proven">PROVEN</span></div>
+              </div>
+              <div class="src"><span class="tag z">zetaris · Q3 Q5 Q10</span><span class="tag m">meterless · 63 facts</span><span class="tag e">EU JRC GFC2020</span></div>
+              <div class="flip">
+                <span class="k">What would change its mind</span>
+                <p>Proven, if the outline left out the 4.7 ha cleared in 2023.</p>
+                <small>Computed by code from the same rules. The model only words it.</small>
+              </div>
+              <div class="ask">
+                <span class="k">Ask for this first</span>
+                <p>A field report on P-041 from F-007, dated after 2023.</p>
+                <small>The one document that could overturn A2.</small>
+              </div>
+              <div class="acts">
+                <span class="btn pri">Write to the supplier</span>
+                <span class="btn sec">Mark as reviewed</span>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </div>
+      </div>
+    </div>
+
+    <!-- Secondary windows -->
+    <div class="pair">
+      <div class="win">
+        <div class="chrome"><div class="lights"><i></i><i></i><i></i></div><div class="ttl"><b>GreenTrace</b> · New investigation</div><div style="width:47px"></div></div>
+        <div class="scroll-x"><div class="mini home">
+          <div class="l">
+            <span class="eyebrow">EU Deforestation Regulation · from 30 Dec 2026</span>
+            <h2>Check a deforestation-free claim.</h2>
+            <p>Paste what the supplier promises. GreenTrace checks their plots against the EU forest map and shows the one change that would flip the verdict.</p>
+            <div class="field">“100% of our cocoa comes from deforestation-free farms since 2021.”</div>
+            <div class="row2"><span class="opt">Upload GeoJSON or CSV</span><span class="opt">Draw on the map</span><span class="opt">Clean supply chain</span><span class="opt">Annex admission</span></div>
+            <span class="btn pri" style="align-self:flex-start;height:40px">Check this claim</span>
+          </div>
+          <div class="r">
+            <img src="images/map_base.jpg" alt="La même zone près de Soubré">
+            <img src="images/map_loss.png" alt="" aria-hidden="true" style="image-rendering:pixelated">
+            <span class="chip c-bl">Run the demo case · real plot near Soubré</span>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="win">
+        <div class="chrome"><div class="lights"><i></i><i></i><i></i></div><div class="ttl"><b>GreenTrace</b> · Test bench</div><div style="width:47px"></div></div>
+        <div class="scroll-x"><div class="mini bench">
+          <div class="h"><h2>20 trap cases, known answers</h2><span>Results appear after “Run all 20”</span></div>
+          <div class="cases">
+            <div class="case"><div class="t"><span class="n">01</span><span class="pill p-proven">PROVEN</span></div><p>Base world, no change</p><div class="res"><span>rules —</span><span>agents —</span></div></div>
+            <div class="case"><div class="t"><span class="n">02</span><span class="pill p-contra">CONTRA</span></div><p>Confirmed 2022 alert inside P-014</p><div class="res"><span>rules —</span><span>agents —</span></div></div>
+            <div class="case"><div class="t"><span class="n">03</span><span class="pill p-proven">PROVEN</span></div><p>Same alert, 31 Dec 2020</p><div class="res"><span>rules —</span><span>agents —</span></div></div>
+            <div class="case"><div class="t"><span class="n">04</span><span class="pill p-contra">CONTRA</span></div><p>Same alert, 1 Jan 2021</p><div class="res"><span>rules —</span><span>agents —</span></div></div>
+            <div class="case"><div class="t"><span class="n">07</span><span class="pill p-unver">UNVERIF.</span></div><p>6 ha declared as one point</p><div class="res"><span>rules —</span><span>agents —</span></div></div>
+            <div class="case ai"><div class="t"><span class="n">11</span><span class="pill p-proven">PROVEN</span></div><p>NGO: “clearing in the region”, no name</p><div class="res"><span>rules —</span><span>agents —</span></div></div>
+            <div class="case ai"><div class="t"><span class="n">12</span><span class="pill p-unver">UNVERIF.</span></div><p>NGO names a plot in free text</p><div class="res"><span>rules —</span><span>agents —</span></div></div>
+            <div class="case ai"><div class="t"><span class="n">15</span><span class="pill p-proven">PROVEN</span></div><p>Two cooperatives, same name</p><div class="res"><span>rules —</span><span>agents —</span></div></div>
+            <div class="case ai"><div class="t"><span class="n">17</span><span class="pill p-unver">UNVERIF.</span></div><p>“100% certified” = 40% of volume</p><div class="res"><span>rules —</span><span>agents —</span></div></div>
+            <div class="case ai"><div class="t"><span class="n">18</span><span class="pill p-contra">CONTRA</span></div><p>Admission hidden in an annex</p><div class="res"><span>rules —</span><span>agents —</span></div></div>
+          </div>
+          <div class="foot"><span><i></i>Cases where rules alone are expected to fail: this is where the AI has to read.</span><span>10 of 20 shown</span></div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+  <section class="notes">
+    <div><b>L'écran d'enquête</b><p>Tout ce que le jury doit voir tient sur un écran : la parcelle sur l'image réelle, la date de la perte face à la date limite de l'EUDR, le refus de l'Évaluateur, et le verdict avec la bascule.</p></div>
+    <div><b>Les sponsors visibles</b><p>Chaque appel à Zetaris est en bleu, chaque passage par Meterless en violet, dans la trace comme dans le verdict. Le juré voit où ils servent sans lire le README.</p></div>
+    <div><b>Le banc d'essai</b><p>Les réponses attendues sont connues d'avance. Les résultats restent vides jusqu'au vrai lancement : aucun score écrit à l'avance.</p></div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var c=document.getElementById('topo'); if(!c) return;
+  function draw(){
+    var r=c.getBoundingClientRect(), d=window.devicePixelRatio||1;
+    c.width=r.width*d; c.height=r.height*d;
+    var x=c.getContext('2d'); x.setTransform(d,0,0,d,0,0);
+    x.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--contour').trim()||'rgba(20,64,43,.09)';
+    x.lineWidth=1;
+    var hills=[[r.width*.12,r.height*.18,1.2],[r.width*.78,r.height*.55,1.6],[r.width*.4,r.height*.95,1]];
+    hills.forEach(function(h,j){
+      for(var i=1;i<=18;i++){
+        var rad=i*30*h[2]; x.beginPath();
+        for(var a=0;a<=Math.PI*2+0.01;a+=0.04){
+          var w=1+0.13*Math.sin(a*3+j+i*0.35)+0.05*Math.sin(a*8-i*0.7);
+          var px=h[0]+Math.cos(a)*rad*w*1.45, py=h[1]+Math.sin(a)*rad*w;
+          a===0?x.moveTo(px,py):x.lineTo(px,py);
+        }
+        x.stroke();
+      }
+    });
+  }
+  draw();
+  var t; window.addEventListener('resize',function(){clearTimeout(t);t=setTimeout(draw,150)});
+  try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',draw)}catch(e){}
+})();
+</script>

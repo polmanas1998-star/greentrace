@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en" style="color-scheme:dark">
+<head>
+<meta charset="utf-8">
+<title>GreenTrace — Live investigation</title>
+
+</head>
+<body>
+<div>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0A120D}
+a{color:#9BE3B4}a:hover{color:#BFE8CF}
+</style>
+
+<div style="min-height: 1120px; background: #0A120D; color: #E7EEE9; font-family: 'Geist', system-ui, sans-serif; display: flex; flex-direction: column">
+
+  <header style="border-bottom: 1px solid #24332A; background: rgba(10,18,13,0.88); backdrop-filter: saturate(180%) blur(16px)">
+    <div style="max-width: 1360px; margin: 0 auto; padding: 12px 32px; display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px">
+      <a href="2_accueil.html" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: #E7EEE9; min-height: 44px">
+        <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="0" y="0" width="28" height="28" rx="8" fill="#14402B"></rect><path d="M6.5 8.5 L19.5 6.5 L21.5 19.5 L8 21.5 Z" fill="none" stroke="#9BE3B4" stroke-width="1.8" stroke-linejoin="round"></path><rect x="14" y="9.5" width="4" height="4" fill="#D9622B"></rect></svg>
+        <span style="font-weight: 600; font-size: 16px; letter-spacing: -0.01em">GreenTrace</span>
+      </a>
+      <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+        <span style="font-size: 16px; font-weight: 600; letter-spacing: -0.01em">“Zero deforestation since 2021” · ChocoDurable SA</span>
+        <span style="font-size: 12px; color: #8A978F">Synthetic company · real plot and real maps</span>
+      </div>
+      <div style="margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 12px">
+        <span role="status" style="display: inline-flex; align-items: center; gap: 8px; padding: 0 12px; min-height: 36px; border-radius: 999px; background: #08130D; color: #FFFFFF; font-size: 14px; font-weight: 500"><span style="width: 8px; height: 8px; border-radius: 50%; background: #9BE3B4; box-shadow: 0 0 0 4px rgba(155,227,180,0.2)"></span>Investigating · 00:41</span>
+        <button type="button" style="font: inherit; font-size: 14px; font-weight: 500; padding: 0 16px; min-height: 44px; border-radius: 10px; border: 1px solid #2E3F35; background: #15211A; color: #E7EEE9; cursor: pointer">Stop</button>
+      </div>
+    </div>
+  </header>
+
+  <main style="flex: 1; max-width: 1360px; width: 100%; box-sizing: border-box; margin: 0 auto; padding: 32px 32px 40px; display: flex; flex-direction: column; gap: 24px">
+
+    <p style="margin: 0; font-size: 20px; line-height: 1.5; color: #B6C2BA">Checking part 2 of 3. The Evaluator rejected one piece of evidence and asked for one more check; <span style="color: #E7EEE9; font-weight: 500">the verdict will follow in a few seconds.</span></p>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+
+      <aside aria-label="Claim parts" style="flex: 1 1 264px; max-width: 296px; display: flex; flex-direction: column; gap: 12px">
+        <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8A978F">The claim, in three parts</span>
+        <div style="background: #15211A; border: 1px solid #24332A; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 8px">
+          <div style="display: flex; justify-content: space-between; align-items: center"><span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A978F">A1</span><span style="font-size: 12px; font-weight: 700; color: #7FD3A0; background: #163325; padding: 2px 8px; border-radius: 6px">PROVEN</span></div>
+          <div style="font-size: 16px; line-height: 1.4">All volume traced to plots</div>
+        </div>
+        <div style="background: #15211A; border: 1px solid #08130D; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.30)">
+          <div style="display: flex; justify-content: space-between; align-items: center"><span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A978F">A2</span><span style="font-size: 12px; font-weight: 600; color: #E7EEE9">Round 2 of 3</span></div>
+          <div style="font-size: 16px; line-height: 1.4">No forest cleared on delivering plots after 2020</div>
+        </div>
+        <div style="background: #15211A; border: 1px solid #24332A; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 8px">
+          <div style="display: flex; justify-content: space-between; align-items: center"><span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A978F">A3</span><span style="font-size: 12px; font-weight: 500; color: #8A978F">Queued</span></div>
+          <div style="font-size: 16px; line-height: 1.4">Yields are plausible</div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 4px">
+          <div style="background: #15211A; border: 1px solid #24332A; border-radius: 16px; padding: 12px 16px"><div style="font-size: 12px; color: #8A978F">Zetaris queries</div><div style="font-family: 'Geist Mono', monospace; font-size: 24px; font-weight: 500; margin-top: 4px">14</div></div>
+          <div style="background: #15211A; border: 1px solid #24332A; border-radius: 16px; padding: 12px 16px"><div style="font-size: 12px; color: #8A978F">Model calls · Meterless</div><div style="font-family: 'Geist Mono', monospace; font-size: 24px; font-weight: 500; margin-top: 4px">9</div></div>
+          <div style="background: #15211A; border: 1px solid #24332A; border-radius: 16px; padding: 12px 16px"><div style="font-size: 12px; color: #8A978F">Facts in world model</div><div style="font-family: 'Geist Mono', monospace; font-size: 24px; font-weight: 500; margin-top: 4px">63</div></div>
+          <div style="background: #15211A; border: 1px solid #24332A; border-radius: 16px; padding: 12px 16px"><div style="font-size: 12px; color: #8A978F">Evidence blocked</div><div style="font-family: 'Geist Mono', monospace; font-size: 24px; font-weight: 500; margin-top: 4px">1</div></div>
+        </div>
+      </aside>
+
+      <section aria-label="Live trace" style="flex: 999 1 520px; min-width: 0; background: #15211A; border: 1px solid #24332A; border-radius: 20px; overflow: hidden">
+        <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 20px; border-bottom: 1px solid #24332A">
+          <span style="font-size: 16px; font-weight: 600">Trace</span>
+          <div role="group" aria-label="Filter the trace" style="display: flex; gap: 4px">
+            <button type="button" aria-pressed="true" style="font: inherit; font-size: 14px; padding: 0 12px; min-height: 44px; border-radius: 10px; border: 0; background: #1B2820; color: #E7EEE9; cursor: pointer">All agents</button>
+            <button type="button" aria-pressed="false" style="font: inherit; font-size: 14px; padding: 0 12px; min-height: 44px; border-radius: 10px; border: 0; background: transparent; color: #B6C2BA; cursor: pointer">Evaluator</button>
+            <button type="button" aria-pressed="false" style="font: inherit; font-size: 14px; padding: 0 12px; min-height: 44px; border-radius: 10px; border: 0; background: transparent; color: #B6C2BA; cursor: pointer">Sponsor calls</button>
+          </div>
+        </div>
+        <ol aria-live="polite" style="list-style: none; margin: 0; padding: 8px 0">
+          <li style="display: grid; grid-template-columns: 56px 16px 120px minmax(0, 1fr); gap: 12px; padding: 12px 20px; align-items: baseline; border-bottom: 1px solid #1B2820">
+            <span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A978F">00:03</span><span style="width: 8px; height: 8px; border-radius: 50%; background: #8B5CF6"></span>
+            <span style="font-size: 14px; font-weight: 600">Extractor</span>
+            <span style="font-size: 15px; line-height: 1.5; color: #B6C2BA">Split the claim into A1–A3; scope all cocoa, 2021–2025 <span style="font-family: 'Geist Mono', monospace; font-size: 12px; padding: 2px 8px; border-radius: 6px; background: #261E3A; color: #C3B1F2; white-space: nowrap">Meterless · Nemotron</span></span>
+          </li>
+          <li style="display: grid; grid-template-columns: 56px 16px 120px minmax(0, 1fr); gap: 12px; padding: 12px 20px; align-items: baseline; border-bottom: 1px solid #1B2820">
+            <span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A978F">00:07</span><span style="width: 8px; height: 8px; border-radius: 50%; background: #0EA5E9"></span>
+            <span style="font-size: 14px; font-weight: 600">Planner</span>
+            <span style="font-size: 15px; line-height: 1.5; color: #B6C2BA">A2 holds if no forest lost inside a delivering plot after 2020</span>
+          </li>
+          <li style="display: grid; grid-template-columns: 56px 16px 120px minmax(0, 1fr); gap: 12px; padding: 12px 20px; align-items: baseline; border-bottom: 1px solid #1B2820">
+            <span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A978F">00:12</span><span style="width: 8px; height: 8px; border-radius: 50%; background: #64748B"></span>
+            <span style="font-size: 14px; font-weight: 600">Investigator</span>
+            <span style="font-size: 15px; line-height: 1.5; color: #B6C2BA">Evidence card E-01: your plot P-041, supplier F-007 <span style="font-family: 'Geist Mono', monospace; font-size: 12px; padding: 2px 8px; border-radius: 6px; background: #1A2638; color: #9DB8E8; white-space: nowrap">Zetaris · Q3 · 41 rows</span></span>
+          </li>
+          <li style="display: grid; grid-template-columns: 56px 16px 120px minmax(0, 1fr); gap: 12px; padding: 16px 20px; align-items: baseline; background: #2A1C14; border-bottom: 1px solid #5A3322">
+            <span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #F39B72">00:19</span><span style="width: 8px; height: 8px; border-radius: 50%; background: #08130D"></span>
+            <span style="font-size: 14px; font-weight: 700; color: #F39B72">Evaluator</span>
+            <div style="display: flex; flex-direction: column; gap: 4px">
+              <span style="font-size: 15px; line-height: 1.5; color: #F3C9B0; font-weight: 500">Rejected E-01: the supplier's delivery year was never tested. Sent back to the Planner.</span>
+              <span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #F39B72">refutation R3 · block · target Planner</span>
+            </div>
+          </li>
+          <li style="display: grid; grid-template-columns: 56px 16px 120px minmax(0, 1fr); gap: 12px; padding: 12px 20px; align-items: baseline; border-bottom: 1px solid #1B2820">
+            <span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A978F">00:21</span><span style="width: 8px; height: 8px; border-radius: 50%; background: #0EA5E9"></span>
+            <span style="font-size: 14px; font-weight: 600">Planner</span>
+            <span style="font-size: 15px; line-height: 1.5; color: #B6C2BA">Plan revised: did F-007 still deliver from P-041 in the loss year?</span>
+          </li>
+          <li style="display: grid; grid-template-columns: 56px 16px 120px minmax(0, 1fr); gap: 12px; padding: 12px 20px; align-items: baseline; border-bottom: 1px solid #1B2820">
+            <span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A978F">00:33</span><span style="width: 8px; height: 8px; border-radius: 50%; background: #08130D"></span>
+            <span style="font-size: 14px; font-weight: 600">Evaluator</span>
+            <span style="font-size: 15px; line-height: 1.5; color: #B6C2BA">Own query on the reference maps: 4.7 ha of tree cover lost in 2023 inside P-041 <span style="font-family: 'Geist Mono', monospace; font-size: 12px; padding: 2px 8px; border-radius: 6px; background: #1A2638; color: #9DB8E8; white-space: nowrap">Zetaris · Q10 · 118 cells</span></span>
+          </li>
+          <li style="display: grid; grid-template-columns: 56px 16px 120px minmax(0, 1fr); gap: 12px; padding: 12px 20px; align-items: baseline; border-bottom: 1px solid #1B2820">
+            <span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A978F">00:36</span><span style="width: 8px; height: 8px; border-radius: 50%; background: #08130D"></span>
+            <span style="font-size: 14px; font-weight: 600">Evaluator</span>
+            <span style="font-size: 15px; line-height: 1.5; color: #B6C2BA">1.5 t delivered from P-041 in 2023 · evidence approved <span style="font-family: 'Geist Mono', monospace; font-size: 12px; padding: 2px 8px; border-radius: 6px; background: #1A2638; color: #9DB8E8; white-space: nowrap">Zetaris · Q5</span></span>
+          </li>
+          <li style="display: grid; grid-template-columns: 56px 16px 120px minmax(0, 1fr); gap: 12px; padding: 12px 20px; align-items: baseline">
+            <span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A978F">00:38</span><span style="width: 8px; height: 8px; border-radius: 50%; background: #64748B"></span>
+            <span style="font-size: 14px; font-weight: 600">Code checks</span>
+            <span style="font-size: 15px; line-height: 1.5; color: #B6C2BA">Timeline: loss in 2023, deliveries 2021–2025 · holds under a 30 m GPS error · outline not drawn around the loss</span>
+          </li>
+          <li style="display: grid; grid-template-columns: 56px 16px 120px minmax(0, 1fr); gap: 12px; padding: 12px 20px; align-items: baseline">
+            <span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A978F">00:41</span><span style="width: 8px; height: 8px; border-radius: 50%; background: #A16207"></span>
+            <span style="font-size: 14px; font-weight: 600">Writer</span>
+            <span style="font-size: 15px; line-height: 1.5; color: #E7EEE9">Writing the evidence file <span style="font-family: 'Geist Mono', monospace; font-size: 12px; padding: 2px 8px; border-radius: 6px; background: #261E3A; color: #C3B1F2; white-space: nowrap">Meterless · Nemotron</span></span>
+          </li>
+        </ol>
+      </section>
+
+      <section aria-label="Plot on the reference maps" style="flex: 1 1 296px; max-width: 360px; background: #15211A; border: 1px solid #24332A; border-radius: 20px; overflow: hidden">
+        <div style="position: relative; width: 100%; aspect-ratio: 3 / 2; background: #2F4A33; overflow: hidden">
+          <img src="images/map_base.jpg" alt="Sentinel-2 cloudless image of the plot area west of Soubré" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block">
+          <img src="images/map_loss.png" alt="" aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; image-rendering: pixelated">
+          <svg viewBox="0 0 960 640" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Plot P-041 with 4.7 hectares of tree cover lost in 2023" style="position: absolute; inset: 0; width: 100%; height: 100%"><polygon points="343,293 507,283 539,361 489,425 366,421 329,366" fill="none" stroke="rgba(14,26,20,0.45)" stroke-width="5" stroke-linejoin="round"></polygon><polygon points="343,293 507,283 539,361 489,425 366,421 329,366" fill="rgba(255,255,255,0.06)" stroke="#15211A" stroke-width="2" stroke-linejoin="round"></polygon></svg>
+        </div>
+        <div style="padding: 16px 20px; display: flex; flex-direction: column; gap: 8px">
+          <div style="font-size: 16px; font-weight: 600">P-041 · your outline</div>
+          <div style="display: flex; justify-content: space-between; font-size: 14px; color: #B6C2BA"><span>Outline</span><span style="font-family: 'Geist Mono', monospace">10.6 ha</span></div>
+          <div style="display: flex; justify-content: space-between; font-size: 14px; color: #B6C2BA"><span>Lost in 2023 · UMD</span><span style="font-family: 'Geist Mono', monospace; color: #F39B72">4.7 ha</span></div>
+          <div style="display: flex; justify-content: space-between; font-size: 14px; color: #B6C2BA"><span>Delivered 2021–2025</span><span style="font-family: 'Geist Mono', monospace">7.5 t</span></div>
+          <div style="font-size: 12px; color: #8A978F; line-height: 1.5">Real Sentinel-2 imagery (EOX cloudless 2021) and real UMD loss for this outline.</div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+</div>
+
+</body>
+</html>
