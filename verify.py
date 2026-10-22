@@ -24,7 +24,7 @@ from app.canonical import canonical_json, sha256_of
 from app.explain.flip import compute_flip
 from app.orchestrator import apply_change
 from app.receipt import RECEIPT_VERSION, decision_for, evidence_answers, rules_sha256, verdict_seal
-from app.rules import Extracted, check_plot
+from app.rules import Extracted, check_plot, decide_promise
 from app.world.drawn import plot_from_geojson
 
 LABELS = ("alert_id", "plot_id", "delivery_id", "supplier_id", "doc_id", "rule")
@@ -69,17 +69,18 @@ def check(receipt: dict[str, Any]) -> dict[str, Any]:
 
 def check_plots(receipt: dict[str, Any]) -> dict[str, Any]:
     """An analyst's plot file: every row hash, then every plot's verdict re-derived from its own Q10 rows."""
-    from app.plotcheck import NO_ISSUE, seal
+    from app.plotcheck import NO_ISSUE, promise_seal, seal
 
     problems = _integrity(receipt)
     if receipt["rules_sha256"] != rules_sha256():
         problems.append("rules: this checkout's app/rules.py is not the one the receipt was made with")
     plots = {p["plot_id"]: p for p in receipt["plots"]}
-    recomputed = []
+    recomputed, all_findings = [], []
     for result in receipt["results"]:
         answer = result.get("answer")
         cells = receipt["sources"][answer]["rows"] if answer is not None else None
         findings = check_plot(plots[result["plot_id"]], cells, {receipt["producing_until"]})
+        all_findings += findings
         again = {"plot_id": result["plot_id"], "verdict": findings[0].verdict if findings else NO_ISSUE,
                  "code": findings[0].code if findings else None, "rule": findings[0].rule if findings else 4}
         if (again["verdict"], again["code"]) != (result["verdict"], result["code"]):
@@ -91,6 +92,18 @@ def check_plots(receipt: dict[str, Any]) -> dict[str, Any]:
         problems.append("seal: the verdicts recomputed do not give the receipt's seal")
     verdicts = [r["verdict"] for r in recomputed]
     summary = ", ".join(f"{verdicts.count(v)} {v}" for v in dict.fromkeys(verdicts))
+    promise = receipt.get("promise")
+    if promise and promise["status"] == "success":
+        texts = {(p["doc_id"], p["section"], p["paragraph_no"]): p["paragraph_text"] for p in promise["paragraphs"]}
+        problems += _quoted(promise["extracted"], texts)
+        e = promise["extracted"]
+        decision = decide_promise(receipt["plots"], all_findings,
+                                  Extracted(scope=e["scope"], admissions=tuple(e["admissions"]),
+                                            mentions=tuple(e["mentions"])), promise["claim_types"])
+        if promise_seal(decision) != promise["seal"]:
+            problems.append(f"promise: the rules give {decision['verdict']} on these plots and quotes, "
+                            f"the receipt says {promise['verdict']}")
+        summary += f"; promise {decision['verdict']}"
     return {"status": "TAMPERED" if problems else "VALID", "problems": problems, "verdict": summary,
             "seal": seal_again, "changes_replayed": 0}
 
@@ -116,6 +129,18 @@ def _label(row: dict) -> str:
         return f" (cell {row['lat']}, {row['lon']})"
     key = next((k for k in LABELS if k in row), None)
     return f" ({key.split('_')[0]} {row[key]})" if key else ""
+
+
+def _quoted(extracted: dict, paragraphs: dict) -> list[str]:
+    """Every quote word for word in the paragraph it cites."""
+    problems = []
+    for item in extracted["admissions"] + extracted["mentions"]:
+        if not item.get("quote"):
+            continue
+        key = (item["doc"], item.get("section", "main"), item["paragraph_no"])
+        if " ".join(item["quote"].split()) not in " ".join(paragraphs.get(key, "").split()):
+            problems.append(f"quote: not found word for word in {' '.join(map(str, key))}")
+    return problems
 
 
 def _quotes(receipt: dict) -> list[str]:

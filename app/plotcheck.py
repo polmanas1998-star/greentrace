@@ -26,12 +26,16 @@ from typing import Any, Callable, Optional
 from shapely import wkt
 from shapely.geometry import mapping
 
-from app import plotfile
+import dataclasses
+
+from app import plotfile, userdocs
+from app.agents import extractor
+from app.agents.context import RunContext
 from app.canonical import sha256_of
 from app.checks import gfw, landcover
 from app.queries import Answer, DataGate, SourceUnavailable
 from app.receipt import RECEIPT_VERSION, ZIP_DATE, rules_sha256
-from app.rules import CONTRADICTED, RULES_VERSION, UNVERIFIABLE, check_plot
+from app.rules import CONTRADICTED, RULES_VERSION, UNVERIFIABLE, Extracted, check_plot, decide_promise
 from app.tracing import LOG_DIR, now_utc, trace
 
 NO_ISSUE = "NO_ISSUE"
@@ -49,6 +53,8 @@ class Batch:
     warnings: list[str]
     answers: list = field(default_factory=list)   # the DataGate's Q10 answers, in order
     results: list[dict] = field(default_factory=list)
+    plot_findings: list = field(default_factory=list)  # the rules' Finding objects, for the promise
+    promise: Optional[dict] = None  # the analyst's promise and documents, as the receipt keeps them
     output: dict = field(default_factory=dict)
     log_dir: Optional[Path] = None
 
@@ -57,10 +63,14 @@ BATCHES: "OrderedDict[str, Batch]" = OrderedDict()
 
 
 def check(geojson: Any, batch_id: str, engine: Any, *, year: Optional[int] = None, remote: Optional[gfw.Tiles] = None,
-          log: Optional[Callable[[dict], Any]] = None, log_dir: Optional[Path] = None) -> dict[str, Any]:
+          log: Optional[Callable[[dict], Any]] = None, log_dir: Optional[Path] = None,
+          promise: Optional[str] = None, documents: Any = None, model: Any = None) -> dict[str, Any]:
     """Read the file, check every plot, keep the batch for its exports. engine: SQLiteEngine or ZetarisEngine;
-    remote: Global Forest Watch tiles for the plots the reference cells do not cover (live mode only)."""
+    remote: Global Forest Watch tiles for the plots the reference cells do not cover (live mode only);
+    promise and documents: the analyst's claim and texts (app/userdocs.py), read by the Extractor with
+    model (an app.adapters.llm.ModelGate, or None for the rule fallback) and judged with the plots."""
     plots, errors, warnings = plotfile.read(geojson)
+    texts = userdocs.read(promise, documents) if promise is not None or documents else None
     year = year or datetime.now(timezone.utc).year
     log = log or (lambda record: trace(record, log_dir=log_dir))
     gate = DataGate(engine, batch_id, log=log)
@@ -80,12 +90,16 @@ def check(geojson: Any, batch_id: str, engine: Any, *, year: Optional[int] = Non
                 pass  # no answer: rule 1 says the maps did not answer
             if remote is not None and (cells is None or not landcover.measure(plot, cells)["covered"]):
                 cells, source = _read_gfw(remote, plot, gate, batch_id, log)
-        result = _result(plot, cells, source, year, gate.answers[source] if source is not None else None,
+        findings = check_plot(plot, cells, {year})
+        batch.plot_findings += findings
+        result = _result(plot, cells, source, findings, gate.answers[source] if source is not None else None,
                          remote is None)
         batch.results.append(result)
         _step(log, batch_id, "check_plot", f"{plot['plot_id']} ({plot['shape']}, {plot['area_ha']} ha)",
               f"{result['verdict']}: {result['sentence']}")
     batch.answers = list(gate.answers)
+    if texts is not None:
+        batch.promise = _promise(batch, gate, texts, model, log)
     batch.output = _output(batch)
     _step(log, batch_id, "rank_plots", f"{len(batch.results)} plot(s)",
           ", ".join(f"{n} {v}" for v, n in batch.output["summary"]["plots"].items()), agent="Writer")
@@ -112,9 +126,35 @@ def _read_gfw(remote: gfw.Tiles, plot: dict, gate: DataGate, batch_id: str,
     return reading.cells, len(gate.answers) - 1
 
 
-def _result(plot: dict, cells: Optional[list[dict]], source: Optional[int], year: int, answer: Optional[Answer],
+def _promise(batch: Batch, gate: DataGate, texts: tuple, model: Any, log: Callable[[dict], Any]) -> dict:
+    """The analyst's promise: the Extractor reads the documents, app/rules.decide_promise judges it with the plots."""
+    claim, paragraphs, roles, described = texts
+    parsed = extractor.read_claim(claim)
+    _step(log, batch.batch_id, "receive_documents", f"promise and {len(described)} document(s)",
+          f"{len(paragraphs)} paragraph(s); checkable parts of the promise: {', '.join(parsed['types']) or 'none'}")
+    kept = {"claim": claim, "claim_types": parsed["types"], "documents": described, "paragraphs": paragraphs,
+            "roles": roles}
+    if not parsed["types"]:
+        return {**kept, "status": "too_vague", "extracted": dataclasses.asdict(Extracted()), "decision": None}
+    ctx = RunContext(run_id=batch.batch_id, gate=gate, memory=None, company_id="analyst", log=log, model=model)
+    suppliers = sorted({p["supplier_id"] for p in batch.plots if p["supplier_id"] != plotfile.NOT_GIVEN})
+    extracted = extractor.read_documents(ctx, paragraphs, roles, suppliers)
+    decision = decide_promise(batch.plots, batch.plot_findings, extracted, parsed["types"])
+    _step(log, batch.batch_id, "apply_verdict_rules", f"promise: {claim}"[:300],
+          f"{decision['verdict']}: " + "; ".join(f"{p['claim_part']} {p['verdict']}" for p in decision["parts"]),
+          agent="Writer")
+    return {**kept, "status": "success", "extracted": dataclasses.asdict(extracted), "decision": decision}
+
+
+def promise_seal(decision: Optional[dict]) -> Optional[str]:
+    if decision is None:
+        return None
+    return sha256_of({"verdict": decision["verdict"], "parts": decision["parts"],
+                      "findings": [(f["code"], list(f["refs"])) for f in decision["findings"]]})
+
+
+def _result(plot: dict, cells: Optional[list[dict]], source: Optional[int], findings: list, answer: Optional[Answer],
             sample: bool) -> dict[str, Any]:
-    findings = check_plot(plot, cells, {year})
     finding = findings[0] if findings else None
     measured = landcover.measure(plot, cells) if cells is not None and plot["area_ha"] is not None else None
     verdict = finding.verdict if finding else NO_ISSUE
@@ -169,7 +209,31 @@ def _output(batch: Batch) -> dict[str, Any]:
         "exports": {name: f"/api/check-plots/{batch.batch_id}/{name}"
                     for name in ("plots_no_issue_found.geojson", "findings.csv", "receipt", "package")},
         "seal": seal(batch.results),
+        "promise": _promise_output(batch.promise),
         "log_file": f"logs/{batch.batch_id}.jsonl",
+    }
+
+
+def _promise_output(promise: Optional[dict]) -> Optional[dict]:
+    """What the analyst reads about their promise: the verdict per part, why, and the exact quotes."""
+    if promise is None:
+        return None
+    if promise["status"] == "too_vague":
+        return {"claim": promise["claim"], "status": "too_vague", "verdict": None,
+                "sentence": "Too vague to check: the promise names nothing that data can check.",
+                "documents": promise["documents"]}
+    decision = promise["decision"]
+    deciding = [f for f in decision["findings"] if f["verdict"] == decision["verdict"]]
+    extracted = promise["extracted"]
+    return {
+        "claim": promise["claim"], "status": "success", "verdict": decision["verdict"], "parts": decision["parts"],
+        "sentence": (deciding[0]["detail"][0].upper() + deciding[0]["detail"][1:] + "." if deciding
+                     else "The promise holds on every point checked: no plot and no document stands against it."),
+        "findings": [{"claim_part": f["part"], **{k: f[k] for k in ("rule", "verdict", "code", "detail")},
+                      "refs": list(f["refs"])} for f in decision["findings"]],
+        "quotes": [{"kind": kind[:-1], **item} for kind in ("admissions", "mentions") for item in extracted[kind]
+                   if item.get("quote")],
+        "scope": extracted["scope"], "documents": promise["documents"], "seal": promise_seal(decision),
     }
 
 
@@ -251,6 +315,10 @@ def receipt(batch: Batch) -> dict[str, Any]:
         "results": [{"plot_id": r["plot_id"], "verdict": r["verdict"], "code": r["code"], "rule": r["rule"],
                      "answer": (r["evidence"] or {}).get("answer")} for r in batch.results],
         "seal": batch.output["seal"],
+        "promise": None if batch.promise is None else {
+            k: batch.promise[k] for k in ("claim", "claim_types", "paragraphs", "roles", "extracted", "status")}
+        | {"seal": promise_seal(batch.promise["decision"]),
+           "verdict": (batch.promise["decision"] or {}).get("verdict")},
     }
 
 

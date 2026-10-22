@@ -15,8 +15,12 @@ from app.world.texts import NGO_DOC, RSE_DOC
 APPROVE, BLOCK, REVISE = "approve", "block", "revise_plan"
 
 
-def verify_quotes(ctx: RunContext, answer: dict, paragraphs: list[dict]) -> dict:
-    """Keep only what the model quoted word for word from the paragraph it cites (kit: exact quote rule)."""
+def verify_quotes(ctx: RunContext, answer: dict, paragraphs: list[dict], roles: dict | None = None) -> dict:
+    """Keep only what the model quoted word for word from the paragraph it cites (kit: exact quote rule).
+
+    roles: doc_id -> "company" (may admit clearing) or "third_party" (may name a supplier); by default
+    the demo's two documents, the company's report and the NGO note."""
+    roles = roles or {RSE_DOC: "company", NGO_DOC: "third_party"}
     text = {(p["doc_id"], p["paragraph_no"], p["section"]): p["paragraph_text"] for p in paragraphs}
 
     def found(item: dict, section: str | None = None) -> bool:
@@ -34,9 +38,9 @@ def verify_quotes(ctx: RunContext, answer: dict, paragraphs: list[dict]) -> dict
             ok = found(item, item.get("section")) if kind == "admissions" else found(item, "main")
             if kind == "admissions":
                 # Only the company can admit, and only clearing after the cut-off counts.
-                ok = ok and item["doc"] == RSE_DOC and (item.get("year") or 0) >= FIRST_YEAR_AFTER_CUTOFF
+                ok = ok and roles.get(item["doc"]) == "company" and (item.get("year") or 0) >= FIRST_YEAR_AFTER_CUTOFF
             else:
-                ok = ok and item["doc"] == NGO_DOC
+                ok = ok and roles.get(item["doc"]) == "third_party"
             (kept[kind] if ok else rejected).append(item)
     scope_quote = " ".join(str(answer.get("scope_quote") or "").split())
     if answer["scope"] != "all" and not any(scope_quote and scope_quote in " ".join(t.split()) for t in text.values()):

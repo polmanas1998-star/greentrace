@@ -157,3 +157,82 @@ def _read_by_rules(rse: list[dict], ngo: list[dict]) -> Extracted:
 def _first_year(text: str) -> int | None:
     match = YEAR.search(text)
     return int(match.group(1)) if match else None
+
+
+# ---- the analyst's own documents (app/userdocs.py) ---------------------------------------------------------
+
+USER_SYSTEM = (
+    "You are the Extractor of an audit of a deforestation-free claim. The data blocks are paragraphs of documents "
+    "the analyst pasted, each labelled with its document id and paragraph number; the first block is the claim "
+    "itself (document 'promise'). The supplier's own documents are: {company}. Third-party documents are: {third}. "
+    "Report three things. scope: 'all' only if the claim covers every tonne the supplier sells with no qualifier at "
+    "all; any qualifier that narrows it (a programme, a label, a certification, a region, a product line) makes it "
+    "'subset'; quote the words that decide it. admissions: only in the supplier's own documents, every passage "
+    "where the supplier says forest was cleared, opened or converted after 2020, whatever the wording; a denial "
+    "such as 'not one hectare was cleared' is NOT an admission. mentions: only in third-party documents, every "
+    "passage that ties forest clearing or forest loss to a named supplier, cooperative or farm: supplier_name is "
+    "the name exactly as written, cooperative_group the group written next to it or null, year the year as a "
+    "number even when written in words. Use section 'main'. Quote word for word, copied exactly from one "
+    "paragraph. Never invent a paragraph, a name or a year. Empty lists are a valid answer."
+)
+NEGATION = re.compile(r"\b(no|not|never|zero|without|free|nor)\b", re.I)
+
+
+def read_documents(ctx: RunContext, paragraphs: list[dict], roles: dict[str, str],
+                   supplier_names: list[str]) -> Extracted:
+    """What the analyst's documents say: Nemotron with exact quotes (3 readings, 2 must agree), else rules."""
+    company = [d for d, r in roles.items() if r == "company"]
+    third = [d for d, r in roles.items() if r == "third_party"]
+    if ctx.model is not None:
+        system = USER_SYSTEM.format(company=", ".join(company) or "none", third=", ".join(third) or "none")
+        blocks = [(f"{p['doc_id']} {p['section']} {p['paragraph_no']}", p["paragraph_text"]) for p in paragraphs]
+        readings, info = [], {}
+        for _ in range(READINGS):
+            answer, info = ctx.model.complete_json("Extractor", system, blocks, SCHEMA)
+            if answer is None:
+                break
+            readings.append(evaluator.verify_quotes(ctx, answer, paragraphs, roles))
+        if len(readings) >= AGREEMENT:
+            kept = _agreed(readings)
+            extracted = Extracted(
+                scope=kept["scope"],
+                admissions=tuple({k: a.get(k) for k in ("doc", "section", "paragraph_no", "quote", "plots", "year")}
+                                 for a in kept["admissions"]),
+                mentions=tuple({k: m.get(k) for k in ("doc", "paragraph_no", "quote", "supplier_name",
+                                                      "cooperative_group", "year")} for m in kept["mentions"]))
+            ctx.step("Extractor", "extract_claims", f"{len(paragraphs)} paragraph(s) of the analyst's documents, "
+                     f"read {len(readings)} times by {info['model']}",
+                     f"agreed by {AGREEMENT} of {len(readings)}: scope {extracted.scope}; "
+                     f"{len(extracted.admissions)} admission(s); {len(extracted.mentions)} mention(s), all quoted",
+                     target="Planner", provider=info["provider"], model=info["model"])
+            return extracted
+    extracted = _read_documents_by_rules(paragraphs, roles, supplier_names)
+    ctx.step("Extractor", "fallback_rules", f"{len(paragraphs)} paragraph(s) of the analyst's documents",
+             f"scope {extracted.scope}; {len(extracted.admissions)} admission(s); "
+             f"{len(extracted.mentions)} mention(s) of a supplier of the file", target="Planner", status="degraded")
+    return extracted
+
+
+def _read_documents_by_rules(paragraphs: list[dict], roles: dict[str, str], supplier_names: list[str]) -> Extracted:
+    """The plain baseline, careful never to read a denial as an admission: clearing words, a year after 2020,
+    no negation in the paragraph; a third party naming a supplier of the file with a year after 2020."""
+    promise = next((p for p in paragraphs if p["doc_id"] == "promise"), None)
+    scope = "subset" if promise and re.search(r"\b(certified|labelled|labeled|programme|program)\b",
+                                              promise["paragraph_text"], re.I) else "all"
+    admissions = tuple(
+        {"doc": p["doc_id"], "section": p["section"], "paragraph_no": p["paragraph_no"], "plots": [],
+         "year": _first_year(p["paragraph_text"])}
+        for p in paragraphs
+        if roles.get(p["doc_id"]) == "company" and p["doc_id"] != "promise"
+        and ADMISSION_WORDS.search(p["paragraph_text"]) and not NEGATION.search(p["paragraph_text"])
+        and (_first_year(p["paragraph_text"]) or 0) > 2020
+    )
+    mentions = tuple(
+        {"doc": p["doc_id"], "paragraph_no": p["paragraph_no"], "supplier_name": name,
+         "year": _first_year(p["paragraph_text"])}
+        for p in paragraphs if roles.get(p["doc_id"]) == "third_party"
+        for name in supplier_names
+        if re.search(rf"\b{re.escape(name)}\b", p["paragraph_text"], re.I)
+        and (_first_year(p["paragraph_text"]) or 0) > 2020
+    )
+    return Extracted(scope=scope, admissions=admissions, mentions=mentions)

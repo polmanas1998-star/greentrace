@@ -1464,7 +1464,7 @@
     "input_sha256": "dc9e667576f2247f30fe9c7742b80f2107d5d995784ac51352a1cbf49e3fd671",
     "data_sha256": "d4451ff89313a707268be5afcb491ba853fc0ff8378283fc50563075eaf40bd6",
     "rules_version": "2026-10-23.1",
-    "rules_sha256": "2e415a9dae4fde5f5600d9ccce34929f44cebaace57ba57ece2e156a2946b38e"
+    "rules_sha256": "22aeb9b31545946485e497d3a71117a584fac1d5c5df5ce48dae1cbcde763b8a"
   },
   "log_file": "logs/example-05.jsonl",
   "execution_time_seconds": 0.07

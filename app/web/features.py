@@ -17,12 +17,14 @@ import sqlite3
 from fastapi import APIRouter, Body, HTTPException, Query, Response
 from fastapi.responses import FileResponse
 
-from app import citizen, orchestrator, plotcheck, plotfile, timelapse
+from app import citizen, orchestrator, plotcheck, plotfile, timelapse, userdocs
+from app.adapters.llm import ModelGate
 from app.checks import gfw
 from app.explain.suppliers import rank
 from app.pipeline import new_run_id, run_case
 from app.queries import SQLiteEngine, ZetarisEngine
 from app.receipt import decision_for
+from app.tracing import trace
 from app.world.store import attach_reference
 
 router = APIRouter()
@@ -80,12 +82,19 @@ def map_engine(sample: bool) -> SQLiteEngine | ZetarisEngine:
 
 @router.post("/api/check-plots")
 def check_plots(body: Any = Body(...)) -> dict[str, Any]:
-    geojson = body.get("geojson") if isinstance(body, dict) and "geojson" in body else body
+    """{"geojson": FeatureCollection, "promise": text?, "documents": [{name, issuer, text}]?}, or the bare file."""
+    wrapped = isinstance(body, dict) and "geojson" in body
+    geojson = body["geojson"] if wrapped else body
+    batch_id, sample = f"plots-{new_run_id()}", orchestrator.sample_mode({})
+    model = None
+    if not sample and wrapped and body.get("promise") is not None:
+        gate = ModelGate(batch_id, log=trace)
+        model = gate if gate.providers else None
     try:
-        sample = orchestrator.sample_mode({})
-        return plotcheck.check(geojson, f"plots-{new_run_id()}", map_engine(sample),
-                               remote=None if sample else gfw.Tiles())
-    except plotfile.FileRefused as error:
+        return plotcheck.check(geojson, batch_id, map_engine(sample), remote=None if sample else gfw.Tiles(),
+                               promise=body.get("promise") if wrapped else None,
+                               documents=body.get("documents") if wrapped else None, model=model)
+    except (plotfile.FileRefused, userdocs.DocumentsRefused) as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
 

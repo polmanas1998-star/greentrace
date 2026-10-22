@@ -233,6 +233,51 @@ def check_plot(plot: dict, cells: Optional[list[dict]], delivered_in: set[int]) 
     return [finding] if finding else []
 
 
+def decide_promise(plots: list[dict], plot_findings: list[Finding], extracted: Extracted,
+                   claim_types: list[str]) -> dict:
+    """The analyst's promise, judged on THEIR plots and documents (no registry, no volumes).
+
+    no_deforestation: every plot's finding, the supplier's own admissions (rule 2), and a third
+    party naming a supplier of the file whose plots show nothing (sources in conflict, rule 3).
+    scope: a narrower promise than announced (rule 3). coverage, when the promise says "100%" or
+    "all": the file holds no volumes, so that every tonne comes from these plots is not checked
+    (rule 3). Same order and same verdict per part as decide()."""
+    found = list(plot_findings)
+    for admission in extracted.admissions:
+        found.append(Finding("no_deforestation", 2, CONTRADICTED, "company_admission",
+                             f"the supplier's own document admits clearing ({admission['doc']} paragraph "
+                             f"{admission['paragraph_no']})",
+                             (f"doc:{admission['doc']}:{admission['section']}:{admission['paragraph_no']}",)))
+    contradicted = {p["supplier_id"] for p in plots
+                    for f in plot_findings if f.verdict == CONTRADICTED and f"plot:{p['plot_id']}" in f.refs}
+    for mention in extracted.mentions:
+        if (mention.get("year") or 0) < FIRST_YEAR_AFTER_CUTOFF or not mention.get("supplier_name"):
+            continue
+        named = sorted({p["supplier_id"] for p in plots if _words(p["supplier_id"])
+                        and _words(p["supplier_id"]) == _words(mention["supplier_name"])})
+        if named and not set(named) & contradicted:
+            found.append(Finding("no_deforestation", 3, UNVERIFIABLE, "sources_in_conflict",
+                                 f"{mention['doc']} paragraph {mention['paragraph_no']} reports clearing by "
+                                 f"{mention['supplier_name']} in {mention['year']}; "
+                                 f"none of its plots shows it on the maps",
+                                 tuple(f"supplier:{s}" for s in named) + (f"doc:{mention['doc']}:main:"
+                                                                         f"{mention['paragraph_no']}",)))
+    if extracted.scope != "all":
+        found.append(Finding("scope", 3, UNVERIFIABLE, "narrower_scope",
+                             "the promise covers only part of the supplier's cocoa, not all of it", ("doc:promise",)))
+    if "coverage" in claim_types:
+        found.append(Finding("coverage", 3, UNVERIFIABLE, "volume_not_checked",
+                             "the plot file holds no volumes: that every tonne comes from these plots is not checked",
+                             ("doc:promise",)))
+    parts_checked = (["coverage"] if "coverage" in claim_types else []) + ["no_deforestation", "scope"]
+    findings = sorted(found, key=lambda f: (PARTS.index(f.part), f.rule, f.code, f.refs))
+    parts = [_part_verdict(part, [f for f in findings if f.part == part]) for part in parts_checked]
+    verdicts = {p["verdict"] for p in parts}
+    overall = CONTRADICTED if CONTRADICTED in verdicts else UNVERIFIABLE if UNVERIFIABLE in verdicts else PROVEN
+    return {"verdict": overall, "rules_version": RULES_VERSION, "parts": parts,
+            "findings": [f.__dict__ for f in findings]}
+
+
 def _years(hectares: dict[int, float]) -> str:
     return ", ".join(str(year) for year in sorted(hectares))
 
