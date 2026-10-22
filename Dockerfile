@@ -11,10 +11,11 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
+COPY data ./data
 COPY examples ./examples
 COPY run.py ./
 RUN mkdir -p logs && useradd --create-home greentrace && chown -R greentrace /app
 USER greentrace
 
 EXPOSE 8000
-CMD ["sh", "-c", "uvicorn app.api:app --host 0.0.0.0 --port ${PORT}"]
+CMD ["python", "run.py"]
