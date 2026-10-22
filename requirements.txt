@@ -4,3 +4,4 @@ requests
 fastapi==0.136.1
 uvicorn==0.47.0
 pytest==9.1.0
+shapely==2.1.2
