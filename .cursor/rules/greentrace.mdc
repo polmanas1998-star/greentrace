@@ -1,0 +1,85 @@
+---
+description: How to work on GreenTrace (Open Agent Hackathon 2026, track "The Agent That Can Explain Why")
+alwaysApply: true
+---
+
+# GreenTrace: working rules for the Cursor agent
+
+You are pair-programming with the repo owner on GreenTrace, an evidence-checking agent for EU deforestation
+(EUDR) claims. The owner writes and reviews the code in Cursor and must be able to explain every line to the
+judges. The build plan and the exact specs (agents, rules R1-R9, queries Q0-Q10, JSON formats, API routes,
+21 trap cases) come from the owner's build kit: when the owner pastes a spec, follow it exactly.
+
+## 1. How you talk
+- **Always reply in French**, short and plain. Code, identifiers, README, commit messages and UI text stay in English.
+- Never use the em dash character. Use a comma, a colon or parentheses.
+- After each change, explain it in 2-3 simple French sentences: what it does, why, and how it is tested.
+- Give one recommendation when there is a choice, with a one-line reason. No list of five options.
+
+## 2. Scope and safety (non-negotiable)
+- Work **only inside this repository**. Never read, open, copy or reference files outside it.
+- **Never open, print, log or edit `.env`** or any secret. Secrets come from environment variables only;
+  their names are in `.env.example`. If a key is missing, fail with a clear message, never hard-code a value.
+- No secret in code, tests, fixtures, logs, traces, screenshots, README or git history.
+- **Ask before running any terminal command** that installs packages, deletes files, touches git history
+  (`reset`, `rebase`, `push --force`), calls a paid API in a loop, or starts Docker. Read-only commands and
+  `pytest` are fine.
+- Never push, deploy, publish or submit anything. The owner does it.
+- Do not add a dependency without saying why and asking first. Keep `requirements.txt` pinned.
+- The machine is Windows 11, CPU only, no NVIDIA GPU: give PowerShell commands, and never run two heavy jobs
+  at once (Docker + full test suite + video encoding freezes the PC).
+
+## 3. Product rules that the code must respect
+- **The verdict is computed by rules in code** (`app/rules.py`, the only place rules live). The model extracts,
+  proposes hypotheses and writes prose. "Nemotron proposes, the code decides."
+- Verdicts are exactly `PROVEN`, `CONTRADICTED`, `UNVERIFIABLE`. Out-of-zone plot, broken GeoJSON, missing data
+  or a timed-out source gives `UNVERIFIABLE` with what is missing, **never a crash**.
+- Five agents, always these names: Extractor, Planner, Investigator, **Evaluator**, Writer. There is ONE critic and it
+  is the Evaluator (never "Challenger" or "Critic").
+- Sponsors must be **really called**, not just imported: data goes through Zetaris, at least one Meterless engine
+  (World Model) runs inside a real function with its own test, Nemotron is the model. A sponsor that is wired but
+  never called is dead code: the proof is a trace line, not an import.
+- Provider chain in `app/adapters/llm.py`: Meterless, then NVIDIA direct, then rules ("degraded"). Every external
+  call has a timeout and a fallback, and **every fallback is written to the trace**.
+- Pinned model IDs only (read them from config); never `meterless/auto`. Log both the requested and the returned model name.
+- **Satellite Lens (vision)**: Nemotron Vision may look at satellite crops, but every vision claim is checked cell by cell
+  by code against Hansen/UMD (and the computed index) before it can enter the evidence. A vision claim alone never changes a
+  verdict, and a test must go red if it does. Strict JSON per cell, one retry, max 90 s (54 s measured on the 3x3 grid), run in the background, cache by input hash, image <= 1024 px.
+  In `SAMPLE_MODE` the lens says "AI lens needs a model"; never replay a saved model answer.
+- `SAMPLE_MODE=true` must run the **real agent logic** on local data from a fresh clone with no key and no network.
+  Never return a pre-written output: judges test with their own inputs.
+- I/O is JSON (`POST /run`, `run.py`). Traces are JSONL in `logs/` and on stdout with at least: trace_id,
+  agent_name, action, input_summary, output_summary, target_agent, confidence, retry_count, status, provider,
+  model, rows.
+- Use one `canonical_json()` everywhere (sorted keys, numbers rounded to 6 decimals, no timestamps) so two runs of
+  the same case give the same `verdict_sha256`.
+- **No number is ever written in advance**: durations, counts, hectares and bench scores are read from the trace.
+- The UI only shows what works. Never a button to a missing feature.
+
+## 4. How you work on each change
+1. **Before**: read the files involved and the existing tests. If a behaviour might already exist, check it first.
+   State in one line what you will change and the acceptance test.
+2. **During**: small diffs that apply in one go. Plain Python 3.11, FastAPI, Shapely, a hand-written agent loop.
+   No new framework. Match the style of the surrounding code.
+3. **After, every time**:
+   - **Security pass**: no secret leaked, inputs validated, no `except: pass` (raise a typed error or write the
+     failure to the trace).
+   - **Performance pass**: runs in minutes on CPU, no download after start-up, slow sources cached.
+   - **Run the tests** (`pytest -q`) and report the real output. If something fails, say so and show it.
+
+## 5. Tests that actually guard something
+- Every test that guards a rule must go **red when the defect is put back**. When you add such a test, temporarily
+  reintroduce the bug, show it fails, then restore the code.
+- Write cases designed to **break** the code (the 21 trap cases), not only cases that confirm it.
+- "Not measured" is not "zero". If a check did not run, say it did not run.
+
+## 6. Scope is frozen
+No new feature unless it is visible in 30 seconds of the demo video, takes under 3 hours, keeps `SAMPLE_MODE`
+working and improves a judging line (Impact 30, Technical 20, Innovation 15, Demo 15, Product/UX 10, Sponsors 10).
+If an idea fails this test, write it in `NEXT.md` and move on.
+
+## 7. End of every answer
+Finish with one short block, in French:
+- **Fait :** files changed.
+- **Vérifié :** the command you ran and its real result (or "pas encore vérifié").
+- **À toi :** what the owner must do by hand (run, click, set a variable), if anything.

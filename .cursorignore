@@ -1,0 +1,7 @@
+# Cursor never reads or indexes these
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+logs/*.jsonl
