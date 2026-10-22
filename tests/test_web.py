@@ -268,3 +268,126 @@ def test_a_drawn_plot_runs_live_and_its_timeline_shows_the_loss(client):
     assert output["verdict"] == "CONTRADICTED" and output["findings"][0]["evidence"][0] == {"source": "plot", "id": "P-900"}
     (plot,) = client.get(f"/runs/{run_id}/timeline").json()["plots"]
     assert plot["plot_id"] == "P-900" and plot["reference_maps"]["loss_after_2020_ha"] == pytest.approx(3.42, abs=0.01)
+
+
+# ---- plain words: what a judge who is not an expert reads first --------------------------------------
+
+def run_case_no(client, case_no, **body):
+    response = client.post("/run", json={"input": {"claim": CLAIM, **body}, "options": {"sample_mode": True, "case": case_no}})
+    assert response.status_code == 200
+    return response.json()
+
+
+def plain_words(client, run_id):
+    response = client.get(f"/ui/runs/{run_id}/plain")
+    assert response.status_code == 200
+    return response.json()["sentence"]
+
+
+OPENING = {"PROVEN": "This promise holds: ", "CONTRADICTED": "This promise is false: ",
+           "UNVERIFIABLE": "This promise cannot be checked yet: "}
+
+
+def test_every_verdict_has_one_plain_sentence_without_jargon(client):
+    from app.world.cases import CASES
+
+    for case in CASES:
+        out = run_case_no(client, case.number)
+        sentence = plain_words(client, out["run_id"])
+        assert sentence.startswith(OPENING[out["verdict"]]), (case.number, sentence)
+        assert sentence.endswith(".") and sentence.count(". ") <= 1, (case.number, sentence)
+        # no rule code, refutation id, query id or snake_case code in the words a non-expert reads
+        assert not re.search(r"\b[a-z]+_[a-z_]+\b|\b[RQ]\d\b|\brule\b|sha256", sentence), (case.number, sentence)
+        for finding in out["findings"]:  # the farm the deciding finding names is the one the sentence names
+            plots = [e["id"] for e in finding["evidence"] if e["source"] == "plot"]
+            if finding["verdict"] == out["verdict"] and plots:
+                assert plots[0] in sentence, (case.number, sentence)
+
+
+def test_the_plain_sentence_is_built_from_the_run_not_written_in_advance(client):
+    from app import orchestrator
+
+    run_id = start(client, case=2)  # "try to fool it" runs on a live run, as on the page
+    assert json.loads(events(client, run_id)[-1]["data"])["verdict"] == "CONTRADICTED"
+    last = max(d["year"] for d in orchestrator.RUNS[run_id].evidence.deliveries if d["plot_id"] == "P-014")
+    assert plain_words(client, run_id) == ("This promise is false: a satellite alert shows forest cut on 14 March 2022 "
+                                           f"on farm P-014, which kept selling cocoa to this company until {last}.")
+    # Change the alert's date: the sentence follows the evidence, then the verdict.
+    client.post(f"/runs/{run_id}/what_if", json={"entity": "alert:A-221", "field": "alert_date", "value": "2021-06-02"})
+    assert "forest cut on 2 June 2021 on farm P-014" in plain_words(client, run_id)
+    client.post(f"/runs/{run_id}/what_if", json={"entity": "alert:A-221", "field": "alert_date", "value": "2019-03-14"})
+    assert plain_words(client, run_id).startswith("This promise holds: ")
+
+    untraced = run_case_no(client, 8)
+    share = float(re.search(r"([\d.]+)% of", untraced["findings"][0]["finding"])[1])
+    assert f"{100 - share:.0f}% of the cocoa bought in" in plain_words(client, untraced["run_id"])
+    from dataclasses import replace
+
+    from app.checks import registry
+    from app.web.plain import sentence
+    e = orchestrator.RUNS[untraced["run_id"]].evidence
+    doubled = replace(e, company={**e.company, "total_tonnes": e.company["total_tonnes"] * 2})
+    gap = 100 * (1 - registry.traced_share(doubled.company, doubled.deliveries, doubled.plots))
+    assert round(gap) != round(100 - share) and sentence(doubled).startswith(f"This promise cannot be checked yet: {gap:.0f}% ")
+
+    drawn = run_case_no(client, 1, plot=square(5.7300, -6.5220, 10.0))
+    lost = float(drawn["findings"][0]["finding"].split(" ha ")[0])
+    assert f"satellite maps show {lost:.1f} ha of forest cut after 2020 on farm P-900" in plain_words(client, drawn["run_id"])
+
+
+def test_plain_words_for_a_vague_claim_and_an_unknown_run(client):
+    response = client.post("/runs", json={"input": {"claim": "We are good people."}, "options": {"sample_mode": True}})
+    run_id = response.json()["run_id"]
+    assert json.loads(events(client, run_id)[-1]["data"])["status"] == "too_vague"
+    assert plain_words(client, run_id).startswith("This promise is too vague to check")
+    assert client.get("/ui/runs/nope/plain").status_code == 404
+    assert client.get("/ui/runs/nope/where").status_code == 404
+
+
+def test_where_it_happened_is_the_deciding_farm_and_alert(client):
+    from shapely.geometry import Point, Polygon
+
+    where = client.get(f"/ui/runs/{run_case_no(client, 2)['run_id']}/where").json()
+    assert where["verdict"] == "CONTRADICTED" and where["plot"]["plot_id"] == "P-014"
+    assert where["alert"]["alert_id"] == "A-221" and where["alert"]["alert_date"] == "2022-03-14"
+    ring = Polygon([(lon, lat) for lat, lon in where["plot"]["ring"]])
+    assert ring.covers(Point(where["alert"]["lon"], where["alert"]["lat"]))
+    point = client.get(f"/ui/runs/{run_case_no(client, 7)['run_id']}/where").json()
+    assert point["plot"]["plot_id"] == "P-021" and point["plot"]["ring"] is None and point["alert"] is None
+    assert client.get(f"/ui/runs/{run_case_no(client, 1)['run_id']}/where").json()["plot"] is None
+
+
+def test_the_page_explains_itself_before_the_jargon(client):
+    page = client.get("/").text
+    for words in ("Paste a promise", "Five AI agents check it", "against maps, deliveries and reports",
+                  "A verdict you can verify", "the evidence backs the promise", "the evidence shows it is false",
+                  "the evidence is missing, and GreenTrace says which", "Take the tour", "Five AI agents at work"):
+        assert words in page, words
+    assert page.count("In plain words") == 2  # on top of the live verdict and of the evidence file
+    # The jargon is folded, not removed: the trace, the counters, the seal and the fingerprints, the rules
+    # and the codes, every single change tried, each sit in a "Technical details" block closed by default.
+    details = re.findall(r"<details[^>]*>", page)
+    assert len(details) >= 4 and all('class="tech' in d and " open" not in d for d in details)
+    folded = page.split('<details class="tech" id="trace-tech">', 1)[1].split("</details>", 1)[0]
+    assert 'id="trace"' in folded and 'id="live-stats"' in folded
+    seal = page.split('id="seal-tech">', 1)[1].split("</details>", 1)[0]
+    assert 'id="seal"' in seal and 'id="prints"' in seal
+    assert 'id="flip-tried"' in page.split('id="flip"', 1)[1].split("</details>", 1)[0]
+    script = (STATIC / "app.js").read_text(encoding="utf-8")
+    assert "Checks the AI tried to break it with" in script and "Refutations tried" not in script
+    assert "Technical details" in script  # the findings' rules and ids, the World Model facts of "try to fool it"
+
+
+def test_the_tour_has_five_bubbles_and_can_be_closed_from_the_keyboard():
+    page = (STATIC / "index.html").read_text(encoding="utf-8")
+    script = (STATIC / "app.js").read_text(encoding="utf-8")
+    tour = script.split("const TOUR = [", 1)[1].split("];", 1)[0]
+    targets = re.findall(r'target: "([\w-]+)"', tour)
+    assert targets == ["live-title", "agents", "live-result", "where", "fool"]
+    for target in targets:
+        assert f'id="{target}"' in page, target
+    assert not re.search(r"\d", tour)  # no number written in advance: the run shows its own
+    bubble = page.split('id="tour"', 1)[1].split("</div>\n</div>", 1)[0]
+    assert 'role="dialog"' in page and 'aria-labelledby="tour-title"' in page
+    assert all(f'id="tour-{b}"' in bubble for b in ("close", "back", "next"))
+    assert 'event.key === "Escape" && state.tour' in script and "reducedMotion" in script.split("function tourRefresh", 1)[1]

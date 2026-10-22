@@ -7,6 +7,7 @@ GET  /ui/setup    what the page needs to draw its controls, read from the code
 POST /runs, GET /runs/{run_id}/events, GET /ui/runs: app/web/live.py
 GET /api/plot-map, POST /api/plot-measure: app/web/maps.py        POST /ui/bench/{case}: app/web/bench.py
 POST /api/lens, GET /api/lens/{key}: app/web/lens.py (the Satellite Lens, app/lens)
+GET /ui/runs/{run_id}/plain: app/web/plain.py (the verdict in plain words)
 """
 from pathlib import Path
 from typing import Any
@@ -16,7 +17,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app import orchestrator
-from app.web import bench, lens, live, maps
+from app.web import bench, lens, live, maps, plain
 from app.world.cases import CASES, CASES_BY_NUMBER, DEFAULT_CLAIM
 
 STATIC = Path(__file__).resolve().parent / "static"
@@ -72,4 +73,5 @@ def mount(app: FastAPI) -> None:
     app.include_router(maps.router)
     app.include_router(bench.router)
     app.include_router(lens.router)
+    app.include_router(plain.router)
     app.mount("/static", StaticFiles(directory=STATIC), name="static")

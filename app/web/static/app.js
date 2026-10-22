@@ -7,14 +7,28 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
 (() => {
   "use strict";
 
-  // What each claim part and each rule number means, in app/rules.py's words. The run's rules_version is
-  // printed at the foot of its evidence file.
+  // What each claim part means: in plain words first, then in app/rules.py's words (shown under "Technical
+  // details", with the rule numbers). The run's rules_version is printed at the foot of its evidence file.
   const PARTS = {
+    coverage: "Every tonne is traced back to a farm",
+    no_deforestation: "No forest cut after 2020 on a farm that sells to the company",
+    plausibility: "The farms could really grow that much cocoa",
+    scope: "The company's own report promises the same",
+  };
+  const PARTS_EXACT = {
     coverage: "Every tonne of the year is traced to a plot",
     no_deforestation: "No forest lost after 31 December 2020 on a plot that delivers",
     plausibility: "The declared plots could have produced the volume",
     scope: "The report promises what the claim says",
   };
+  // The five agents of app/agents, and what each one does, in a sentence.
+  const AGENTS = [
+    ["Extractor", "Reads the promise and the company's reports"],
+    ["Planner", "Decides what to check"],
+    ["Investigator", "Pulls satellite alerts, maps and deliveries"],
+    ["Evaluator", "Tries to break every finding"],
+    ["Writer", "Applies the fixed rules and writes the evidence file"],
+  ];
   const RULES = {
     1: "a source did not answer, or a datum is invalid",
     2: "direct evidence that held, after the cut-off",
@@ -29,7 +43,9 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
   const state = { setup: null, run: null, filter: "all", maps: {}, mapPlot: null, bench: null, geo: null,
     // the judge's plot: corners drawn on the map (editable), or an uploaded GeoJSON that falls outside the frame
     draw: { active: false, points: [], feature: null, source: null, measure: null, problem: null, timer: null, asked: 0 },
-    lens: {} };  // the Satellite Lens result of each scene, kept for this page
+    lens: {},  // the Satellite Lens result of each scene, kept for this page
+    where: null,  // the farm and alert behind the verdict of the evidence file on screen
+    tour: null };  // the guided tour, while it is open: { step, runId }
   const $ = (id) => document.getElementById(id);
   const SVG = "http://www.w3.org/2000/svg";
 
@@ -115,6 +131,7 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
       }
     }
     renderMode(view);
+    if (view === "file") drawWhere();
     const verdict = run && run.output && run.output.verdict;
     document.title = {
       file: verdict ? `${capital(verdict.toLowerCase())} · Evidence file · GreenTrace` : "Evidence file · GreenTrace",
@@ -144,6 +161,11 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     if (!initial) {
       $("main").focus({ preventScroll: true });
       window.scrollTo(0, 0);
+    }
+    if (state.tour && state.tour.runId) {
+      const view = currentView();
+      if ((view !== "live" && view !== "file") || !state.run || state.run.id !== state.tour.runId) closeTour();
+      else tourRefresh(true);
     }
   }
 
@@ -809,12 +831,14 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
   function resetLive(run) {
     $("trace").replaceChildren();
     $("live-result").hidden = true;
+    $("live-lead").hidden = false;
     $("live-error").hidden = true;
     setTitles(run);
     setStatus("running", "Starting");
     $("live-lead").textContent = "Starting the run. Each line below is one step, as the agents write it to the trace.";
     renderLiveParts(run);
     renderStats(run);
+    renderAgents(run);
     $("trace-foot").textContent = `One line per step, as written to logs/${run.id}.jsonl. Times are the trace's own` +
       (run.fresh && !reducedMotion ? "; lines that arrive together are shown at reading pace." : ".");
   }
@@ -859,16 +883,18 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     }
     $("trace").append(stepRow(step, run.lines[0]));
     renderStats(run);
+    renderAgents(run);
     const elapsed = offset(step, run.lines[0]);
     setStatus("running", `Investigating · ${plural(run.lines.length, "step")}` + (elapsed === null ? "" : ` · ${clock(elapsed)}`));
     $("live-lead").textContent = progress(count(run.lines));
+    if (state.tour) tourRefresh();
   }
 
   function renderLiveParts(run) {
-    const parts = run.output && run.output.parts;
+    const parts = run.settled && run.output && run.output.parts;  // once every line is on screen
     const card = (name, state) => h("div", { class: "part-card" },
-      h("div", { class: "part-card-head" }, h("span", { class: "part-id", text: name }), state),
-      h("div", { class: "part-text", text: PARTS[name] || words(name) }));
+      h("div", { class: "part-card-head" }, h("span", { class: "part-text", text: PARTS[name] || words(name) }), state),
+      h("span", { class: "part-id", text: name }));
     let cards;
     if (parts && parts.length) {
       cards = parts.map((p) => card(p.claim_part, verdictTag(p.verdict)));
@@ -991,8 +1017,56 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     );
   }
 
+  function renderAgents(run) {
+    const finished = Boolean(run.settled);
+    const last = run.lines.length ? run.lines[run.lines.length - 1].agent_name : null;
+    const c = count(run.lines);
+    const did = (name, mine) => {
+      const acts = (action) => mine.filter((step) => step.action === action).length;
+      if (name === "Extractor" && run.parts.length) return `Found ${plural(run.parts.length, "part")} of the promise that data can check`;
+      if (name === "Planner" && acts("revise_plan")) return `Planned the checks, then revised the plan when the Evaluator sent it back`;
+      if (name === "Investigator" && acts("query_zetaris")) return `${plural(acts("query_zetaris"), "look-up")} in the data` + (finished ? "" : " so far");
+      if (name === "Evaluator" && c.tested) return `${plural(c.tested, "attempt")} to break a finding, ${c.held} held` +
+        (c.sentBack ? `; sent the plan back ${c.sentBack === 1 ? "once" : c.sentBack + " times"}` : "");
+      if (name === "Writer" && acts("apply_verdict_rules")) return "Took the verdict from the fixed rules, then wrote the file";
+      return mine.length ? plural(mine.length, "step") : "";
+    };
+    $("agent-list").replaceChildren(...AGENTS.map(([name, role]) => {
+      const mine = run.lines.filter((step) => step.agent_name === name);
+      const st = !mine.length ? (finished ? "idle" : "waiting") : finished ? "done" : last === name ? "working" : "paused";
+      const label = { idle: "no step", waiting: "waiting", working: "working", paused: "standing by", done: "done" }[st];
+      return h("li", { class: "agent", "data-state": st },
+        h("span", { class: "agent-dot", "data-agent": name, "aria-hidden": "true" }),
+        h("span", { class: "agent-who" }, h("b", { text: name }), h("span", { text: role })),
+        h("span", { class: "agent-did", text: did(name, mine) }),
+        h("span", { class: "agent-state", text: label }));
+    }));
+    $("trace-tech-sub").textContent = `full trace of ${plural(run.lines.length, "step")}, counters, World Model`;
+  }
+
+  async function loadPlain(run) {
+    // The sentence is built on the server from the run's own findings (app/web/plain.py), after every change.
+    const key = `${run.id}:${run.output && run.output.verdict_sha256}`;
+    if (run.plainKey === key) return;
+    run.plainKey = key;
+    let text;
+    try {
+      text = (await getJSON(`/ui/runs/${encodeURIComponent(run.id)}/plain`)).sentence;
+    } catch {
+      text = run.output.summary || "";  // a run this server no longer keeps: the Writer's own summary
+    }
+    if (run.plainKey !== key) return;
+    run.plain = text;
+    if (run === state.run) {
+      $("live-plain").textContent = text;
+      $("file-plain").textContent = text;
+      tourRefresh();
+    }
+  }
+
   function settle(run) {
     if (run !== state.run) return;
+    run.settled = true;
     setTitles(run);
     if (run.error) {
       setStatus("failed", "Stopped");
@@ -1006,10 +1080,14 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     setStatus("done", `Finished · ${plural(run.lines.length, "step")}` +
       (typeof out.execution_time_seconds === "number" ? ` · ${out.execution_time_seconds} s` : ""));
     $("live-lead").textContent = out.summary || "";
+    $("live-lead").hidden = true;
     $("live-verdict").replaceChildren(out.verdict ? verdictTag(out.verdict) : h("span", { class: "tag tag-quiet", text: "TOO VAGUE" }));
+    $("live-plain").textContent = run.plain || "";
     $("live-open-file").href = runHref(run.id, "file");
     $("live-result").hidden = false;
     renderLiveParts(run);
+    renderAgents(run);
+    loadPlain(run);
     if (!run.lines.length) {
       $("trace").replaceChildren(h("li", { class: "trace-empty",
         text: "This run was not started from this page, so its trace was not streamed here. " +
@@ -1022,6 +1100,7 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     } else {
       show(currentView());
     }
+    tourRefresh();
   }
 
   // ---- evidence file ---------------------------------------------------------------------------
@@ -1047,7 +1126,9 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     const word = $("verdict-word");
     word.className = "verdict-word" + (verdict ? ` v-${verdict}` : "");
     word.textContent = verdict ? `${capital(verdict.toLowerCase())}.` : "Too vague.";
-    $("file-summary").textContent = out.summary || "";
+    $("file-plain").textContent = run.plain || "";
+    $("file-summary").textContent = out.summary ? `The Writer's summary: ${out.summary}` : "";
+    loadPlain(run);
     const untested = out.untested_factors || [];
     $("file-untested").textContent = untested.length ? `Not tested: ${untested.join(" ")}` : "";
     $("file-untested").hidden = !untested.length;
@@ -1066,16 +1147,23 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     $("download-package").hidden = vague;
     $("download-package").href = `/runs/${encodeURIComponent(run.id)}/package`;
     $("open-letters").hidden = !(out.supplier_letters && out.supplier_letters.length);
-    $("seal").hidden = !hash;
+    $("seal-tech").hidden = !hash;
     $("seal").replaceChildren("sealed · ", h("b", { text: sealOf(hash) }));
     $("seal-note").textContent = "";
+    const prints = out.fingerprints || {};
+    const print = (label, value) => h("div", {}, h("dt", { text: label }), h("dd", { class: "mono", title: value, text: value }));
+    $("prints").replaceChildren(...[["verdict_sha256", shortHash(hash)], ["input_sha256", shortHash(prints.input_sha256)],
+      ["data_sha256", shortHash(prints.data_sha256)], ["rules_sha256", shortHash(prints.rules_sha256)],
+      ["rules_version", prints.rules_version]].filter(([, v]) => v).map(([k, v]) => print(k, v)));
 
     for (const id of ["flip", "ask", "fool"]) $(id).hidden = vague;
     if (vague) {
       $("findings").replaceChildren(h("p", { class: "none", text: "No finding: the claim names nothing the data can check." }));
       $("part-rows").replaceChildren();
+      $("where").hidden = true;
     } else {
       renderFindings(out);
+      renderWhere(run);
       renderTimelines(run);
       renderPartRows(out);
       renderFlip(run);
@@ -1083,6 +1171,7 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
       renderFool(run);
     }
     renderNotes(out);
+    renderFileTech(run);
     const fp = out.fingerprints || {};
     $("file-foot").replaceChildren(
       h("span", {}, "Every finding names the rows it rests on. Files are dated and sealed",
@@ -1171,24 +1260,31 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     }
     $("findings").replaceChildren(...findings.map((f) => {
       const tried = f.refutations_tried || [];
+      const held = tried.filter((t) => t.result === "held").length;
       return h("article", { class: "finding" },
         h("div", { class: "finding-what" },
-          h("div", { class: "finding-head" }, h("span", { class: "part-id", text: f.claim_part }), verdictTag(f.verdict),
-            h("span", { class: "rule-ref", text: `Rule ${f.rule}` })),
-          h("h3", { class: "finding-text", text: `${capital(f.finding)}.` }),
-          h("p", { class: "small muted", text: `Rule ${f.rule}: ${RULES[f.rule] || "see app/rules.py"}.` })),
+          h("div", { class: "finding-head" }, verdictTag(f.verdict), h("span", { class: "finding-part", text: PARTS[f.claim_part] || words(f.claim_part) })),
+          h("h3", { class: "finding-text", text: `${capital(f.finding)}.` })),
         h("div", { class: "source" },
-          h("span", { class: "eyebrow", text: "Where this comes from" }),
-          h("div", { class: "source-block" }, h("span", { class: "sub", text: "Evidence" }),
+          h("div", { class: "source-block" }, h("span", { class: "eyebrow", text: "Sources" }),
             h("ul", { class: "evidence-list" }, (f.evidence || []).map((e) => h("li", {}, chip(`${e.source} · ${e.id}`, "data"))))),
-          h("div", { class: "source-block" }, h("span", { class: "sub", text: `Refutations tried · ${tried.length}` }),
+          h("div", { class: "source-block" }, h("span", { class: "eyebrow", text: `Checks the AI tried to break it with · ${tried.length}` }),
             tried.length
-              ? h("ul", { class: "refutations" }, tried.map((t) => h("li", {},
-                h("span", { class: "ref-id", text: t.id }),
-                h("span", { class: t.result === "held" ? "ref-held" : null, text: t.result }),
+              ? h("ul", { class: "checks" }, tried.map((t) => h("li", {},
+                h("span", { class: t.result === "held" ? "check-held" : "check-result", text: t.result === "held" ? "the doubt held" : "did not break it" }),
                 h("span", { text: t.detail }))))
-              : h("span", { class: "none", text: "None tried on this finding." }))),
-        h("div", { class: "checked", text: checkedBy(f.checked_by) || "Who checked it is not stated in this output." }));
+              : h("span", { class: "none", text: "None tried on this finding." }),
+            tried.length ? h("span", { class: "small muted", text: held ? `${plural(held, "doubt")} held: read the trace before relying on it.`
+              : "None of them broke it." }) : null)),
+        h("div", { class: "checked", text: checkedBy(f.checked_by) || "Who checked it is not stated in this output." }),
+        h("details", { class: "tech finding-tech" },
+          h("summary", {}, h("span", { text: "Technical details" }), h("span", { class: "sub", text: `rule ${f.rule} · ${f.claim_part}` + (tried.length ? ` · ${tried.map((t) => t.id).join(" ")}` : "") })),
+          h("p", { class: "small", text: `Rule ${f.rule}: ${RULES[f.rule] || "see app/rules.py"}. Claim part ${f.claim_part}: ${PARTS_EXACT[f.claim_part] || words(f.claim_part)}.` }),
+          tried.length ? h("ul", { class: "refutations" }, tried.map((t) => h("li", {},
+            h("span", { class: "ref-id", text: t.id }),
+            h("span", { class: t.result === "held" ? "ref-held" : null, text: t.result }),
+            h("span", { text: t.detail })))) : null,
+          h("p", { class: "small muted", text: `checked_by: ${(f.checked_by || []).join(", ") || "not stated"}` })));
     }));
   }
 
@@ -1196,9 +1292,102 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     const withFinding = new Set((out.findings || []).map((f) => f.claim_part));
     $("part-rows").replaceChildren(...(out.parts || []).filter((p) => !withFinding.has(p.claim_part)).map((p) =>
       h("article", { class: "part-row" },
-        h("span", { class: "part-id", text: p.claim_part }), verdictTag(p.verdict),
+        verdictTag(p.verdict),
         h("span", { class: "part-text", text: PARTS[p.claim_part] || words(p.claim_part) }),
-        h("span", { class: "rule-ref", text: `rule ${p.rule} · ${RULES[p.rule] || ""}` }))));
+        h("span", { class: "part-id", text: p.claim_part }))));
+  }
+
+  function renderFileTech(run) {
+    const out = run.output;
+    const row = (cells) => h("tr", {}, cells.map((c) => h("td", {}, c)));
+    const parts = (out.parts || []).map((p) => row([h("span", { class: "mono", text: p.claim_part }), verdictTag(p.verdict),
+      `rule ${p.rule}: ${RULES[p.rule] || ""}`, h("span", { class: "mono", text: (p.codes || []).join(", ") || "none" })]));
+    const files = [out.log_file && `trace ${out.log_file}`, typeof out.execution_time_seconds === "number" && `run ${out.execution_time_seconds} s`,
+      out.fingerprints && out.fingerprints.rules_version && `rules ${out.fingerprints.rules_version}`, `run id ${run.id}`].filter(Boolean);
+    $("file-tech-body").replaceChildren(
+      parts.length ? h("div", { class: "table-wrap" }, h("table", { class: "tech-table" },
+        h("caption", { class: "sr-only", text: "Each claim part, its verdict, the rule that decided it and the finding codes" }),
+        h("thead", {}, h("tr", {}, ["Claim part", "Verdict", "Rule", "Codes"].map((name) => h("th", { scope: "col", text: name })))),
+        h("tbody", {}, parts))) : null,
+      h("p", { class: "small muted", text: "Rules 1 to 4 are fixed code (app/rules.py): the model proposes, the code decides. " + files.join(" · ") }));
+  }
+
+  // ---- where it happened: the farm and the alert behind the verdict, on a small map -------------
+
+  async function renderWhere(run) {
+    const box = $("where");
+    const key = `${run.id}:${run.output.verdict_sha256}`;
+    if (box.dataset.key === key) return;
+    box.dataset.key = key;
+    box.hidden = true;
+    state.where = null;
+    delete $("where-map").dataset.width;
+    let data;
+    try {
+      data = await getJSON(`/ui/runs/${encodeURIComponent(run.id)}/where`);
+    } catch {
+      return;  // a run this server no longer keeps: the findings still name their rows
+    }
+    if (box.dataset.key !== key || !data.plot) { tourRefresh(); return; }
+    state.where = data;
+    box.hidden = false;
+    drawWhere();
+    tourRefresh();
+  }
+
+  function drawWhere() {
+    // Drawn at the map's real width, so the labels keep their size: again when the view shows or the window resizes.
+    const data = state.where;
+    const width = Math.round($("where-map").clientWidth);
+    if (!data || $("where").hidden || !width || $("where-map").dataset.width === String(width)) return;
+    $("where-map").dataset.width = String(width);
+    const W = Math.max(280, width);
+    const H = Math.round(W * (W < 560 ? 0.66 : 0.4));
+    const p = data.plot;
+    const a = data.alert;
+    const lat0 = p.lat;
+    const sx = 111320 * Math.cos((lat0 * Math.PI) / 180);  // app/world/geo.py, the same flat-earth scale
+    const toM = ([lat, lon]) => [(lon - p.lon) * sx, (lat - lat0) * 110574];
+    const radius = Math.sqrt((p.area_ha * 10000) / Math.PI);  // a point plot: a disk of its declared area
+    const pts = (p.ring || []).map(toM);
+    const extent = [...pts, a ? toM([a.lat, a.lon]) : [0, 0], [radius, radius], [-radius, -radius]];
+    const half = Math.max(100, ...extent.map(([x, y]) => Math.max(Math.abs(x) * (H / W), Math.abs(y)))) * 1.3;
+    const k = H / 2 / half;  // pixels per metre
+    const X = (x) => W / 2 + x * k;
+    const Y = (y) => H / 2 - y * k;
+    const labelAt = (x, y, words) => {  // one line beside the dot, on the side with room; two lines when narrow
+      const room = (text, right) => (right ? W - 8 - (x + 18) : x - 18 - 8) >= text.length * 7.5;
+      const line = words.join(" · ");
+      const right = room(line, true) || !room(line, false) ? x < W / 2 || room(line, true) : false;
+      const lines = room(line, right) ? [line] : words;
+      return lines.map((text, i) => ({ x: (right ? x + 18 : x - 18).toFixed(1), y: (y + i * 16).toFixed(1),
+        "text-anchor": right ? "start" : "end", text }));
+    };
+    const bar = [50, 100, 200, 500, 1000].find((m) => m * k >= 60) || 1000;
+    const shapes = [];
+    if (pts.length) {
+      const d = pts.map(([x, y]) => `${X(x).toFixed(1)},${Y(y).toFixed(1)}`).join(" ");
+      shapes.push(s("polygon", { points: d, class: "m-halo" }), s("polygon", { points: d, class: "m-outline" }));
+    } else {
+      shapes.push(s("circle", { cx: W / 2, cy: H / 2, r: (radius * k).toFixed(1), class: "w-disk" }),
+        s("circle", { cx: W / 2, cy: H / 2, r: 4, class: "w-point" }));
+    }
+    const top = pts.length ? Math.min(...pts.map(([, y]) => Y(y))) : H / 2 - radius * k;
+    shapes.push(s("text", { x: W / 2, y: Math.max(20, top - 12), class: "w-label", "text-anchor": "middle", text: p.ring ? p.plot_id : `${p.plot_id} · declared by a point` }));
+    if (a) {
+      const [ax, ay] = toM([a.lat, a.lon]);
+      shapes.push(s("circle", { cx: X(ax).toFixed(1), cy: Y(ay).toFixed(1), r: 12, class: "w-alert-ring" }),
+        s("circle", { cx: X(ax).toFixed(1), cy: Y(ay).toFixed(1), r: 6, class: "w-alert" }),
+        ...labelAt(X(ax), Y(ay) + 5, [`alert ${a.alert_id}`, a.alert_date]).map((at) => s("text", { ...at, class: "w-label w-label-alert" })));
+    }
+    shapes.push(s("g", { class: "w-scale" }, s("path", { d: `M16 ${H - 20}V${H - 14}H${16 + bar * k}V${H - 20}` }),
+      s("text", { x: 24 + bar * k, y: H - 14, text: `${bar} m` })));
+    const said = `${p.plot_id}, ${p.area_ha} ha, ${p.ring ? "mapped as a polygon" : "declared by a point"}` +
+      (a ? `; satellite alert ${a.alert_id} of ${a.alert_date}, ${a.confidence} confidence, ${pts.length ? "inside the outline" : "near the point"}` : "");
+    $("where-map").replaceChildren(s("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": said }, shapes));
+    $("where-sub").textContent = `${p.plot_id} · ${p.area_ha} ha` + (a ? ` · alert ${a.alert_id}, ${a.confidence} confidence` : "");
+    $("where-note").textContent = "Drawn from the rows this run read: the farm's outline from the plot registry" +
+      (a ? ", the alert's position from the satellite alerts" : "") + ". North is up.";
   }
 
   function renderNotes(out) {
@@ -1232,6 +1421,7 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     const tried = out.flip_tried || [];
     $("flip-sentence").textContent = out.flip || "No flip in this output.";
     $("flip-how").textContent = `Computed by code from the same evidence and rules: ${plural(tried.length, "single change")} tried, no model.`;
+    $("flip-tech-sub").textContent = `${plural(tried.length, "single change")} tried`;
     const flip = tried.find((t) => t.verdict !== out.verdict && editable(t.change.entity, t.change.field));
     const val = (value) => (Array.isArray(value) ? value.join(", ") : value);
     $("flip-tried").replaceChildren(...tried.map((t) => h("li", {},
@@ -1329,13 +1519,18 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
       h("div", { class: "before-after", "aria-label": `Verdict before ${last.verdict_before}, after ${last.verdict_after}` },
         h("span", { class: "label", text: "Verdict" }), verdictTag(last.verdict_before),
         h("span", { "aria-hidden": "true", text: "→" }), verdictTag(last.verdict_after)),
-      h("div", {}, h("span", { class: "label", text: `Facts invalidated in the World Model · ${facts.length}` }),
-        facts.length ? h("ul", {}, shown.map((id) => h("li", { class: "mono", text: id })),
-          facts.length > shown.length ? h("li", { text: `and ${facts.length - shown.length} more` }) : null)
-          : h("p", { class: "none", text: "None: no fact of this run was built on that value." })),
-      h("div", {}, h("span", { class: "label", text: `Cards checked again by the Evaluator · ${cards.length}` }),
-        cards.length ? h("ul", {}, cards.map((id) => h("li", { class: "mono", text: id })))
-          : h("p", { class: "none", text: "None: no card rests on that value any more." })));
+      h("p", { class: "small", text: last.verdict_before === last.verdict_after
+        ? `The verdict stays ${last.verdict_after}: this change does not touch what decided it.`
+        : `The verdict changes from ${last.verdict_before} to ${last.verdict_after}: the evidence file above now shows why.` }),
+      h("details", { class: "tech" },
+        h("summary", {}, h("span", { text: "Technical details" }), h("span", { class: "sub", text: `${plural(facts.length, "fact")} invalidated · ${plural(cards.length, "card")} checked again` })),
+        h("div", {}, h("span", { class: "label", text: `Facts invalidated in the World Model · ${facts.length}` }),
+          facts.length ? h("ul", {}, shown.map((id) => h("li", { class: "mono", text: id })),
+            facts.length > shown.length ? h("li", { text: `and ${facts.length - shown.length} more` }) : null)
+            : h("p", { class: "none", text: "None: no fact of this run was built on that value." })),
+        h("div", {}, h("span", { class: "label", text: `Cards checked again by the Evaluator · ${cards.length}` }),
+          cards.length ? h("ul", {}, cards.map((id) => h("li", { class: "mono", text: id })))
+            : h("p", { class: "none", text: "None: no card rests on that value any more." }))));
   }
 
   async function submitFool(event) {
@@ -1493,6 +1688,108 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     $("bench-score").textContent = "not run yet";
   }
 
+  // ---- the guided tour: five bubbles on the demo case -----------------------------------------------
+  // Nothing in it is a number: each bubble points at what the run itself shows on screen.
+
+  const TOUR = [
+    { view: "live", target: "live-title", title: "The promise",
+      text: "This is what the company says about its cocoa. GreenTrace does not take its word for it: it checks." },
+    { view: "live", target: "agents", title: "Five AI agents at work",
+      text: "They read the promise, plan the checks, pull satellite alerts, maps and deliveries, then try to break every " +
+        "finding. Every step is logged: the full trace is under Technical details." },
+    { view: "live", target: "live-result", wait: "live-lead", title: "The verdict, in plain words",
+      text: "The verdict comes from fixed rules, not from the AI, and this sentence is written by code from what was found." },
+    { view: "file", target: "where", fallback: "findings", title: "The proof, on the map",
+      text: "The farm behind the verdict, as the run read it: its outline and the satellite alert. Each finding names " +
+        "the rows it rests on." },
+    { view: "file", target: "fool", title: "Try to fool it",
+      text: "Change one fact, for example the date of the alert, and run it again. If the verdict flips, the evidence " +
+        "file shows exactly why." },
+  ];
+
+  async function startTour() {
+    if (!state.setup) return;
+    state.tour = { step: 0, runId: null };
+    await startRun(state.setup.default_claim, null, null);
+    if (!state.run || !state.tour) { closeTour(); return; }
+    state.tour.runId = state.run.id;
+    tourRefresh();
+  }
+
+  function tourGo(delta) {
+    const tour = state.tour;
+    if (!tour) return;
+    const next = tour.step + delta;
+    if (next >= TOUR.length) { closeTour(); return; }
+    if (next < 0) return;
+    tour.step = next;
+    const want = TOUR[next].view;
+    if (currentView() !== want) location.hash = runHref(tour.runId, want);  // route() refreshes the bubble
+    else tourRefresh(true);
+  }
+
+  function tourRefresh(focus) {
+    const tour = state.tour;
+    const bubble = $("tour");
+    document.querySelectorAll(".tour-on").forEach((node) => node.classList.remove("tour-on"));
+    if (!tour || !tour.runId) { bubble.hidden = true; return; }
+    const step = TOUR[tour.step];
+    const run = state.run;
+    if (!run || run.id !== tour.runId || currentView() !== step.view) { bubble.hidden = true; return; }
+    const ready = step.wait ? Boolean(run.output && !$(step.target).hidden && run.plain) : true;
+    let target = $(ready ? step.target : step.wait);
+    if (target.hidden && step.fallback) target = $(step.fallback);
+    $("tour-count").textContent = `${tour.step + 1} of ${TOUR.length}`;
+    $("tour-title").textContent = step.title;
+    $("tour-text").textContent = ready ? step.text : "The agents are still working. The verdict appears here when the rules have spoken.";
+    $("tour-back").disabled = tour.step === 0;
+    $("tour-next").disabled = !ready;
+    $("tour-next").textContent = tour.step === TOUR.length - 1 ? "Done" : "Next";
+    const wasHidden = bubble.hidden;
+    bubble.hidden = false;
+    target.classList.add("tour-on");
+    const scrollTo = placeTour(target);
+    const shown = `${tour.step}:${ready}:${target.id}`;
+    if (tour.shown !== shown || wasHidden) {  // scroll only when the bubble moves to something new
+      tour.shown = shown;
+      window.scrollTo({ top: scrollTo, behavior: reducedMotion ? "auto" : "smooth" });
+    }
+    if (focus || wasHidden) $("tour-title").focus({ preventScroll: true });
+  }
+
+  function placeTour(target) {
+    // In page coordinates, so the bubble stays put while the page scrolls. Returns where to scroll to.
+    const bubble = $("tour");
+    const box = target.getBoundingClientRect();
+    const top = box.top + window.scrollY;
+    const bottom = box.bottom + window.scrollY;
+    const width = bubble.offsetWidth;
+    const height = bubble.offsetHeight;
+    const view = window.innerHeight;
+    const page = document.documentElement.clientWidth;
+    const left = Math.min(Math.max(16, box.left), page - width - 16);
+    let at;
+    let scroll;
+    if (bottom - top + 12 + height <= view - 32) {  // the target and the bubble under it fit in the window
+      at = bottom + 12;
+      scroll = top - (view - (bottom - top + 12 + height)) / 2;
+    } else {  // a tall target: the bubble sits over its top edge
+      at = top + 16;
+      scroll = top - 72;
+    }
+    bubble.style.left = `${Math.round(left + window.scrollX)}px`;
+    bubble.style.top = `${Math.round(at)}px`;
+    return Math.max(0, Math.round(scroll));
+  }
+
+  function closeTour() {
+    const had = Boolean(state.tour);
+    state.tour = null;
+    $("tour").hidden = true;
+    document.querySelectorAll(".tour-on").forEach((node) => node.classList.remove("tour-on"));
+    if (had) $("main").focus({ preventScroll: true });
+  }
+
   // ---- wiring ------------------------------------------------------------------------------------
 
   function setFilter(filter) {
@@ -1530,6 +1827,17 @@ as HTML: the reports a run reads can hold anything (trap case 19 hides an instru
     $("draw-undo").addEventListener("click", undoPoint);
     $("draw-clear").addEventListener("click", clearPlot);
     $("draw-check").addEventListener("click", checkPlot);
+    $("tour-start").addEventListener("click", startTour);
+    $("tour-next").addEventListener("click", () => tourGo(1));
+    $("tour-back").addEventListener("click", () => tourGo(-1));
+    $("tour-close").addEventListener("click", closeTour);
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && state.tour && !$("letters").open) { event.preventDefault(); closeTour(); }
+    });
+    window.addEventListener("resize", () => {
+      drawWhere();
+      if (state.tour && !$("tour").hidden) tourRefresh();
+    });
     window.addEventListener("hashchange", () => route(false));
     loadSetup().then(() => {
       if (state.run && state.run.output) renderFile(state.run);
