@@ -152,10 +152,13 @@ def test_a_cell_the_model_left_out_is_not_seen(tmp_path):
     assert next(c for c in out["cells"] if c["cell"] == "A1")["label"] == "forest_kept"  # first answer counts
 
 
-def test_without_the_2020_scene_the_model_is_not_asked():
+def test_without_the_2020_scene_the_model_is_not_asked(tmp_path):
+    import shutil
+    for name in ("P-042.jpg", "P-042.json"):  # the recent scene only, whatever the repository ships
+        shutil.copy(lens.SCENES_DIR / name, tmp_path / name)
     fake = FakeVision()  # no answer at all: a call would fail the test
     lines, log = traced()
-    out = lens.look(lens.scene_for("P-042"), "lens-test", gate=gate_with(fake, log), log=log)
+    out = lens.look(lens.scene_for("P-042", directory=tmp_path), "lens-test", gate=gate_with(fake, log), log=log)
     assert fake.calls == [] and out["ai"] is False and out["message"] == lens.NEEDS_BEFORE
     assert all("loss_after_2020_ha" in c for c in out["cells"])  # the code's grid still stands
 
