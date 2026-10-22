@@ -360,7 +360,10 @@ def test_no_runtime_listening_reads_offline(traced):
 # ---- rate limits: wait, do not give up (added 22/10 after the 21-case bench) -----------------
 
 def throttled(retry_after="2"):
-    import httpx
+    try:
+        import httpx
+    except ImportError:  # openai 3.x ships its HTTP client as httpx2
+        import httpx2 as httpx
     response = httpx.Response(429, request=httpx.Request("POST", "http://nvidia.test"),
                               headers={"retry-after": retry_after})
     return openai.RateLimitError("rate limited", response=response, body=None)
