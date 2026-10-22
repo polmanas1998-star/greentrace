@@ -8,6 +8,7 @@ reference implementation on this machine and opens a small JSON door to it for t
 | `reference/`, `conformance/`, `LICENSE` | World Model reference implementation and its conformance suite, Apache-2.0 | Meterless, copied **unmodified** from [Meterless/Meterless](https://github.com/Meterless/Meterless) `engines/world-model`, commit `1742dec` |
 | `UPSTREAM.sha256` | sha-256 of every copied file, to check they are unmodified | GreenTrace |
 | `server.ts`, `package.json` | the local server: one world per run, `source-priority` conflict policy | GreenTrace (Apache-2.0) |
+| `hmem/reference/`, `hmem/conformance/`, `hmem/LICENSE`, `hmem/AGENTS.md` | H-MEM, the second engine: memory between investigations, and its conformance suite (13/13), Apache-2.0 | Meterless, copied **unmodified** from `engines/hmem`, commit `1742dec`; `hmem/UPSTREAM.sha256` lists every file |
 
 ## Run it
 
@@ -17,6 +18,8 @@ npm run conformance       # Meterless conformance suite: 8/8 checks expected
 npm run test:reference    # the reference's own tests
 npm start                 # server on http://127.0.0.1:8787 (WORLD_MODEL_PORT to change)
 sha256sum -c UPSTREAM.sha256   # proves reference/ and conformance/ are untouched
+node node_modules/tsx/dist/cli.mjs hmem/conformance/runner.ts   # H-MEM conformance: 13/13 expected
+(cd hmem && sha256sum -c UPSTREAM.sha256)                         # H-MEM untouched
 ```
 
 GreenTrace finds the server at `WORLD_MODEL_URL` (default `http://127.0.0.1:8787`). If it does not
@@ -32,3 +35,10 @@ and checks they build the same world, byte for byte.
   `relate`, `assertFact` (writes) and `entity`, `facts`, `entityAt`, `timeline`, `audit` (reads).
   Every write needs provenance (`source.kind` and `source.at`), as the reference requires.
 - Listens on 127.0.0.1 only (no authentication), bodies up to 1 MB, at most 200 worlds in memory.
+
+## The second door: H-MEM
+
+`POST /hmem` with `{"op": ..., "args": {...}}`, ops `add`, `query`, `delete`, `history` (the store,
+retrieval and ledger services of the reference). Kept on disk in `HMEM_DIR` (default
+`../data/memory`: `state.json` + `ledger.jsonl`, written by the reference itself); `HMEM_CLOCK_MS`
+pins its clock, for tests only. GreenTrace's use is in `app/memory/hmem.py`.

@@ -10,9 +10,18 @@
 // Facts are settled by the reference's source-priority policy: a fact from the
 // Evaluator supersedes one from the Investigator, which supersedes the
 // Extractor's. Nothing is ever deleted; the audit log keeps every write.
+//
+// POST /hmem   -> {"op": "add" | "query" | "delete" | "history", "args": {...}}
+//
+// The second engine: the unmodified H-MEM reference (./hmem/reference), memory
+// across investigations, kept on disk in HMEM_DIR (state.json + ledger.jsonl,
+// default ../data/memory). HMEM_CLOCK_MS pins its clock, for tests only.
 
 import http from "node:http";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { WorldModel } from "./reference/src/index.ts";
+import { HMEM } from "./hmem/reference/src/index.ts";
 
 const HOST = "127.0.0.1"; // this machine only: the server has no authentication
 const PORT = Number(process.env.WORLD_MODEL_PORT ?? 8787);
@@ -37,6 +46,63 @@ const OPS: Record<string, (world: WorldModel, args: Args) => unknown> = {
 };
 
 const worlds = new Map<string, WorldModel>();
+
+const HMEM_DIR = process.env.HMEM_DIR ?? path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "data", "memory");
+const HMEM_CLOCK = process.env.HMEM_CLOCK_MS ? Number(process.env.HMEM_CLOCK_MS) : undefined;
+const TEXT_MAX = 2000;
+let hmem: HMEM | undefined; // opened on the first /hmem call: the World Model never waits on the disk
+
+function memory(): HMEM {
+  hmem ??= new HMEM({ persistDir: HMEM_DIR, actor: "greentrace", ...(HMEM_CLOCK ? { clock: () => HMEM_CLOCK } : {}) });
+  return hmem;
+}
+
+function text(value: unknown, what: string): string {
+  if (typeof value !== "string" || value.trim() === "" || value.length > TEXT_MAX) {
+    throw new BadRequest(`${what} must be a non-empty string of at most ${TEXT_MAX} characters`);
+  }
+  return value;
+}
+
+function strings(value: unknown, what: string, max: number): string[] {
+  if (!Array.isArray(value) || value.length > max || !value.every((v) => typeof v === "string" && v.length <= 300)) {
+    throw new BadRequest(`${what} must be a list of at most ${max} short strings`);
+  }
+  return value;
+}
+
+// Records go out without their embedding: a long vector nobody on the Python side reads.
+const bare = ({ embedding, ...rest }: Record<string, unknown>) => rest;
+
+// The only H-MEM operations the door opens: the store (add, delete), retrieval (query), the ledger (history).
+const HMEM_OPS: Record<string, (m: HMEM, args: Args) => unknown> = {
+  add: (m, args) => bare(m.add({
+    content: text(args.content, "content"),
+    source: typeof args.source === "string" ? args.source : "", // the reference itself rejects a record with no source
+    type: "factual",
+    layer: "working",
+    tags: strings(args.tags ?? [], "tags", 20),
+    confidence: typeof args.confidence === "number" ? args.confidence : undefined,
+    provenance: {
+      origin: "plan_completion",
+      learnedAt: m.clock(),
+      label: typeof args.label === "string" ? args.label.slice(0, 300) : "greentrace",
+      refs: strings(args.refs ?? [], "refs", 50),
+    },
+  }) as never),
+  query: (m, args) => {
+    const result = m.query(text(args.query, "query"), {
+      topN: typeof args.topN === "number" ? args.topN : undefined,
+      threshold: typeof args.threshold === "number" ? args.threshold : undefined,
+    });
+    return { ...result, memories: result.memories.map((r) => ({ relevance: r.relevance, memory: bare(r.memory as never) })) };
+  },
+  delete: (m, args) => {
+    m.store.delete(text(args.id, "id"), text(args.reason, "reason"));
+    return { deleted: args.id };
+  },
+  history: (m, args) => m.ledger.history(text(args.id, "id")),
+};
 
 function worldFor(namespace: string): WorldModel {
   let world = worlds.get(namespace);
@@ -75,10 +141,14 @@ function send(res: http.ServerResponse, status: number, body: unknown): void {
 
 const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && req.url === "/health") {
-    return send(res, 200, { ok: true, engine: "meterless/world-model reference", conflictPolicy: POLICY, sourcePriority: SOURCE_PRIORITY });
+    return send(res, 200, { ok: true, engine: "meterless/world-model reference", conflictPolicy: POLICY, sourcePriority: SOURCE_PRIORITY,
+                            memoryEngine: "meterless/hmem reference" });
+  }
+  if (req.method === "POST" && req.url === "/hmem") {
+    return hmemCall(req, res);
   }
   if (req.method !== "POST" || req.url !== "/call") {
-    return send(res, 404, { ok: false, error: "not found: use GET /health or POST /call" });
+    return send(res, 404, { ok: false, error: "not found: use GET /health, POST /call or POST /hmem" });
   }
 
   let namespace: unknown, op: unknown, args: unknown;
@@ -98,6 +168,17 @@ const server = http.createServer(async (req, res) => {
     send(res, 422, { ok: false, error: (err as Error).message });
   }
 });
+
+async function hmemCall(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+  let op: unknown, args: unknown;
+  try {
+    ({ op, args } = JSON.parse(await readBody(req)) ?? {});
+    if (typeof op !== "string" || !Object.hasOwn(HMEM_OPS, op)) throw new BadRequest(`unknown op ${JSON.stringify(op)}; known: ${Object.keys(HMEM_OPS).join(", ")}`);
+    send(res, 200, { ok: true, result: HMEM_OPS[op](memory(), (args ?? {}) as Args) });
+  } catch (err) {
+    send(res, err instanceof BadRequest || err instanceof SyntaxError ? 400 : 422, { ok: false, error: (err as Error).message });
+  }
+}
 
 server.listen(PORT, HOST, () => {
   console.log(`Meterless World Model on http://${HOST}:${PORT} (${POLICY}: ${SOURCE_PRIORITY.join(" > ")})`);
