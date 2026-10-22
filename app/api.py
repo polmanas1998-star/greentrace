@@ -6,6 +6,7 @@ GET  /runs/{run_id}          the evidence file of a finished run (kept in memory
 POST /runs/{run_id}/what_if  change one value, re-run only what depends on it
 GET  /runs/{run_id}/receipt  the verdict receipt: python verify.py receipt.json re-derives it offline
 GET  /runs/{run_id}/package  the audit package: one zip, receipt included
+GET  /runs/{run_id}/timeline per plot a finding is about: loss by year inside it, cut-off, deliveries
 """
 from typing import Any
 
@@ -14,6 +15,7 @@ from fastapi import Body, FastAPI, HTTPException, Response
 from pydantic import BaseModel
 
 from app import orchestrator
+from app.explain.timeline import timeline
 from app.receipt import build_receipt, package_zip
 from app.pipeline import run_case
 
@@ -57,6 +59,11 @@ def get_package(run_id: str) -> Response:
                     headers={"Content-Disposition": f'attachment; filename="greentrace-{run_id}.zip"'})
 
 
+@app.get("/runs/{run_id}/timeline")
+def get_timeline(run_id: str) -> dict[str, Any]:
+    return {"run_id": run_id, **timeline(_finished(run_id).evidence)}
+
+
 def _finished(run_id: str) -> orchestrator.Investigation:
     finished = orchestrator.RUNS.get(run_id)
     if finished is None:
@@ -72,3 +79,6 @@ def what_if(run_id: str, change: WhatIf) -> dict[str, Any]:
         raise HTTPException(status_code=404, detail=str(error)) from error
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
+
+from app.web import mount  # noqa: E402 - the interface (app/web), on top of the routes above
+mount(app)

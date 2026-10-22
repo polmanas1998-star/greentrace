@@ -13,7 +13,9 @@ from app.checks.landcover import (
 from app.world import geo
 
 MAX_BYTES = 5_000_000
-P041_WKT = None  # the outline drawn on 18/10: to paste here from Amir's prep files (see the skip reason)
+# No exact outline was recorded for the demo plots: each is a square centred on its point (decision of 22/10).
+P041 = {"polygon_wkt": geo.square_wkt(5.7052, -6.7244, 10.6)}  # the honest counter-example
+P042 = {"polygon_wkt": geo.square_wkt(5.7300, -6.5220, 10.0)}  # the default real plot of the demo
 
 committed = pytest.mark.skipif(not CELLS_FILE.exists(), reason="data/reference_cells.csv.gz not built yet "
                                "(python -m scripts.fetch_reference_maps needs the JRC tile)")
@@ -69,6 +71,8 @@ def test_loss_is_counted_by_year_and_after_2020_only_on_forest():
     assert result["covered"] is True
     assert result["loss_ha_by_year"] == {"2014": round(ha(2), 4), "2021": round(ha(3), 4), "2023": round(ha(0, 1), 4)}
     assert result["loss_after_2020_ha"] == round(ha(0, 3), 4)  # 0.4 is not forest; 2014 is before the cut-off
+    assert result["forest_loss_ha_by_year"] == {"2014": round(ha(2), 4), "2021": round(ha(3), 4),
+                                                "2023": round(ha(0), 4)}
     assert result["forest_2020_ha"] == round(0.9 * ha(0) + 0.4 * ha(1) + ha(2) + 0.5 * ha(3), 4)
     assert len(result["cells"]) == 4 and {c["overlap"] for c in result["cells"]} == {1.0}
 
@@ -93,7 +97,7 @@ def test_outside_or_half_outside_the_maps_is_no_data_never_zero():
     for plot in (square(20, 20, 22, 22), square(8, 8, 12, 12)):  # outside; straddling the edge
         result = measure(plot, grid_cells())
         assert result == {"covered": False, "reason": NO_DATA, "forest_2020_ha": None, "loss_ha_by_year": None,
-                          "loss_after_2020_ha": None, "cells": []}
+                          "forest_loss_ha_by_year": None, "loss_after_2020_ha": None, "cells": []}
 
 
 def test_same_plot_same_measure():
@@ -188,14 +192,36 @@ def test_the_dam_lake_is_not_counted_as_forest_lost():
     assert result["covered"] and result["loss_after_2020_ha"] == 0
 
 
+# The values below were MEASURED on data/reference_cells.csv.gz (22/10), and are written in its meta file.
+# The measure is deterministic: the tolerance is a thousandth of a hectare.
+
 @committed
-@pytest.mark.skipif(P041_WKT is None, reason="P-041's exact outline is not in the repository yet")
-def test_p041_lost_about_4_66_ha_in_2023():
-    plot = {"polygon_wkt": P041_WKT}
-    result = measure(plot, read_cells(*plot_box(plot)))
-    # One Hansen cell is 0.077 ha here: two cells of difference is within the method's own noise.
-    assert result["loss_ha_by_year"]["2023"] == pytest.approx(4.66, abs=0.15)
-    assert canonical_json(result) == canonical_json(measure(plot, read_cells(*plot_box(plot))))
+def test_p042_lost_2020_forest_after_the_cutoff():
+    result = measure(P042, read_cells(*plot_box(P042)))
+    assert result["forest_2020_ha"] == pytest.approx(4.623, abs=0.001)
+    assert result["loss_after_2020_ha"] == pytest.approx(3.4235, abs=0.001)
+    assert result["loss_ha_by_year"] == pytest.approx(
+        {"2019": 0.0941, "2020": 3.0336, "2021": 3.5617, "2022": 1.1268, "2023": 0.59, "2024": 0.3613}, abs=0.001)
+    assert canonical_json(result) == canonical_json(measure(P042, read_cells(*plot_box(P042))))
+
+
+@committed
+def test_p041_lost_tree_cover_but_no_2020_forest():
+    result = measure(P041, read_cells(*plot_box(P041)))
+    assert result["forest_2020_ha"] == pytest.approx(0.0, abs=0.001)
+    assert result["loss_after_2020_ha"] == pytest.approx(0.0, abs=0.001)
+    after = {y: v for y, v in result["loss_ha_by_year"].items() if int(y) > 2020}
+    assert after == pytest.approx({"2021": 0.15, "2024": 0.3589}, abs=0.001)  # nothing in 2023
+
+
+@committed
+def test_the_meta_file_holds_the_measured_values():
+    measured = load_meta()["measured"]
+    for name, plot in (("P-041", P041), ("P-042", P042)):
+        result = measure(plot, read_cells(*plot_box(plot)))
+        assert measured[name]["polygon_wkt"] == plot["polygon_wkt"]
+        for key in ("forest_2020_ha", "loss_after_2020_ha", "loss_ha_by_year"):
+            assert measured[name][key] == result[key]
 
 
 @committed

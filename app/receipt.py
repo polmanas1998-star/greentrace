@@ -1,6 +1,7 @@
 """The verdict receipt (kit v21, page 1): everything needed to re-derive a verdict offline.
 
-receipt.json holds every answer the run got from Zetaris (query, SQL, rows, hashes), what
+receipt.json holds every answer the run got from Zetaris (query, SQL, rows, hashes, the
+reference cells of Q10 included), the plot the analyst drew if any (its GeoJSON), what
 the Extractor read in the reports with its exact quotes, the verdict per claim part with
 the rule that decided it, every change the flip tried, and the model calls (for
 information only: verify.py never needs them). python verify.py receipt.json rebuilds the
@@ -30,7 +31,7 @@ from app.tracing import LOG_DIR
 
 RECEIPT_VERSION = "1"
 RULES_FILE = Path(__file__).resolve().parent / "rules.py"
-EVIDENCE_QUERIES = ("Q0", "Q2", "Q3", "Q4", "Q6")  # what investigator.evidence_from_answers reads
+EVIDENCE_QUERIES = ("Q0", "Q2", "Q3", "Q4", "Q6", "Q10")  # what investigator.evidence_from_answers reads
 ZIP_DATE = (1980, 1, 1, 0, 0, 0)  # fixed entry dates: the same files give the same archive
 
 
@@ -69,6 +70,7 @@ def build_receipt(run: Any) -> dict[str, Any]:
     unreviewed = [c["id"] for c in run.cards if c["id"] not in run.reviews]
     decision = decision_for(run.evidence, unreviewed)
     flip = compute_flip(run.evidence)
+    declared = run.ctx.notes.get("declared_plot")
     return {
         "receipt_version": RECEIPT_VERSION,
         "run_id": ctx.run_id,
@@ -83,12 +85,14 @@ def build_receipt(run: Any) -> dict[str, Any]:
         "sources": sources,
         "documents": _documents(sources, extracted),
         "extracted": extracted,
+        "declared_plot": {"input": run.input_plot, "row": declared} if declared else None,
         "what_if": list(run.changes),
         "verdict": {
             "overall": decision["verdict"],
             "parts": decision["parts"],
             "findings": [{"code": f["code"], "rule": f["rule"], "verdict": f["verdict"], "refs": list(f["refs"]),
-                          "derived_from": _derived_from(f["refs"], sources)} for f in decision["findings"]],
+                          "derived_from": _derived_from(f["refs"], sources, declared)}
+                         for f in decision["findings"]],
             "unreviewed_cards": unreviewed,
         },
         "flip": {"tried": flip["tried"], "first_flip": flip["first_flip"], "sentence": flip["sentence"]},
@@ -116,7 +120,7 @@ def _documents(sources: list[dict], extracted: dict) -> list[dict]:
     return cited
 
 
-def _derived_from(refs: tuple[str, ...], sources: list[dict]) -> list[str]:
+def _derived_from(refs: tuple[str, ...], sources: list[dict], declared: Optional[dict] = None) -> list[str]:
     """Where a finding comes from: the answer and row behind each of its refs."""
     match = {
         "alert": ("Q4", lambda row, key: row["alert_id"] == key),
@@ -129,6 +133,14 @@ def _derived_from(refs: tuple[str, ...], sources: list[dict]) -> list[str]:
     found = []
     for ref in refs:
         kind, _, key = ref.partition(":")
+        if kind == "plot" and declared and key == declared["plot_id"]:
+            found.append(f"{ref}: declared_plot (drawn by the analyst)")
+            continue
+        if kind == "cells":
+            cells = next((s for s in sources if s["query_id"] == "Q10" and s["agent"] == "Investigator"), None)
+            found.append(f"Q10#{cells['index']} rows 0-{len(cells['rows']) - 1}" if cells and cells["rows"]
+                         else f"{ref}: no answer")
+            continue
         query_id, same = match.get(kind, (None, None))
         source = next((s for s in sources if s["query_id"] == query_id
                        and (s["agent"] == "Investigator" or query_id == "Q1")), None)

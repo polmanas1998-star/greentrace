@@ -3,14 +3,18 @@
 Few model calls here (kit, section 4): the queries come from the plan, the checks are
 code. Every card it writes in the World Model depends on the entities it was read
 from, so changing one value later invalidates exactly the cards built on it.
+
+A plot drawn by the analyst (input.plot) is a declaration, not a registry row: it joins
+the evidence next to the rows, and Q10 reads the reference cells around it.
 """
-from typing import Mapping, Optional
+from typing import Any, Mapping, Optional
 
 from app.agents.context import RunContext
-from app.checks import geometry
+from app.checks import geometry, landcover
 from app.memory.world_model import Source
 from app.queries import SourceUnavailable
 from app.rules import Evidence, Extracted, decide
+from app.world import drawn
 
 MARGIN_DEG = 0.01  # about 1 km around the supply area
 
@@ -19,6 +23,7 @@ def gather(ctx: RunContext, hypotheses: list[dict], extracted: Extracted) -> Evi
     asked = {q for h in hypotheses for q in h["queries"]}
     ask = ctx.gate.ask
     answers: dict[str, Optional[list[dict]]] = {}
+    declared = ctx.notes.get("declared_plot")
 
     if "Q0" in asked:
         answers["Q0"] = ask("Investigator", "Q0").rows
@@ -33,7 +38,7 @@ def gather(ctx: RunContext, hypotheses: list[dict], extracted: Extracted) -> Evi
     if "Q7" in asked:
         ask("Investigator", "Q7", company_id=ctx.company_id)
 
-    located = [p for p in plots if geometry.coordinates_valid(p)]
+    located = [p for p in plots + ([declared] if declared else []) if geometry.coordinates_valid(p)]
     if "Q4" in asked and located:
         try:
             answers["Q4"] = ask("Investigator", "Q4",
@@ -43,16 +48,28 @@ def gather(ctx: RunContext, hypotheses: list[dict], extracted: Extracted) -> Evi
                                 lon_max=round(max(p["lon"] for p in located) + MARGIN_DEG, 6)).rows
         except SourceUnavailable:
             pass  # no Q4 answer: the alerts are unknown, and rule 1 says so
+    if "Q10" in asked and declared:
+        lat_min, lat_max, lon_min, lon_max = landcover.plot_box(declared)
+        try:
+            answers["Q10"] = ask("Investigator", "Q10", lat_min=lat_min, lat_max=lat_max,
+                                 lon_min=lon_min, lon_max=lon_max).rows
+        except SourceUnavailable:
+            pass  # no Q10 answer: no reference data for the drawn plot, and rule 1 says so
 
-    return evidence_from_answers(answers, extracted, ctx.company_id)
+    evidence = evidence_from_answers(answers, extracted, ctx.company_id, declared)
+    if declared:
+        ctx.notes["declared_deliveries"] = [d for d in evidence.deliveries if d["plot_id"] == declared["plot_id"]]
+    return evidence
 
 
 def evidence_from_answers(answers: Mapping[str, Optional[list[dict]]], extracted: Extracted,
-                          company_id: str) -> Evidence:
+                          company_id: str, declared: Optional[dict[str, Any]] = None) -> Evidence:
     """The evidence from the Investigator's rows, by query id. Pure: verify.py rebuilds it from a receipt.
 
     Q2 gives the company and its suppliers, Q3 the plots, Q6 the deliveries, Q0 the data-quality
     issues, Q4 the alerts (no Q4 answer: the alert source did not answer, or nothing was located).
+    A declared plot adds itself, its deliveries and their tonnes to the declared volume; Q10
+    gives the reference cells around it (no Q10 answer: the maps did not answer).
     """
     suppliers_rows = answers.get("Q2") or []
     if not suppliers_rows:
@@ -60,9 +77,22 @@ def evidence_from_answers(answers: Mapping[str, Optional[list[dict]]], extracted
     first = suppliers_rows[0]
     company = {"company_id": company_id, "fiscal_year": first["fiscal_year"], "total_tonnes": first["total_tonnes"]}
     suppliers = [{k: r[k] for k in ("supplier_id", "name", "cooperative_group")} for r in suppliers_rows]
-    return Evidence(company=company, suppliers=suppliers, plots=answers.get("Q3") or [],
-                    deliveries=answers.get("Q6") or [], alerts=answers.get("Q4"),
-                    dq_issues=answers.get("Q0") or [], extracted=extracted)
+    plots, deliveries = list(answers.get("Q3") or []), list(answers.get("Q6") or [])
+    reference: dict[str, Optional[list[dict]]] = {}
+    if declared:
+        if declared["supplier_id"] not in {s["supplier_id"] for s in suppliers}:
+            raise ValueError(f"input.plot: {declared['supplier_id']} is not a supplier of {company_id}")
+        if any(p["plot_id"] == declared["plot_id"] for p in plots):
+            raise ValueError(f"input.plot: {declared['plot_id']} is already in the registry")
+        added = drawn.declared_deliveries(declared, company["fiscal_year"])
+        plots.append(declared)
+        deliveries += added
+        company["total_tonnes"] = round(company["total_tonnes"] + sum(
+            d["tonnes"] for d in added if d["year"] == company["fiscal_year"]), 2)
+        reference[declared["plot_id"]] = answers.get("Q10")
+    return Evidence(company=company, suppliers=suppliers, plots=plots, deliveries=deliveries,
+                    alerts=answers.get("Q4"), dq_issues=answers.get("Q0") or [], extracted=extracted,
+                    reference=reference)
 
 
 def write_cards(ctx: RunContext, evidence: Evidence) -> list[dict]:
@@ -88,9 +118,11 @@ def write_cards(ctx: RunContext, evidence: Evidence) -> list[dict]:
 
 
 def check_still_delivering(ctx: RunContext, card: dict) -> dict:
-    """H5, added by the Planner after the Evaluator's request: Q5 on the card's plot."""
+    """H5, added by the Planner after the Evaluator's request: Q5 on the card's plot (plus a drawn plot's own)."""
     plot_id = next(r.split(":", 1)[1] for r in card["refs"] if r.startswith("plot:"))
     rows = ctx.gate.ask("Investigator", "Q5", plot_id=plot_id).rows
+    rows = rows + [{k: d[k] for k in ("plot_id", "year", "tonnes", "supplier_id")}
+                   for d in ctx.notes.get("declared_deliveries", []) if d["plot_id"] == plot_id]
     return {"plot_id": plot_id, "years": sorted({r["year"] for r in rows if r["tonnes"] > 0}), "rows": rows}
 
 

@@ -8,8 +8,8 @@ that holds blocks the card. Rule fallback = the catalogue, chosen by the card's 
 import json
 
 from app.agents.context import RunContext
-from app.checks import geometry
-from app.rules import CONFIRMED, CUTOFF, FIRST_YEAR_AFTER_CUTOFF
+from app.checks import geometry, landcover
+from app.rules import CONFIRMED, CONTRADICTED, CUTOFF, FIRST_YEAR_AFTER_CUTOFF, map_check
 from app.world.texts import NGO_DOC, RSE_DOC
 
 APPROVE, BLOCK, REVISE = "approve", "block", "revise_plan"
@@ -54,15 +54,17 @@ def verify_quotes(ctx: RunContext, answer: dict, paragraphs: list[dict]) -> dict
 CATALOGUE = {
     "R1": "the alert lies in another plot than the one named",
     "R2": "the supplier named is a namesake, not ours",
-    "R3": "the plot had stopped delivering before the alert",
+    "R3": "the plot had stopped delivering before the alert, or the loss",
     "R4": "the alert is of low confidence",
     "R5": "the alert is dated before the cut-off",
     "R6": "a single source, with no independent issuer",
     "R8": "the plot's cocoa is not part of the volume the claim covers",
+    "R9": "the reference maps, read again, do not show this loss of 2020 forest inside the outline",
 }
 APPLIES = {
     "confirmed_alert_in_delivering_plot": ["R1", "R3", "R4", "R5", "R6", "R8"],
     "sources_in_conflict": ["R2", "R6"],
+    "forest_loss_in_delivering_plot": ["R3", "R6", "R9"],
 }
 PROPOSE = (
     "You are the Evaluator of an audit. You receive the STRUCTURE of one evidence card (its kind and the kinds "
@@ -91,7 +93,7 @@ def evaluate(ctx: RunContext, card: dict, hypotheses: list[dict], delivery: dict
     # R3 is always tried when an alert is tied to a plot; if the plan never read the deliveries, send it back.
     if "R3" in applicable and not any(h["id"] == "H5" for h in hypotheses):
         ctx.step("Evaluator", "propose_refutation", f"{card['id']}: {card['detail']}",
-                 "R3 'the plot had stopped delivering before the alert' is untested by the plan", target="Planner")
+                 f"R3 '{CATALOGUE['R3']}' is untested by the plan", target="Planner")
         return {"card": card["id"], "decision": REVISE, "refutation": "R3",
                 "reason": "R3 needs the plot's deliveries by year", "tried": []}
 
@@ -140,26 +142,57 @@ def _test(ctx: RunContext, card: dict, refutation: str, delivery: dict | None) -
                           detail=f"{alert['alert_id']} confidence {alert['confidence']} ({alert['system']})")
         return _tried(ctx, card, "R5", statement, holds=alert["alert_date"] <= CUTOFF,
                       detail=f"{alert['alert_id']} dated {alert['alert_date']}")
+    if refutation == "R3" and "cells" in refs:
+        measured = landcover.measure(_drawn(ctx, refs["plot"]), _own_cells(ctx, refs["plot"]))
+        lost = sorted(int(y) for y in measured["forest_loss_ha_by_year"] or {} if int(y) > landcover.CUTOFF_YEAR)
+        return _tried(ctx, card, "R3", statement, holds=not lost or not any(y >= lost[0] for y in delivery["years"]),
+                      detail=f"{delivery['plot_id']} delivered in {', '.join(map(str, delivery['years']))}; "
+                             f"2020 forest first lost there in {lost[0] if lost else 'no year'} (own Q10)")
     if refutation == "R3":
         alert = ctx.gate.ask("Evaluator", "Q9", alert_id=refs["alert"]).rows[0]
         year = int(alert["alert_date"][:4])
         return _tried(ctx, card, "R3", statement, holds=not any(y >= year for y in delivery["years"]),
                       detail=f"{delivery['plot_id']} delivered in {', '.join(map(str, delivery['years']))}")
+    if refutation == "R9":
+        plot, cells = _drawn(ctx, refs["plot"]), _own_cells(ctx, refs["plot"])
+        again = map_check(plot, cells, set(delivery["years"]))
+        return _tried(ctx, card, "R9", statement, holds=again is None or again.verdict != CONTRADICTED,
+                      detail=f"own Q10, {len(cells)} cells re-read around {plot['plot_id']}: "
+                             + (again.detail if again else "no loss after 2020 inside the outline"))
     if refutation == "R1":
         return _other_plot(ctx, card, refs)
     if refutation == "R2":
         return _namesakes(ctx, card, refs)
     if refutation == "R6":
-        independent = "alert" in refs or card["code"] == "sources_in_conflict"
+        independent = "alert" in refs or "cells" in refs or card["code"] == "sources_in_conflict"
         return _tried(ctx, card, "R6", statement, holds=not independent,
                       detail="the alert comes from a public satellite system, not from the company"
-                      if "alert" in refs else "the account comes from an NGO, not from the company")
+                      if "alert" in refs else "the maps are public satellite products (EU JRC, Hansen/UMD), "
+                      "not the company's" if "cells" in refs else "the account comes from an NGO, not from the company")
     if refutation == "R8":
         rows = ctx.gate.ask("Evaluator", "Q6", company_id=ctx.company_id, year_from=2021, year_to=2025).rows
         tonnes = sum(r["tonnes"] for r in rows if r["plot_id"] == refs["plot"])
         return _tried(ctx, card, "R8", statement, holds=tonnes <= 0,
                       detail=f"{refs['plot']} supplied {tonnes:.2f} t of the company's 2021-2025 volume")
     raise ValueError(f"no test for {refutation}")
+
+
+def _drawn(ctx: RunContext, plot_id: str) -> dict:
+    """The outline the analyst drew: a declaration, so there is no registry row to re-read."""
+    declared = ctx.notes.get("declared_plot")
+    if not declared or declared["plot_id"] != plot_id:
+        raise ValueError(f"{plot_id} was not drawn in this run")
+    return declared
+
+
+def _own_cells(ctx: RunContext, plot_id: str) -> list[dict]:
+    """The Evaluator's own Q10 around the drawn outline, asked once per plot."""
+    cache = ctx.notes.setdefault("evaluator_cells", {})
+    if plot_id not in cache:
+        lat_min, lat_max, lon_min, lon_max = landcover.plot_box(_drawn(ctx, plot_id))
+        cache[plot_id] = ctx.gate.ask("Evaluator", "Q10", lat_min=lat_min, lat_max=lat_max,
+                                      lon_min=lon_min, lon_max=lon_max).rows
+    return cache[plot_id]
 
 
 def _other_plot(ctx: RunContext, card: dict, refs: dict) -> dict:

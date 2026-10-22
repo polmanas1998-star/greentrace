@@ -9,3 +9,8 @@ __pycache__
 logs/*.jsonl
 data/build
 tests
+meterless/node_modules
+meterless/reference/node_modules
+meterless/.world
+design
+logs

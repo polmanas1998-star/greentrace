@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>GreenTrace</title>
+<link rel="icon" href="/static/mark.svg" type="image/svg+xml">
+<link rel="preload" href="/static/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/app.css">
+<script src="/static/app.js" defer></script>
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="bar">
+  <div class="bar-in">
+    <a class="brand" href="#/">
+      <img src="/static/mark.svg" width="28" height="28" alt="">
+      <span>GreenTrace</span>
+    </a>
+    <nav class="tabs" aria-label="Main">
+      <a id="tab-check" href="#/">Check a claim</a>
+      <a id="tab-files" href="#/files">Evidence files</a>
+      <a id="tab-bench" href="#/bench">Reliability tests</a>
+    </nav>
+    <div class="bar-end">
+      <span class="mode" id="mode-badge" hidden></span>
+      <span>Track · The Agent That Can Explain Why</span>
+    </div>
+  </div>
+</header>
+
+<main id="main" tabindex="-1">
+
+  <!-- Check a claim (mockup 2_accueil) -->
+  <div class="view home" id="view-home" hidden>
+    <section class="home-main" aria-labelledby="home-title">
+      <div class="stack-16">
+        <span class="eyebrow eyebrow-signal">EU Deforestation Regulation · from 30 December 2026</span>
+        <h1 id="home-title" class="display">Check a deforestation-free claim.</h1>
+        <p class="lead lead-narrow">Paste what your supplier promises. GreenTrace investigates their plots and
+          shows the one change that would flip the verdict.</p>
+      </div>
+
+      <button class="demo" type="button" id="run-demo">
+        Run the demo case
+        <span id="demo-sub">Cocoa importer · synthetic supply chain</span>
+      </button>
+
+      <form class="panel claim-form" id="claim-form">
+        <div class="stack-8">
+          <label class="label" for="claim">Or paste your supplier's claim</label>
+          <textarea id="claim" name="claim" rows="3" maxlength="1000" required>100% of our cocoa comes from deforestation-free farms since 2021.</textarea>
+        </div>
+        <div class="plots-row" id="plot-slot">
+          <span class="label">Plots</span>
+          <button class="btn btn-dashed" type="button" id="plot-upload" disabled>Upload GeoJSON or CSV <span class="soon">coming</span></button>
+          <button class="btn" type="button" id="plot-draw" disabled>Draw on the map <span class="soon">coming</span></button>
+          <span class="hint" id="plot-note">Optional</span>
+        </div>
+        <div class="claim-end">
+          <div class="examples" id="examples" role="group" aria-label="Examples, run on the sample world"></div>
+          <button class="btn btn-go" type="submit">Check this claim</button>
+        </div>
+        <p class="error" id="claim-error" role="alert" hidden></p>
+      </form>
+    </section>
+
+    <section class="panel map-card" aria-labelledby="map-title">
+      <div class="map-head">
+        <span class="map-title" id="map-title"></span>
+        <span class="mono map-coords" id="map-coords"></span>
+      </div>
+      <div class="map" id="map">
+        <div class="map-switch" role="group" aria-label="Plot shown" id="map-switch"></div>
+      </div>
+      <dl class="map-numbers" id="map-numbers"></dl>
+      <div class="map-foot" id="map-foot"></div>
+    </section>
+  </div>
+
+  <!-- Live trace (mockup 3_enquete_en_direct) -->
+  <div class="view" id="view-live" hidden>
+    <div class="run-bar">
+      <div class="run-claim">
+        <h1 class="run-title" id="live-title"></h1>
+        <span class="sub" id="live-sub"></span>
+      </div>
+      <div class="run-bar-end">
+        <nav class="seg" aria-label="Run views">
+          <a class="seg-live" href="#">Live trace</a>
+          <a class="seg-file" href="#">Evidence file</a>
+        </nav>
+        <span class="pill" id="live-status" role="status"><span class="pill-dot"></span><span id="live-status-text"></span></span>
+      </div>
+    </div>
+    <p class="lead live-lead" id="live-lead"></p>
+
+    <div class="live-grid">
+      <aside class="live-side" aria-label="Run so far">
+        <div class="panel card result-card" id="live-result" hidden>
+          <div class="result-head"><span class="eyebrow">Verdict</span><span id="live-verdict"></span></div>
+          <a class="btn btn-go" id="live-open-file" href="#">Open the evidence file</a>
+        </div>
+        <p class="error" id="live-error" role="alert" hidden></p>
+        <span class="eyebrow" id="parts-live-title">The claim, part by part</span>
+        <div class="part-cards" id="live-parts"></div>
+        <dl class="stats" id="live-stats"></dl>
+      </aside>
+
+      <section class="panel trace" aria-labelledby="trace-title">
+        <div class="trace-head">
+          <h2 id="trace-title" class="h-card">Trace</h2>
+          <div class="filters" role="group" aria-label="Filter the trace">
+            <button type="button" data-filter="all" aria-pressed="true">All agents</button>
+            <button type="button" data-filter="evaluator" aria-pressed="false">Evaluator</button>
+            <button type="button" data-filter="sponsor" aria-pressed="false">Sponsor calls</button>
+          </div>
+        </div>
+        <ol class="trace-list" id="trace" aria-live="polite" aria-relevant="additions"></ol>
+        <p class="trace-foot" id="trace-foot"></p>
+      </section>
+    </div>
+  </div>
+
+  <!-- Evidence file (mockup 4_dossier_de_preuves) -->
+  <div class="view" id="view-file" hidden>
+    <div class="run-bar">
+      <div class="run-claim">
+        <span class="run-title" id="file-title"></span>
+        <span class="sub" id="file-sub"></span>
+      </div>
+      <div class="run-bar-end">
+        <nav class="seg" aria-label="Run views">
+          <a class="seg-live" href="#">Live trace</a>
+          <a class="seg-file" href="#">Evidence file</a>
+        </nav>
+      </div>
+    </div>
+    <div class="banner" id="file-banner" role="status" hidden></div>
+
+    <section class="verdict" aria-labelledby="verdict-word">
+      <div class="verdict-main">
+        <span class="verdict-label" id="verdict-label"></span>
+        <h1 class="verdict-word" id="verdict-word"></h1>
+        <p class="lead" id="file-summary"></p>
+        <p class="small muted" id="file-untested"></p>
+        <div class="tags" id="verdict-tags"></div>
+      </div>
+      <div class="verdict-actions">
+        <a class="btn btn-go btn-48" id="download-package" href="#">Download audit package</a>
+        <button class="btn btn-48" type="button" id="open-letters" hidden>Write to the supplier</button>
+        <button class="seal" type="button" id="seal" title="Copy the full verdict_sha256"></button>
+        <span class="small muted" id="seal-note" aria-live="polite"></span>
+      </div>
+    </section>
+
+    <div class="file-grid">
+      <section class="file-main" aria-labelledby="findings-title">
+        <h2 class="eyebrow" id="findings-title">Findings</h2>
+        <div class="findings" id="findings"></div>
+        <div class="part-rows" id="part-rows"></div>
+        <div class="notes" id="notes"></div>
+      </section>
+
+      <aside class="file-side">
+        <section class="flip" id="flip" aria-labelledby="flip-title">
+          <h2 class="eyebrow eyebrow-signal" id="flip-title">What would change its mind</h2>
+          <p class="flip-sentence" id="flip-sentence"></p>
+          <p class="small muted" id="flip-how"></p>
+          <ul class="flip-tried" id="flip-tried"></ul>
+        </section>
+
+        <section class="panel card ask" id="ask" aria-labelledby="ask-title">
+          <h2 class="eyebrow" id="ask-title">Ask for this first</h2>
+          <p class="ask-text" id="ask-text"></p>
+          <p class="small muted" id="ask-note"></p>
+        </section>
+
+        <section class="panel card fool" id="fool" aria-labelledby="fool-title">
+          <h2 class="h-card" id="fool-title">Try to fool it</h2>
+          <p class="small muted">Change one value of this run. Only what depends on it is re-run: the facts built on
+            it go stale, the cards are rebuilt and the Evaluator checks them again.</p>
+          <form class="fool-form" id="fool-form">
+            <label class="label" for="fool-entity">Entity</label>
+            <select id="fool-entity" name="entity"></select>
+            <label class="label" for="fool-field">Field</label>
+            <select id="fool-field" name="field"></select>
+            <label class="label" for="fool-value">Value</label>
+            <span id="fool-value-slot"></span>
+            <button class="btn btn-go" type="submit">Re-run what depends on it</button>
+          </form>
+          <p class="small muted" id="fool-empty" hidden>No alert or plot in the findings: nothing to change.</p>
+          <p class="error" id="fool-error" role="alert" hidden></p>
+          <div class="fool-result" id="fool-result" aria-live="polite" hidden></div>
+        </section>
+
+        <section class="panel card package" aria-labelledby="package-title">
+          <h2 class="h-card" id="package-title">Audit package · one zip</h2>
+          <ul>
+            <li>evidence file, trace, findings table (CSV)</li>
+            <li>plots with no issue found (GeoJSON), supplier letters</li>
+            <li>verdict receipt: <span class="mono">python verify.py receipt.json</span> re-derives it offline</li>
+          </ul>
+        </section>
+      </aside>
+    </div>
+
+    <footer class="file-foot" id="file-foot"></footer>
+
+    <dialog class="letters" id="letters" aria-labelledby="letters-title">
+      <div class="letters-head">
+        <h2 class="h-card" id="letters-title">Write to the supplier</h2>
+        <button class="btn" type="button" id="letters-close">Close</button>
+      </div>
+      <p class="small muted">Drafts written by code from the findings, to be reviewed by your compliance team before sending.</p>
+      <div id="letters-body"></div>
+    </dialog>
+  </div>
+
+  <!-- Evidence files: the runs this server keeps -->
+  <div class="view page" id="view-files" hidden>
+    <div class="stack-16">
+      <span class="eyebrow">Evidence files</span>
+      <h1 class="h-section">Every run this server keeps.</h1>
+      <p class="lead">Runs are kept in memory, the last 50; their trace stays in logs/ on the server.</p>
+    </div>
+    <ol class="file-list" id="file-list"></ol>
+  </div>
+
+  <!-- Reliability tests: the 21 trap cases -->
+  <div class="view page" id="view-bench" hidden>
+    <div class="bench-head">
+      <div class="stack-16">
+        <span class="eyebrow eyebrow-signal">Reliability tests · sample mode, no network</span>
+        <h1 class="h-section" id="bench-title">Trap cases, known answers.</h1>
+        <p class="lead">Each case is the demo world with exactly one change. The expected verdict is written down
+          in advance; the result appears only when the case really runs, with the rules alone and no model.</p>
+      </div>
+      <div class="panel card score">
+        <span class="eyebrow">Score · rules alone</span>
+        <span class="score-value" id="bench-score">not run yet</span>
+        <span class="small muted" id="bench-score-note"></span>
+        <button class="btn btn-go btn-48" type="button" id="bench-run">Run all</button>
+      </div>
+    </div>
+    <div class="panel table-wrap">
+      <table class="bench-table">
+        <caption class="sr-only">Expected and obtained verdict for each trap case</caption>
+        <thead><tr><th scope="col">Case</th><th scope="col">The one change</th><th scope="col">Expected</th>
+          <th scope="col">Got</th><th scope="col">Match</th><th scope="col">Seal</th><th scope="col"><span class="sr-only">Evidence file</span></th></tr></thead>
+        <tbody id="bench-rows"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="view page" id="view-missing" hidden>
+    <h1 class="h-section">This run is not here.</h1>
+    <p class="lead" id="missing-text"></p>
+    <a class="btn btn-go btn-48" href="#/">Check a claim</a>
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="foot-in">
+    <span>Maps: EU JRC GFC2020 v4 · Hansen/UMD/Google/USGS/NASA GFC v1.12 (CC BY 4.0) · Data through Zetaris · Models
+      through Meterless on NVIDIA Nemotron</span>
+    <span>Real maps for the outline shown · company and suppliers are synthetic</span>
+  </div>
+</footer>
+
+</body>
+</html>
