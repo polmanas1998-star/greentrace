@@ -5,7 +5,7 @@
 GET  /            the page (HTML, CSS and JS from app/web/static, no build step, no CDN)
 GET  /ui/setup    what the page needs to draw its controls, read from the code
 POST /runs, GET /runs/{run_id}/events, GET /ui/runs: app/web/live.py
-GET  /api/plot-map: app/web/maps.py        POST /ui/bench/{case}: app/web/bench.py
+GET /api/plot-map, POST /api/plot-measure: app/web/maps.py        POST /ui/bench/{case}: app/web/bench.py
 """
 from pathlib import Path
 from typing import Any
@@ -21,7 +21,8 @@ from app.world.cases import CASES, CASES_BY_NUMBER, DEFAULT_CLAIM
 STATIC = Path(__file__).resolve().parent / "static"
 WHAT_IF_FIELDS = ("alert_date", "confidence", "area_ha")  # the ones "try to fool it" offers
 EXAMPLES = (("A clean supply chain", 1), ("An admission hidden in an annex", 18))  # buttons under the claim
-PLOT_INPUT = False  # the pipeline does not read input.plot yet: upload and drawing are shown as "coming"
+PLOT_INPUT = True  # the pipeline reads input.plot (app/world/drawn.py): drawing and upload are live
+DRAWN_PLOT_WORLD = 1  # a drawn plot joins the clean world (case 1), so its verdict is about that plot only
 
 router = APIRouter(include_in_schema=False)
 
@@ -42,6 +43,7 @@ def setup() -> dict[str, Any]:
         "examples": [{"label": label, "case": number, "change": CASES_BY_NUMBER[number].change}
                      for label, number in EXAMPLES],
         "plot_input": PLOT_INPUT,
+        "drawn_plot_world": DRAWN_PLOT_WORLD,
         "map_plots": [{"id": p.plot_id, "role": p.role} for p in maps.PLOTS.values()],
     }
 

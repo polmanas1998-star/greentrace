@@ -56,13 +56,15 @@
         </div>
         <div class="plots-row" id="plot-slot">
           <span class="label">Plots</span>
-          <button class="btn btn-dashed" type="button" id="plot-upload" disabled>Upload GeoJSON or CSV <span class="soon">coming</span></button>
-          <button class="btn" type="button" id="plot-draw" disabled>Draw on the map <span class="soon">coming</span></button>
+          <button class="btn btn-dashed" type="button" id="plot-upload">Upload GeoJSON</button>
+          <input type="file" id="plot-file" accept=".geojson,.json,application/geo+json,application/json" hidden>
+          <button class="btn" type="button" id="plot-draw" aria-pressed="false" aria-controls="map">Draw on the map</button>
           <span class="hint" id="plot-note">Optional</span>
         </div>
+        <p class="plot-status" id="plot-status" aria-live="polite" hidden></p>
         <div class="claim-end">
           <div class="examples" id="examples" role="group" aria-label="Examples, run on the sample world"></div>
-          <button class="btn btn-go" type="submit">Check this claim</button>
+          <button class="btn btn-go" type="submit" id="claim-submit">Check this claim</button>
         </div>
         <p class="error" id="claim-error" role="alert" hidden></p>
       </form>
@@ -75,6 +77,14 @@
       </div>
       <div class="map" id="map">
         <div class="map-switch" role="group" aria-label="Plot shown" id="map-switch"></div>
+      </div>
+      <div class="map-tools" id="map-tools" hidden>
+        <p class="map-tools-status" id="draw-status" aria-live="polite"></p>
+        <div class="map-tools-actions">
+          <button class="btn" type="button" id="draw-undo">Undo last point</button>
+          <button class="btn" type="button" id="draw-clear">Clear</button>
+          <button class="btn btn-go" type="button" id="draw-check">Check this plot</button>
+        </div>
       </div>
       <dl class="map-numbers" id="map-numbers"></dl>
       <div class="map-foot" id="map-foot"></div>
@@ -161,6 +171,7 @@
       <section class="file-main" aria-labelledby="findings-title">
         <h2 class="eyebrow" id="findings-title">Findings</h2>
         <div class="findings" id="findings"></div>
+        <div class="timelines" id="timelines"></div>
         <div class="part-rows" id="part-rows"></div>
         <div class="notes" id="notes"></div>
       </section>
