@@ -1,0 +1,64 @@
+{
+  "plot_id": "P-041",
+  "scene_id": "S2B_29NQG_20250205_0_L2A",
+  "datetime": "2025-02-05T10:59:39.621000Z",
+  "date": "2025-02-05",
+  "cloud_cover_scene_percent": 17.093948,
+  "frame_bad_pixels_share": 0.0,
+  "frame": {
+    "lat_min": 5.701583,
+    "lat_max": 5.708817,
+    "lon_min": -6.729817,
+    "lon_max": -6.718983,
+    "width_m": 1200.0,
+    "height_m": 800.0
+  },
+  "crs": "EPSG:4326",
+  "pixels": [
+    960,
+    640
+  ],
+  "pixel_deg": [
+    1.1285416666666677e-05,
+    1.1303124999999248e-05
+  ],
+  "asset": "visual",
+  "sources": [
+    "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/29/N/QG/2025/2/S2B_29NQG_20250205_0_L2A/TCI.tif"
+  ],
+  "catalogue": {
+    "stac_api": "https://earth-search.aws.element84.com/v1",
+    "collection": "sentinel-2-l2a",
+    "search": {
+      "collections": [
+        "sentinel-2-l2a"
+      ],
+      "bbox": [
+        -6.730719,
+        5.698869,
+        -6.718081,
+        5.711531
+      ],
+      "datetime": "2025-01-01T00:00:00Z/2026-12-31T23:59:59Z",
+      "query": {
+        "eo:cloud_cover": {
+          "lt": 20
+        }
+      },
+      "sortby": [
+        {
+          "field": "properties.eo:cloud_cover",
+          "direction": "asc"
+        }
+      ],
+      "limit": 100
+    }
+  },
+  "licence": "Contains modified Copernicus Sentinel data 2025",
+  "licence_terms": "Copernicus Sentinel data: free, full and open access (Copernicus data policy, Commission Delegated Regulation (EU) No 1159/2013)",
+  "jpeg_quality": 90,
+  "jpg_bytes": 39858,
+  "jpg_sha256": "cee9a1064b08a1909eca9ecbd78c4ef2cd8485b828542eebe12aeaa48059e658",
+  "made_by": "scripts/fetch_satellite.py",
+  "made_on": "2026-10-22"
+}

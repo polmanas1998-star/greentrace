@@ -16,3 +16,7 @@ Live: start Zetaris, copy `.env.example` to `.env` and fill it, load the data fr
 `python -m scripts.load_zetaris`, then `docker run --rm -p 8000:8000 --env-file .env -e SAMPLE_MODE=false greentrace`
 (in `.env`, write `host.docker.internal` instead of `localhost` in `ZETARIS_REST_URL`; on Linux also add
 `--add-host=host.docker.internal:host-gateway`).
+
+Satellite backgrounds of the home map (`python -m scripts.fetch_satellite`, Sentinel-2 L2A from the public
+Earth Search catalogue): "Contains modified Copernicus Sentinel data [year]", the year of each scene being in
+`app/web/static/maps/<plot>.json`. Copernicus Sentinel data are free and open.
