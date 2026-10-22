@@ -8,3 +8,6 @@ __pycache__/
 *.pyc
 # run outputs
 logs/*.jsonl
+
+# rebuilt by python -m scripts.build_data
+data/build/

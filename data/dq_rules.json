@@ -1,0 +1,13 @@
+{
+  "_comment": "One data-quality rule per entry. `valid_when` is a SQL condition that a GOOD row satisfies; it runs as REGISTER DQ in Zetaris and as WHERE NOT (...) in SQLite.",
+  "rules": [
+    {"name": "has_coordinates", "table": "plots", "key": "plot_id",
+     "valid_when": "lat IS NOT NULL AND lon IS NOT NULL"},
+    {"name": "in_cocoa_belt", "table": "plots", "key": "plot_id",
+     "valid_when": "lat BETWEEN 4.3 AND 10.8 AND lon BETWEEN -8.6 AND -2.5"},
+    {"name": "positive_area", "table": "plots", "key": "plot_id",
+     "valid_when": "area_ha > 0"},
+    {"name": "valid_year", "table": "deliveries", "key": "delivery_id",
+     "valid_when": "year BETWEEN 2015 AND 2026"}
+  ]
+}
