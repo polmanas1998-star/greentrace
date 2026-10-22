@@ -29,7 +29,8 @@ from app.explain.flip import compute_flip
 from app.memory.world_model import Source, entity_id
 from app.memory.world_model import WorldModel
 from app.queries import DataGate, SQLiteEngine, ZetarisEngine
-from app.rules import RULES_VERSION, UNVERIFIABLE, Evidence, decide
+from app.receipt import decision_for, verdict_seal
+from app.rules import RULES_VERSION, Evidence
 from app.world.cases import build_case
 from app.world.store import to_sqlite
 
@@ -51,6 +52,8 @@ class Investigation:
     reviews: dict[str, dict] = field(default_factory=dict)
     deliveries: dict[str, dict] = field(default_factory=dict)
     output: dict = field(default_factory=dict)
+    changes: list[dict] = field(default_factory=list)  # what_if changes, replayed by verify.py
+    log_dir: Optional[Path] = None
 
 
 RUNS: "OrderedDict[str, Investigation]" = OrderedDict()
@@ -94,7 +97,8 @@ def investigate(request: dict, run_id: str, *, log, memory_engine=None, zetaris=
         return _output(run_id, sample, request, ctx, started, too_vague=True)
 
     hypotheses = planner.plan(ctx, parsed["types"])
-    run = Investigation(ctx, request, sample, hypotheses, investigator.gather(ctx, hypotheses, extracted))
+    run = Investigation(ctx, request, sample, hypotheses, investigator.gather(ctx, hypotheses, extracted),
+                        log_dir=log_dir)
     run.cards = investigator.write_cards(ctx, run.evidence)
     _review(run, run.cards)
     run.output = _conclude(run, started)
@@ -110,7 +114,8 @@ def what_if(run_id: str, entity: str, field_name: str, value: Any) -> dict[str, 
     started, ctx = time.perf_counter(), run.ctx
     kind, _, key = entity.partition(":")
     before = run.output.get("verdict")
-    run.evidence = _changed(run.evidence, kind, key, field_name, value)
+    run.evidence = apply_change(run.evidence, kind, key, field_name, value)
+    run.changes.append({"entity": entity, "field": field_name, "value": value})
     ctx.step("Pipeline", "what_if", f"{entity}.{field_name} = {value}", f"verdict before: {before}",
              target="Investigator", status="success")
 
@@ -163,10 +168,8 @@ def _review(run: Investigation, cards: list[dict]) -> None:
 
 def _conclude(run: Investigation, started: float) -> dict[str, Any]:
     ctx = run.ctx
-    decision = decide(run.evidence)
     unreviewed = [c["id"] for c in run.cards if c["id"] not in run.reviews]
-    if unreviewed:  # kit: no clear proof after max_rounds -> UNVERIFIABLE, saying what is missing
-        decision = {**decision, "verdict": UNVERIFIABLE}
+    decision = decision_for(run.evidence, unreviewed)  # kit: no clear proof after max_rounds -> UNVERIFIABLE
     ctx.step("Writer", "apply_verdict_rules", f"{len(run.cards)} card(s), rules {RULES_VERSION}",
              decision["verdict"] + (f"; unreviewed {', '.join(unreviewed)}" if unreviewed else ""),
              status="success")
@@ -194,7 +197,8 @@ EDITABLE = {
 }
 
 
-def _changed(evidence: Evidence, kind: str, key: str, field_name: str, value: Any) -> Evidence:
+def apply_change(evidence: Evidence, kind: str, key: str, field_name: str, value: Any) -> Evidence:
+    """One checked what_if change on a copy of the evidence; verify.py replays it from the receipt."""
     allowed = EDITABLE.get(kind, {}).get(field_name)
     if allowed is None:
         raise ValueError(f"can change {sorted(f'{k}.{f}' for k, fs in EDITABLE.items() for f in fs)}, "
@@ -250,9 +254,7 @@ def _output(run_id, sample, request, ctx, started, *, report=None, decision=None
         out["summary"] = "Too vague or not supported: the promise names nothing that data can check."
     else:
         out.update(report)
-        sealed = {"verdict": decision["verdict"], "parts": decision["parts"],
-                  "findings": [(f["code"], f["refs"]) for f in decision["findings"]]}
-        out["verdict_sha256"] = sha256_of(sealed)
+        out["verdict_sha256"] = verdict_seal(decision)
     out["fingerprints"] = {
         "input_sha256": sha256_of(request),
         "data_sha256": sha256_of(answers),
