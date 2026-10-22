@@ -5,7 +5,10 @@ each one with its OWN query, never trusting the Investigator's rows. A refutatio
 needs data nobody planned to read sends the plan back to the Planner; a refutation
 that holds blocks the card. Rule fallback = the catalogue, chosen by the card's shape.
 """
+import json
+
 from app.agents.context import RunContext
+from app.checks import geometry
 from app.rules import CONFIRMED, CUTOFF, FIRST_YEAR_AFTER_CUTOFF
 from app.world.texts import NGO_DOC, RSE_DOC
 
@@ -47,51 +50,143 @@ def verify_quotes(ctx: RunContext, answer: dict, paragraphs: list[dict]) -> dict
     return kept
 
 
+# The ways a card can be wrong (kit, section 3.1), each tested by code with the Evaluator's own query.
+CATALOGUE = {
+    "R1": "the alert lies in another plot than the one named",
+    "R2": "the supplier named is a namesake, not ours",
+    "R3": "the plot had stopped delivering before the alert",
+    "R4": "the alert is of low confidence",
+    "R5": "the alert is dated before the cut-off",
+    "R6": "a single source, with no independent issuer",
+    "R8": "the plot's cocoa is not part of the volume the claim covers",
+}
+APPLIES = {
+    "confirmed_alert_in_delivering_plot": ["R1", "R3", "R4", "R5", "R6", "R8"],
+    "sources_in_conflict": ["R2", "R6"],
+}
+PROPOSE = (
+    "You are the Evaluator of an audit. You receive the STRUCTURE of one evidence card (its kind and the kinds "
+    "of records it rests on), never the values. Propose the ways this card could be wrong: pick up to 4 ids from "
+    "the catalogue given in the data, most likely first, each with a one-line reason; add at most 2 other doubts "
+    "that the catalogue does not cover, in plain words. Do not judge the card yourself: code will test each id."
+)
+PROPOSE_SCHEMA = {
+    "type": "object", "required": ["refutations", "other_doubts"], "additionalProperties": False,
+    "properties": {
+        "refutations": {"type": "array", "maxItems": 4, "items": {
+            "type": "object", "required": ["id", "why"], "additionalProperties": False,
+            "properties": {"id": {"type": "string", "enum": sorted(CATALOGUE)},
+                           "why": {"type": "string", "maxLength": 200}}}},
+        "other_doubts": {"type": "array", "maxItems": 2, "items": {"type": "string", "maxLength": 200}},
+    },
+}
+
+
 def evaluate(ctx: RunContext, card: dict, hypotheses: list[dict], delivery: dict | None) -> dict:
     """One decision for one card: approve, block (with the refutation that held) or revise_plan."""
-    if card["code"] != "confirmed_alert_in_delivering_plot":
-        if card["code"] == "sources_in_conflict":
-            return _namesakes(ctx, card)
-        return _decide(ctx, card, APPROVE, "no refutation applies to this kind of finding", [])
+    applicable = APPLIES.get(card["code"])
+    if not applicable:
+        return _decide(ctx, card, APPROVE, "a fact read directly from the data: no refutation applies", [])
 
-    alert_id = next(r.split(":", 1)[1] for r in card["refs"] if r.startswith("alert:"))
-    tried = []
-
-    # R3, always tried when an alert is tied to a plot: was the plot still delivering?
-    if not any(h["id"] == "H5" for h in hypotheses):
+    # R3 is always tried when an alert is tied to a plot; if the plan never read the deliveries, send it back.
+    if "R3" in applicable and not any(h["id"] == "H5" for h in hypotheses):
         ctx.step("Evaluator", "propose_refutation", f"{card['id']}: {card['detail']}",
-                 "R3 'the supplier had stopped delivering from this plot' is untested by the plan",
-                 target="Planner")
+                 "R3 'the plot had stopped delivering before the alert' is untested by the plan", target="Planner")
         return {"card": card["id"], "decision": REVISE, "refutation": "R3",
-                "reason": "R3 needs the plot's deliveries by year", "tried": tried}
+                "reason": "R3 needs the plot's deliveries by year", "tried": []}
 
-    alert = ctx.gate.ask("Evaluator", "Q9", alert_id=alert_id).rows[0]
-    year = int(alert["alert_date"][:4])
-    tried.append(_tried(ctx, card, "R3", "supplier stopped delivering",
-                        holds=not any(y >= year for y in delivery["years"]),
-                        detail=f"{delivery['plot_id']} delivered in {', '.join(map(str, delivery['years']))}"))
-    tried.append(_tried(ctx, card, "R4", "low-confidence alert", holds=alert["confidence"] not in CONFIRMED,
-                        detail=f"{alert_id} confidence {alert['confidence']} ({alert['system']})"))
-    tried.append(_tried(ctx, card, "R5", "alert date before the cut-off", holds=alert["alert_date"] <= CUTOFF,
-                        detail=f"{alert_id} dated {alert['alert_date']}"))
-
+    chosen, doubts = _propose(ctx, card, applicable)
+    tried = [_test(ctx, card, refutation, delivery) for refutation in chosen]
     held = [t for t in tried if t["holds"]]
     if held:
-        return _decide(ctx, card, BLOCK, f"{held[0]['id']} holds: {held[0]['detail']}", tried, target="Investigator")
-    return _decide(ctx, card, APPROVE, "R3, R4 and R5 tested by own queries and rejected", tried)
+        return {**_decide(ctx, card, BLOCK, f"{held[0]['id']} holds: {held[0]['detail']}", tried,
+                          target="Investigator"), "doubts": doubts}
+    names = ", ".join(t["id"] for t in tried)
+    return {**_decide(ctx, card, APPROVE, f"{names} tested by own queries and rejected", tried), "doubts": doubts}
 
 
-def _namesakes(ctx: RunContext, card: dict) -> dict:
+def _propose(ctx: RunContext, card: dict, applicable: list[str]) -> tuple[list[str], list[str]]:
+    """Nemotron picks which refutations to try from the card's structure; code keeps only applicable ones."""
+    always = ["R3"] if "R3" in applicable else []
+    if ctx.model is not None:
+        structure = {"kind": card["code"], "claim_part": card["part"],
+                     "rests_on": sorted({ref.split(":", 1)[0] for ref in card["refs"]})}
+        catalogue = {k: CATALOGUE[k] for k in applicable}
+        answer, info = ctx.model.complete_json(
+            "Evaluator", PROPOSE, [("card structure", json.dumps(structure)), ("catalogue", json.dumps(catalogue))],
+            PROPOSE_SCHEMA)
+        if answer is not None:
+            picked = [r["id"] for r in answer["refutations"] if r["id"] in applicable]
+            chosen = always + [r for r in dict.fromkeys(picked) if r not in always]
+            ctx.step("Evaluator", "propose_refutation", f"{card['id']} structure only: {structure['kind']}",
+                     f"{', '.join(chosen)}" + (f"; other doubts: {'; '.join(answer['other_doubts'])}"
+                                                if answer["other_doubts"] else ""),
+                     target="Evaluator", provider=info["provider"], model=info["model"])
+            return chosen, list(answer["other_doubts"])
+    chosen = always + [r for r in applicable if r not in always]
+    ctx.step("Evaluator", "propose_refutation", f"{card['id']} {card['code']}",
+             f"catalogue by card shape: {', '.join(chosen)}", target="Evaluator",
+             status="degraded" if ctx.degraded else "success")
+    return chosen, []
+
+
+def _test(ctx: RunContext, card: dict, refutation: str, delivery: dict | None) -> dict:
+    refs = dict(r.split(":", 1) for r in card["refs"])
+    statement = CATALOGUE[refutation]
+    if refutation in ("R4", "R5"):
+        alert = ctx.gate.ask("Evaluator", "Q9", alert_id=refs["alert"]).rows[0]
+        if refutation == "R4":
+            return _tried(ctx, card, "R4", statement, holds=alert["confidence"] not in CONFIRMED,
+                          detail=f"{alert['alert_id']} confidence {alert['confidence']} ({alert['system']})")
+        return _tried(ctx, card, "R5", statement, holds=alert["alert_date"] <= CUTOFF,
+                      detail=f"{alert['alert_id']} dated {alert['alert_date']}")
+    if refutation == "R3":
+        alert = ctx.gate.ask("Evaluator", "Q9", alert_id=refs["alert"]).rows[0]
+        year = int(alert["alert_date"][:4])
+        return _tried(ctx, card, "R3", statement, holds=not any(y >= year for y in delivery["years"]),
+                      detail=f"{delivery['plot_id']} delivered in {', '.join(map(str, delivery['years']))}")
+    if refutation == "R1":
+        return _other_plot(ctx, card, refs)
+    if refutation == "R2":
+        return _namesakes(ctx, card, refs)
+    if refutation == "R6":
+        independent = "alert" in refs or card["code"] == "sources_in_conflict"
+        return _tried(ctx, card, "R6", statement, holds=not independent,
+                      detail="the alert comes from a public satellite system, not from the company"
+                      if "alert" in refs else "the account comes from an NGO, not from the company")
+    if refutation == "R8":
+        rows = ctx.gate.ask("Evaluator", "Q6", company_id=ctx.company_id, year_from=2021, year_to=2025).rows
+        tonnes = sum(r["tonnes"] for r in rows if r["plot_id"] == refs["plot"])
+        return _tried(ctx, card, "R8", statement, holds=tonnes <= 0,
+                      detail=f"{refs['plot']} supplied {tonnes:.2f} t of the company's 2021-2025 volume")
+    raise ValueError(f"no test for {refutation}")
+
+
+def _other_plot(ctx: RunContext, card: dict, refs: dict) -> dict:
+    """R1: re-read the plot and the alert with own queries and redo the containment test."""
+    supplier = next(r["supplier_id"] for r in ctx.gate.ask("Evaluator", "Q5", plot_id=refs["plot"]).rows)
+    plot = next(p for p in ctx.gate.ask("Evaluator", "Q3", supplier_ids=[supplier]).rows
+                if p["plot_id"] == refs["plot"])
+    alert = ctx.gate.ask("Evaluator", "Q9", alert_id=refs["alert"]).rows[0]
+    located = next(a for a in ctx.gate.ask("Evaluator", "Q4", lat_min=plot["lat"] - 0.01, lat_max=plot["lat"] + 0.01,
+                                           lon_min=plot["lon"] - 0.01, lon_max=plot["lon"] + 0.01).rows
+                   if a["alert_id"] == alert["alert_id"])
+    inside = geometry.alert_inside(plot, located)
+    return _tried(ctx, card, "R1", CATALOGUE["R1"], holds=not inside,
+                  detail=f"{alert['alert_id']} re-read {'inside' if inside else 'outside'} {plot['plot_id']} "
+                         f"({plot['area_ha']} ha polygon)")
+
+
+def _namesakes(ctx: RunContext, card: dict, refs: dict) -> dict:
     """R2: is the supplier the NGO names really ours, or a namesake?"""
-    supplier_id = next(r.split(":", 1)[1] for r in card["refs"] if r.startswith("supplier:"))
+    supplier_id = refs["supplier"]
     name = next(r for r in ctx.gate.ask("Evaluator", "Q2", company_id=ctx.company_id).rows
                 if r["supplier_id"] == supplier_id)["name"]
     namesakes = ctx.gate.ask("Evaluator", "Q8", name=name).rows
-    tried = [_tried(ctx, card, "R2", "a namesake cooperative", holds=False,
-                    detail=f"{len(namesakes)} supplier(s) named {name}: "
-                           f"{', '.join(r['supplier_id'] + ' ' + r['cooperative_group'] for r in namesakes)}")]
-    return _decide(ctx, card, APPROVE, "the conflict stands: the claim cannot be settled without the supplier",
-                   tried)
+    return _tried(ctx, card, "R2", CATALOGUE["R2"], holds=False,
+                  detail=f"{len(namesakes)} supplier(s) named {name}: "
+                         f"{', '.join(r['supplier_id'] + ' ' + r['cooperative_group'] for r in namesakes)}; "
+                         f"the rules already kept only the one the NGO's union points to")
 
 
 def _tried(ctx: RunContext, card: dict, refutation: str, statement: str, *, holds: bool, detail: str) -> dict:

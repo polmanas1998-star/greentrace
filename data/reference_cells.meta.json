@@ -1,0 +1,68 @@
+{
+  "file": "reference_cells.csv.gz",
+  "bytes": 1941077,
+  "sha256": "ce6c8ba6d8adcb7bbae6efce89a45e200341d5f97fda25207534545ff0939735",
+  "rows": 716800,
+  "columns": {
+    "lat": "cell centre latitude, degrees, 6 decimals",
+    "lon": "cell centre longitude, degrees, 6 decimals",
+    "forest_fraction_2020": "share of the cell mapped as forest in 2020 by JRC GFC2020 v4, 3 decimals",
+    "loss_year": "year of tree cover loss from Hansen v1.12 (2001-2024), 0 for no loss"
+  },
+  "grid": {
+    "crs": "EPSG:4326",
+    "cell_deg": 0.00025,
+    "origin_lat_lon": [
+      10.0,
+      -10.0
+    ],
+    "aligned_on": "Hansen tile 10N_010W"
+  },
+  "extent": {
+    "lat_min": 5.64,
+    "lat_max": 5.8,
+    "lon_min": -6.78,
+    "lon_max": -6.5
+  },
+  "contains": {
+    "Soubre town": [
+      5.785,
+      -6.594
+    ],
+    "demo plot P-041 and 2.5 km around it": [
+      5.7052,
+      -6.7244
+    ],
+    "video window, 2.4 x 1.4 km": [
+      5.7247,
+      -6.5395
+    ],
+    "dam lake (flooding, not deforestation)": [
+      5.70533,
+      -6.55601
+    ]
+  },
+  "sources": [
+    {
+      "name": "Global Forest Cover 2020 (GFC2020), version 4, European Commission Joint Research Centre",
+      "url": "https://ies-ows.jrc.ec.europa.eu/iforce/gfc2020/download.py?version=v4&type=tile&lat=N10&lon=W10",
+      "file": "JRC_GFC2020_V4_N10_W10.tif",
+      "values": "1 forest in 2020, 0 not forest",
+      "licence": "CC BY 4.0 (to confirm on the JRC dataset page: not reachable from the build environment)",
+      "tile_sha256": "33547f277e30d957c58dae4c8ed1f81915eeb6feeaaed9fdccb4d7ece6bd53df"
+    },
+    {
+      "name": "Hansen/UMD/Google/USGS/NASA Global Forest Change 2000-2024, v1.12, lossyear",
+      "url": "https://storage.googleapis.com/earthenginepartners-hansen/GFC-2024-v1.12/Hansen_GFC-2024-v1.12_lossyear_10N_010W.tif",
+      "file": "Hansen_GFC-2024-v1.12_lossyear_10N_010W.tif",
+      "values": "0 no loss, 1-24 loss detected primarily in 2001-2024",
+      "licence": "CC BY 4.0, Creative Commons Attribution 4.0 International License",
+      "credit": "Source: Hansen/UMD/Google/USGS/NASA",
+      "citation": "Hansen, M. C., P. V. Potapov, R. Moore, M. Hancher, S. A. Turubanova, A. Tyukavina, D. Thau, S. V. Stehman, S. J. Goetz, T. R. Loveland, A. Kommareddy, A. Egorov, L. Chini, C. O. Justice, and J. R. G. Townshend. 2013. High-Resolution Global Maps of 21st-Century Forest Cover Change. Science 342 (15 November): 850-53. Data available on-line from: https://glad.earthengine.app/view/global-forest-change.",
+      "licence_checked_at": "https://storage.googleapis.com/earthenginepartners-hansen/GFC-2024-v1.12/download.html",
+      "tile_sha256": "2aebf9060cf8471c33d44874311ef2c81e64074bbd6495ac3565273ae7265a0c"
+    }
+  ],
+  "built_by": "scripts/fetch_reference_maps.py",
+  "built_on": "2026-10-22"
+}
