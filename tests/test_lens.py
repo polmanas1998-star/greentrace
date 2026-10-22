@@ -64,6 +64,21 @@ def with_before(tmp_path, plot_id="P-042"):
     return lens.scene_for(plot_id, directory=tmp_path), composite
 
 
+def with_cells(tmp_path, plot_id="P-042"):
+    """with_before, plus the nine cell pairs (test bytes, one distinct JPEG-looking file per cell)."""
+    scene, composite = with_before(tmp_path, plot_id)
+    pairs = {}
+    for cell in lens.CELLS:
+        pairs[cell] = b"\xff\xd8\xff\xe0 pair " + cell.encode()
+        (tmp_path / f"{plot_id}_lens_{cell}.jpg").write_bytes(pairs[cell])
+    (tmp_path / f"{plot_id}_lens_cells.json").write_text(json.dumps({"cells": list(lens.CELLS)}), encoding="utf-8")
+    return lens.scene_for(plot_id, directory=tmp_path), composite, pairs
+
+
+def one(label, confidence=0.7):
+    return json.dumps({"label": label, "confidence": confidence})
+
+
 # ---- the code's judgement, cell by cell ----------------------------------------------------------
 
 @pytest.mark.parametrize("label, lost, status", [
@@ -162,7 +177,7 @@ def test_sample_mode_calls_no_model_and_says_so(tmp_path):
     gate = ModelGate("lens-test", env={**MODEL_ENV, "SAMPLE_MODE": "true"}, client_factory=no_client, log=log)
     out = lens.look(scene, "lens-test", gate=gate, log=log)
     assert out["ai"] is False and out["message"] == lens.NEEDS_MODEL
-    assert [line["action"] for line in lines] == ["fallback_rules", "check_vision_claim"]
+    assert [line["action"] for line in lines] == ["check_vision_claim"]  # no gate call at all, said in one line
 
 
 def test_no_scene_outside_the_frames():
@@ -257,3 +272,76 @@ def test_one_vision_call_at_a_time_and_a_missing_answer_is_asked_again(monkeypat
     assert most[0] == 1  # never two calls to the provider at once
     finish(client.post("/api/lens", json={"plot": "P-042"}).json()["key"])
     assert calls.count("P-042") == 2  # no answer is not cached: asking again asks again
+
+
+# ---- one question per cell, the grid as fallback ---------------------------------------------------
+
+def test_one_question_per_cell_with_its_own_pair_one_at_a_time(tmp_path):
+    scene, _, pairs = with_cells(tmp_path)
+    measured = lens.maps_by_cell(scene.frame)
+    labels = ["forest_lost" if measured[c]["lost"] else "forest_kept" for c in lens.CELLS]
+    labels[8] = "cannot_see"
+    fake, pauses = FakeVision(*[one(label) for label in labels]), []
+    lines, log = traced()
+    out = lens.look(scene, "lens-test", gate=gate_with(fake, log), log=log, sleep=pauses.append)
+
+    assert len(fake.calls) == 9 and pauses == [lens.CELL_PAUSE_S] * 8  # nine questions, a pause between two
+    import base64
+    for cell, request in zip(lens.CELLS, fake.calls):
+        user = request["messages"][1]["content"]
+        (image,) = [part["image_url"]["url"] for part in user if part["type"] == "image_url"]
+        assert base64.b64decode(image.split(",", 1)[1]) == pairs[cell]  # this cell's pair, nothing else
+        system = request["messages"][0]["content"]
+        assert f"cell, {cell}," in system and "2020-01-15" in system and "rough, irregular" in system
+        assert request["timeout"] == lens.TIMEOUT_S
+    assert out["method"] == "cells" and out["fallback"] is None
+    assert out["score"] == {"right": 8, "seen": 8, "missed": 0, "wrong": 0, "of": 9}
+    checks = [line for line in lines if line["action"] == "check_vision_claim"]
+    assert len(checks) == 9 and all("(cells method)" in line["input_summary"] for line in checks)
+
+
+def test_a_cell_without_an_answer_falls_back_to_the_grid_and_says_so(tmp_path):
+    scene, composite, _ = with_cells(tmp_path)
+    cells_fake = FakeVision(one("forest_kept"), "not json", "still not json")  # A1 answers, B1 never does
+    grid_fake = FakeVision(answer(["forest_kept"] * 9))
+    log = traced()[1]
+    gates = iter([gate_with(cells_fake, log), gate_with(grid_fake, log)])
+    out = lens.look(scene, "lens-test", gate_factory=lambda: next(gates), log=log, sleep=lambda s: None)
+    assert out["ai"] and out["method"] == "grid" and out["fallback"].startswith("cell B1:")
+    import base64
+    (request,) = grid_fake.calls
+    image = [p for p in request["messages"][1]["content"] if p["type"] == "image_url"][0]["image_url"]["url"]
+    assert base64.b64decode(image.split(",", 1)[1]) == composite  # the one-image grid, on a fresh gate
+
+
+def test_the_grid_method_can_be_asked_alone(tmp_path):
+    scene, composite, _ = with_cells(tmp_path)
+    fake = FakeVision(answer(["no_forest_in_2020"] * 9))
+    out = lens.look(scene, "lens-test", gate=gate_with(fake, traced()[1]), log=traced()[1], method="grid")
+    assert out["method"] == "grid" and len(fake.calls) == 1
+
+
+# ---- scripts/lens_probe.py: the tool for the real test --------------------------------------------
+
+def test_the_probe_refuses_sample_mode(monkeypatch, capsys):
+    from scripts import lens_probe
+
+    monkeypatch.setenv("SAMPLE_MODE", "true")
+    assert lens_probe.main(["--plot", "P-042"]) == 2
+    assert "SAMPLE_MODE is true" in capsys.readouterr().out
+
+
+def test_the_probe_prints_the_ai_grid_next_to_the_code(tmp_path):
+    from scripts import lens_probe
+
+    scene, _, _ = with_cells(tmp_path)
+    measured = lens.maps_by_cell(scene.frame)
+    labels = ["forest_kept"] * 8 + ["cannot_see"]
+    fake = FakeVision(*[one(label) for label in labels])
+    result = lens.look(scene, "probe-test", gate=gate_with(fake, traced()[1]), log=traced()[1], sleep=lambda s: None)
+    text = lens_probe.report(result, 12.3)
+    assert "P-042 · cells method · nvidia" in text and "12.3 s" in text
+    assert "C3 --" in text  # cannot see, counted neither way
+    lost = [c for c in lens.CELLS[:8] if measured[c]["lost"]]
+    assert text.count("MISSED BY AI") == len(lost)
+    assert f"AI right {8 - len(lost)} / seen 8 · missed {len(lost)} · wrong 0" in text

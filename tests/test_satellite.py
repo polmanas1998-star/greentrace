@@ -266,3 +266,36 @@ def test_a_half_of_the_wrong_size_is_refused():
 def test_the_lens_image_needs_both_scenes_and_says_which_command_to_run(tmp_path):
     with pytest.raises(sat.SatelliteError, match="--before"):
         sat.lens_image("P-042", out_dir=tmp_path)
+
+
+def test_a_cell_pair_is_the_cell_at_both_dates_under_its_names():
+    np = pytest.importorskip("numpy")
+    width, height = sat.CELL_HALF_PX
+    before = np.full((3, height, width), 30, dtype="uint8")
+    after = np.full((3, height, width), 220, dtype="uint8")
+    pair = sat.cell_pair(before, after, "B2", "2020", "2026")
+    assert pair.shape == (3, height + sat.CELL_STRIP_PX, 2 * width + sat.LENS_GAP_PX) and pair.shape[2] <= 1024
+    assert (pair[:, sat.CELL_STRIP_PX:, :width] == 30).all() and (pair[:, sat.CELL_STRIP_PX:, -width:] == 220).all()
+    left = sat.label_box("B2 2020")
+    top = (sat.CELL_STRIP_PX - left.shape[1]) // 2
+    assert (pair[:, top:top + left.shape[1], :left.shape[2]] == left).all()  # "B2 2020" over the left
+    right = sat.label_box("B2 2026")
+    x = width + sat.LENS_GAP_PX
+    assert (pair[:, top:top + right.shape[1], x:x + right.shape[2]] == right).all()  # "B2 2026" over the right
+
+
+def test_a_cell_is_cropped_from_its_ninth_and_only_enlarged(tmp_path):
+    np = pytest.importorskip("numpy")
+    rasterio = pytest.importorskip("rasterio")
+    image = np.zeros((3, 640, 960), dtype="uint8")
+    for r in range(3):
+        for c in range(3):
+            image[:, r * 213 + 20:(r + 1) * 213 - 20, c * 320 + 20:(c + 1) * 320 - 20] = 10 + 30 * (3 * r + c)
+    path = tmp_path / "frame.jpg"
+    with rasterio.open(path, "w", driver="JPEG", width=960, height=640, count=3, dtype="uint8", QUALITY="100") as out:
+        out.write(image)
+    for index, cell in enumerate(sat.CELL_NAMES):
+        crop = sat.read_cell(path, cell)
+        assert crop.shape == (3, *reversed(sat.CELL_HALF_PX))
+        centre = crop[:, crop.shape[1] // 2, crop.shape[2] // 2].astype(int)
+        assert abs(centre.mean() - (10 + 30 * index)) <= 3  # the middle of A1 comes from A1, of C3 from C3

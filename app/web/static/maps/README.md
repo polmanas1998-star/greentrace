@@ -21,3 +21,9 @@ Copernicus Sentinel data" (the page prints it when an image is shown).
 `<plot>_lens.jpg` and `.json`: before | after side by side, 1024 x 336 px, the same 3 x 3 grid on
 each half with A1-C3 small in the corners. That one image is what Nemotron Vision sees (app/lens).
 Without it the Lens does not ask the model ("lens needs the 2020 scene") and shows the code's grid.
+
+The same command also cuts nine pairs, one per cell: `<plot>_lens_A1.jpg` to `_C3.jpg` and
+`<plot>_lens_cells.json`, the cell at both dates enlarged by bicubic resampling to 384 x 256 px
+(nothing else done to the pixels), under a strip reading "A1 2020 | A1 2026". The Lens asks one
+question per pair first, and falls back to `<plot>_lens.jpg` if a cell gets no answer.
+`python -m scripts.fetch_satellite --lens` rebuilds all of them offline from the two JPEGs.

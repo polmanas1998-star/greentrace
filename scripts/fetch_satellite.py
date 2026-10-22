@@ -4,7 +4,7 @@
     python -m scripts.fetch_satellite                 # both plots, the recent scene behind the map
     python -m scripts.fetch_satellite --plot P-042
     python -m scripts.fetch_satellite --before        # also the 2020 scene, then the Satellite Lens image
-    python -m scripts.fetch_satellite --lens          # only rebuild the Lens image from the two JPEGs
+    python -m scripts.fetch_satellite --lens          # only rebuild the Lens images from the two JPEGs (offline)
 
 For each plot it asks the public STAC catalogue Earth Search for Sentinel-2 L2A scenes of
 2025-2026 over a 1.4 x 1.4 km box around the plot, with less than 20 % cloud over the scene,
@@ -28,6 +28,13 @@ Nemotron Vision (app/lens): before | after side by side, at most 1024 px wide, t
 grid on each half with A1-C3 written small in the corner of each cell, as <plot>_lens.jpg and
 .json (both scenes, the layout). One image of two dates: on the recent scene alone a clearing
 of 2021 has grown back and there is nothing left to see (first real test, 22/10).
+
+It also cuts nine pairs, one per grid cell (<plot>_lens_A1.jpg to _C3.jpg and
+<plot>_lens_cells.json): the cell cropped from each date's frame JPEG and enlarged by bicubic
+resampling to 384 x 256 px, nothing else done to the pixels, before | after, under a strip that
+reads "A1 2020 | A1 2026". On the whole grid at 512 px per date, Nemotron answered "forest_kept"
+nine times out of nine (second real test, 22/10): a cell of 400 x 267 m is 40 x 27 Sentinel-2
+pixels, too small to judge at that size. --lens rebuilds all of these offline from the JPEGs.
 """
 import argparse
 import hashlib
@@ -297,8 +304,16 @@ def fetch(plot_id: str, out_dir: Path = MAPS_DIR, season: Optional[dict] = None)
 
 # ---- the Satellite Lens image: before | after, one grid, labels in the corners ---------------------------
 
-# 5 x 7 glyphs, drawn pixel by pixel: the six characters the grid needs, no font file.
+# 5 x 7 glyphs, drawn pixel by pixel: the characters the grid and the years need, no font file.
 GLYPHS = {
+    " ": (".....",) * 7,
+    "0": (".###.", "#...#", "#..##", "#.#.#", "##..#", "#...#", ".###."),
+    "4": ("...#.", "..##.", ".#.#.", "#..#.", "#####", "...#.", "...#."),
+    "5": ("#####", "#....", "####.", "....#", "....#", "#...#", ".###."),
+    "6": ("..##.", ".#...", "#....", "####.", "#...#", "#...#", ".###."),
+    "7": ("#####", "....#", "...#.", "..#..", ".#...", ".#...", ".#..."),
+    "8": (".###.", "#...#", "#...#", ".###.", "#...#", "#...#", ".###."),
+    "9": (".###.", "#...#", "#...#", ".####", "....#", "...#.", ".##.."),
     "A": (".###.", "#...#", "#...#", "#####", "#...#", "#...#", "#...#"),
     "B": ("####.", "#...#", "#...#", "####.", "#...#", "#...#", "####."),
     "C": (".####", "#....", "#....", "#....", "#....", "#....", ".####"),
@@ -403,11 +418,102 @@ def lens_image(plot_id: str, out_dir: Path = MAPS_DIR) -> dict[str, Any]:
     return info
 
 
+# ---- one pair per cell: the cell cropped at both dates, enlarged, side by side ------------------------------
+
+CELL_HALF_PX = (384, 256)  # each date of one cell: 3:2 like the cell, 1.2 x the frame JPEG's own pixels
+CELL_STRIP_PX = 20  # the label strip above the pair: "A1 2020" over the left, "A1 2026" over the right
+CELL_NAMES = tuple(f"{c}{r}" for r in "123" for c in "ABC")
+
+
+def read_cell(path: Path, cell: str) -> Any:
+    """One ninth of a frame JPEG, enlarged to CELL_HALF_PX by bicubic resampling and nothing else."""
+    import warnings
+
+    import rasterio
+    from rasterio.enums import Resampling
+    from rasterio.errors import NotGeoreferencedWarning
+    from rasterio.windows import Window
+
+    width, height = CELL_HALF_PX
+    column, row = "ABC".index(cell[0]), "123".index(cell[1])
+    with warnings.catch_warnings(), rasterio.Env(), rasterio.open(path) as src:
+        warnings.simplefilter("ignore", NotGeoreferencedWarning)
+        window = Window(column * src.width / 3, row * src.height / 3, src.width / 3, src.height / 3)
+        return src.read([1, 2, 3], window=window, out_shape=(3, height, width), resampling=Resampling.cubic)
+
+
+def strip(text: str, width: int) -> Any:
+    """An ink strip CELL_STRIP_PX high with the text at its left."""
+    import numpy as np
+
+    out = np.zeros((3, CELL_STRIP_PX, width), dtype="uint8")
+    out[:] = np.array(INK, dtype="uint8")[:, None, None]
+    label = label_box(text)
+    top = (CELL_STRIP_PX - label.shape[1]) // 2
+    out[:, top:top + label.shape[1], :label.shape[2]] = label
+    return out
+
+
+def cell_pair(before: Any, after: Any, cell: str, before_year: str, after_year: str) -> Any:
+    """One cell at both dates: the strip of names, then before | after, (3, 276, 784) uint8."""
+    import numpy as np
+
+    width, height = CELL_HALF_PX
+    for name, half in (("before", before), ("after", after)):
+        if half.shape != (3, height, width):
+            raise SatelliteError(f"the {name} crop of {cell} is {half.shape}, expected (3, {height}, {width})")
+    gap = np.zeros((3, height + CELL_STRIP_PX, LENS_GAP_PX), dtype="uint8")
+    gap[:] = np.array(INK, dtype="uint8")[:, None, None]
+    left = np.concatenate([strip(f"{cell} {before_year}", width), before], axis=1)
+    right = np.concatenate([strip(f"{cell} {after_year}", width), after], axis=1)
+    return np.concatenate([left, gap, right], axis=2)
+
+
+def lens_cells(plot_id: str, out_dir: Path = MAPS_DIR) -> dict[str, Any]:
+    """<plot>_lens_A1.jpg ... _C3.jpg and <plot>_lens_cells.json, from the two frame JPEGs, offline."""
+    scenes = {}
+    for role, suffix in (("before", BEFORE["suffix"]), ("after", AFTER["suffix"])):
+        image, meta = out_dir / f"{plot_id}{suffix}.jpg", out_dir / f"{plot_id}{suffix}.json"
+        if not (image.is_file() and meta.is_file()):
+            raise SatelliteError(f"{image.name} is missing: run python -m scripts.fetch_satellite"
+                                 f"{' --before' if role == 'before' else ''} --plot {plot_id}")
+        scenes[role] = (image, json.loads(meta.read_text(encoding="utf-8")))
+    years = {role: scenes[role][1]["date"][:4] for role in scenes}
+    files = {}
+    for cell in CELL_NAMES:
+        pair = cell_pair(read_cell(scenes["before"][0], cell), read_cell(scenes["after"][0], cell),
+                         cell, years["before"], years["after"])
+        data, quality = jpeg(pair)
+        name = f"{plot_id}_lens_{cell}.jpg"
+        (out_dir / name).write_bytes(data)
+        files[cell] = {"file": name, "jpg_bytes": len(data), "jpg_sha256": hashlib.sha256(data).hexdigest(),
+                       "jpeg_quality": quality}
+    width, height = CELL_HALF_PX
+    info = {
+        "plot_id": plot_id,
+        "before": {k: scenes["before"][1].get(k) for k in ("scene_id", "date", "licence", "jpg_sha256")},
+        "after": {k: scenes["after"][1].get(k) for k in ("scene_id", "date", "licence", "jpg_sha256")},
+        "frame": scenes["after"][1]["frame"],
+        "layout": {"pixels": [2 * width + LENS_GAP_PX, height + CELL_STRIP_PX], "half": [width, height],
+                   "strip": CELL_STRIP_PX, "left": "before", "right": "after",
+                   "crop": "one ninth of each date's frame JPEG (columns A-C west to east, rows 1-3 north to south)",
+                   "resampling": "bicubic, enlargement only: no sharpening, no contrast or colour change"},
+        "cells": files,
+        "made_by": "scripts/fetch_satellite.py",
+        "made_on": datetime.now(timezone.utc).date().isoformat(),
+    }
+    (out_dir / f"{plot_id}_lens_cells.json").write_text(json.dumps(info, indent=2) + "\n", encoding="utf-8",
+                                                        newline="\n")
+    print(f"{plot_id}: 9 cell pairs {info['layout']['pixels'][0]} x {info['layout']['pixels'][1]} px, "
+          f"{info['before']['date']} | {info['after']['date']}")
+    return info
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--plot", choices=sorted(PLOTS), action="append", help="one plot (default: both)")
     parser.add_argument("--before", action="store_true", help="also fetch the 2020 scene, then build the Lens image")
-    parser.add_argument("--lens", action="store_true", help="only build the Lens image from the two JPEGs")
+    parser.add_argument("--lens", action="store_true", help="only build the Lens images from the two JPEGs")
     args = parser.parse_args(argv)
     for plot_id in args.plot or list(PLOTS):
         try:
@@ -417,6 +523,7 @@ def main(argv: list[str]) -> int:
                 fetch(plot_id)
             if args.before or args.lens:
                 lens_image(plot_id)
+                lens_cells(plot_id)
         except SatelliteError as error:
             print(f"{plot_id}: error: {error}", file=sys.stderr)
             return 2
