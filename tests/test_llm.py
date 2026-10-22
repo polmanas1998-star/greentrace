@@ -355,3 +355,33 @@ def test_no_runtime_listening_reads_offline(traced):
     models = ModelGate("llm-test", env=env(METERLESS_BASE_URL=f"127.0.0.1:{port}", MODEL_API_KEY=None), log=traced)
     assert models.chain == ["rules"]
     assert "offline (APIConnectionError)" in traced.lines()[0]["output_summary"]
+
+
+# ---- rate limits: wait, do not give up (added 22/10 after the 21-case bench) -----------------
+
+def throttled(retry_after="2"):
+    import httpx
+    response = httpx.Response(429, request=httpx.Request("POST", "http://nvidia.test"),
+                              headers={"retry-after": retry_after})
+    return openai.RateLimitError("rate limited", response=response, body=None)
+
+
+def test_a_rate_limit_waits_and_still_gets_the_answer(traced):
+    waits = []
+    fakes = {"meterless": FakeClient(throttled("3"), GOOD), "nvidia": FakeClient()}
+    models = ModelGate("llm-test", env=env(), client_factory=lambda p: fakes[p.name], log=traced,
+                       sleep=waits.append)
+    value, info = models.complete_json("Evaluator", "Refute it.", BLOCKS, SCHEMA)
+    assert value == ANSWER and info["provider"] == "meterless"
+    assert waits == [3.0]
+    assert ("rate_limited", "meterless", "retrying") in actions(traced)
+
+
+def test_endless_rate_limits_hand_over_after_the_patience_budget(traced):
+    waits = []
+    fakes = {"meterless": FakeClient(*[throttled("15")] * 10), "nvidia": FakeClient(GOOD)}
+    models = ModelGate("llm-test", env=env(), client_factory=lambda p: fakes[p.name], log=traced,
+                       sleep=waits.append)
+    value, info = models.complete_json("Evaluator", "Refute it.", BLOCKS, SCHEMA)
+    assert value == ANSWER and info["provider"] == "nvidia"
+    assert sum(waits) <= 40 * 2  # at most the budget per attempt

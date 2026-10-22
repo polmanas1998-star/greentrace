@@ -17,9 +17,10 @@ from app.world.texts import NGO_DOC, RSE_DOC
 SYSTEM = (
     "You are the Extractor of an audit of a company's deforestation-free cocoa claim. The data blocks are "
     "paragraphs of the company's sustainability report and of an NGO note, each labelled with its document, "
-    "section and paragraph number. Report three things. scope: 'all' if the report's headline promise covers "
-    "all the cocoa bought, 'certified' if it only covers certified cocoa, 'subset' if it covers another part; "
-    "quote the words that show it. admissions: only in the company's own report (rse_2025), every passage where "
+    "section and paragraph number. Report three things. scope: read the report's headline promise; it is 'all' "
+    "only if it covers every tonne the company buys with no qualifier at all; any qualifier that narrows it (a "
+    "programme, a label, a certification, a region, a product line) makes it 'subset'; quote the words of the "
+    "promise that decide it. admissions: only in the company's own report (rse_2025), every passage where "
     "the company says forest was cleared, opened or converted for cocoa after 2020, whatever the wording; a denial "
     "such as 'not one hectare was cleared' is NOT an admission, and nothing from the NGO note is an admission. "
     "mentions: every passage of the NGO note (ngo_2025) that ties forest clearing or forest loss to a named "
@@ -34,7 +35,7 @@ _QUOTE = {"type": "string", "minLength": 3, "maxLength": 400}
 SCHEMA = {
     "type": "object", "required": ["scope", "scope_quote", "admissions", "mentions"], "additionalProperties": False,
     "properties": {
-        "scope": {"type": "string", "enum": ["all", "certified", "subset"]},
+        "scope": {"type": "string", "enum": ["all", "subset"]},
         "scope_quote": {"type": ["string", "null"], "maxLength": 400},
         "admissions": {"type": "array", "maxItems": 10, "items": {
             "type": "object", "required": ["doc", "section", "paragraph_no", "quote"], "additionalProperties": False,
@@ -138,7 +139,7 @@ def _agreed(readings: list[dict]) -> dict:
 
 def _read_by_rules(rse: list[dict], ngo: list[dict]) -> Extracted:
     promise = next((p for p in rse if p["section"] == "main" and "100%" in p["paragraph_text"]), None)
-    scope = "certified" if promise and re.search(r"\bcertified\b", promise["paragraph_text"], re.I) else "all"
+    scope = "subset" if promise and re.search(r"\bcertified\b", promise["paragraph_text"], re.I) else "all"
 
     admissions = tuple(
         {"doc": p["doc_id"], "section": p["section"], "paragraph_no": p["paragraph_no"],

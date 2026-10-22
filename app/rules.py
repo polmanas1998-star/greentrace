@@ -36,7 +36,7 @@ PARTS = ("coverage", "no_deforestation", "plausibility", "scope")
 @dataclass(frozen=True)
 class Extracted:
     """What the Extractor read in the reports (the model, or its rule fallback)."""
-    scope: str = "all"                       # "all", or the narrower scope the report really claims
+    scope: str = "all"                       # "all", or "subset" when the report's promise is narrower
     admissions: tuple[dict, ...] = ()        # {doc, section, paragraph_no, plots: [...], year}
     mentions: tuple[dict, ...] = ()          # {doc, paragraph_no, supplier_name, cooperative_group?, year}
 
@@ -215,4 +215,5 @@ def _scope(e: Evidence) -> list[Finding]:
     if e.extracted.scope == "all":
         return []
     return [Finding("scope", 3, UNVERIFIABLE, "narrower_scope",
-                    f"the report only claims {e.extracted.scope} cocoa, not all cocoa", ("doc:rse_2025",))]
+                    "the report's own promise covers only part of the cocoa bought, not all of it",
+                    ("doc:rse_2025",))]

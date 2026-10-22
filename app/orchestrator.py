@@ -1,15 +1,22 @@
-"""One investigation, start to finish (kit, sections 1 and 5).
+"""One investigation, start to finish (kit, sections 1 and 5), and "try to fool it" after.
 
 Extractor -> Planner -> Investigator -> Evaluator, and back: an untested refutation
 sends the plan to the Planner and the Investigator reads more, at most max_rounds
-times. Then the rules decide and the Writer words it. Every arrow is a trace line.
+times. Then the rules decide, the flip is computed, and the Writer words it. Every
+arrow is a trace line.
 
-Mode: "sample" runs on the synthetic world in SQLite (SAMPLE_MODE=true, no network);
+what_if() changes one value of a finished run: the World Model invalidates exactly the
+facts built on it, the cards are rebuilt from the changed evidence, and only the cards
+that changed go back to the Evaluator.
+
+Data: "sample" runs on the synthetic world in SQLite (SAMPLE_MODE=true, no network);
 "live" runs on Zetaris through the semantic layer. Same agents, same rules.
 """
 import os
 import re
 import time
+from collections import OrderedDict
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Optional
 
@@ -17,15 +24,35 @@ from app.adapters.llm import ModelGate
 from app.agents import evaluator, extractor, investigator, planner, writer
 from app.agents.context import RunContext
 from app.canonical import sha256_of
+from app.explain.flip import compute_flip
+from app.memory.world_model import Source, entity_id
 from app.memory.world_model import WorldModel
 from app.queries import DataGate, SQLiteEngine, ZetarisEngine
-from app.rules import RULES_VERSION, UNVERIFIABLE, decide
+from app.rules import RULES_VERSION, UNVERIFIABLE, Evidence, decide
 from app.world.cases import build_case
 from app.world.store import to_sqlite
 
 RULES_FILE = Path(__file__).resolve().parent / "rules.py"
 _RUN_ID = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 DEFAULT_SAMPLE_CASE = 2  # the demo world, the same one scripts/load_zetaris.py loads
+KEPT_RUNS = 50
+
+
+@dataclass
+class Investigation:
+    """Everything a finished run needs to be asked "what if?" later."""
+    ctx: RunContext
+    request: dict
+    sample: bool
+    hypotheses: list[dict]
+    evidence: Evidence
+    cards: list[dict] = field(default_factory=list)
+    reviews: dict[str, dict] = field(default_factory=dict)
+    deliveries: dict[str, dict] = field(default_factory=dict)
+    output: dict = field(default_factory=dict)
+
+
+RUNS: "OrderedDict[str, Investigation]" = OrderedDict()
 
 
 def sample_mode(options: dict) -> bool:
@@ -66,35 +93,130 @@ def investigate(request: dict, run_id: str, *, log, memory_engine=None, zetaris=
         return _output(run_id, sample, request, ctx, started, too_vague=True)
 
     hypotheses = planner.plan(ctx, parsed["types"])
-    evidence = investigator.gather(ctx, hypotheses, extracted)
-    cards = investigator.write_cards(ctx, evidence)
+    run = Investigation(ctx, request, sample, hypotheses, investigator.gather(ctx, hypotheses, extracted))
+    run.cards = investigator.write_cards(ctx, run.evidence)
+    _review(run, run.cards)
+    run.output = _conclude(run, started)
+    _remember(run)
+    return run.output
 
-    reviews, deliveries = {}, {}
+
+def what_if(run_id: str, entity: str, field_name: str, value: Any) -> dict[str, Any]:
+    """Change one value of a finished run and re-run only what depends on it (kit, section 2.6)."""
+    run = RUNS.get(run_id)
+    if run is None:
+        raise KeyError(f"no finished run {run_id!r} in this process")
+    started, ctx = time.perf_counter(), run.ctx
+    kind, _, key = entity.partition(":")
+    before = run.output.get("verdict")
+    run.evidence = _changed(run.evidence, kind, key, field_name, value)
+    ctx.step("Pipeline", "what_if", f"{entity}.{field_name} = {value}", f"verdict before: {before}",
+             target="Investigator", status="success")
+
+    changed_id = entity_id(kind, key)
+    stale = ctx.memory.invalidate(changed_id, source=Source("Pipeline")) if _written(ctx, changed_id) else []
+
+    previous = {(c["code"], c["refs"]) for c in run.cards}
+    run.cards = investigator.write_cards(ctx, run.evidence)
+    # Re-check every card that is new or rests on the changed entity; the others keep their review.
+    fresh = [c for c in run.cards if (c["code"], c["refs"]) not in previous or entity in c["refs"]]
+    kept_reviews = {}
+    for card in run.cards:
+        old = next((r for r in run.reviews.values() if r.get("code_refs") == (card["code"], card["refs"])), None)
+        if old and card not in fresh:
+            kept_reviews[card["id"]] = old
+    run.reviews = kept_reviews
+    _review(run, fresh)
+
+    run.output = _conclude(run, started)
+    run.output["what_if"] = {
+        "change": {"entity": entity, "field": field_name, "value": value},
+        "verdict_before": before, "verdict_after": run.output["verdict"],
+        "invalidated_facts": stale, "rechecked_cards": [c["id"] for c in fresh],
+    }
+    return run.output
+
+
+# ---- stages ---------------------------------------------------------------------------------
+
+def _review(run: Investigation, cards: list[dict]) -> None:
+    """The Evaluator's loop on the given cards, sending the plan back when a refutation is untested."""
+    ctx = run.ctx
     for _ in range(ctx.max_rounds):
-        pending = [c for c in cards if c["id"] not in reviews]
+        pending = [c for c in cards if c["id"] not in run.reviews]
         if not pending:
-            break
+            return
         for card in pending:
-            review = evaluator.evaluate(ctx, card, hypotheses, deliveries.get(card["id"]))
+            planned = any(h["id"] == "H5" for h in run.hypotheses)
+            if planned and card["id"] not in run.deliveries and any(r.startswith("plot:") for r in card["refs"]):
+                run.deliveries[card["id"]] = investigator.check_still_delivering(ctx, card)
+            review = evaluator.evaluate(ctx, card, run.hypotheses, run.deliveries.get(card["id"]))
             if review["decision"] == evaluator.REVISE:
                 ctx.step("Evaluator", "request_revision", f"{card['id']} {card['code']}", review["reason"],
                          target="Planner", status="degraded" if ctx.degraded else "success")
-                hypotheses = planner.revise(ctx, hypotheses, review["refutation"], review["reason"])
-                deliveries[card["id"]] = investigator.check_still_delivering(ctx, card)
+                run.hypotheses = planner.revise(ctx, run.hypotheses, review["refutation"], review["reason"])
+                run.deliveries[card["id"]] = investigator.check_still_delivering(ctx, card)
             else:
-                reviews[card["id"]] = review
+                run.reviews[card["id"]] = {**review, "code_refs": (card["code"], card["refs"])}
 
-    decision = decide(evidence)
-    unreviewed = [c["id"] for c in cards if c["id"] not in reviews]
+
+def _conclude(run: Investigation, started: float) -> dict[str, Any]:
+    ctx = run.ctx
+    decision = decide(run.evidence)
+    unreviewed = [c["id"] for c in run.cards if c["id"] not in run.reviews]
     if unreviewed:  # kit: no clear proof after max_rounds -> UNVERIFIABLE, saying what is missing
         decision = {**decision, "verdict": UNVERIFIABLE}
-    ctx.step("Writer", "apply_verdict_rules", f"{len(cards)} card(s), rules {RULES_VERSION}",
-             f"{decision['verdict']}" + (f"; unreviewed {', '.join(unreviewed)}" if unreviewed else ""),
+    ctx.step("Writer", "apply_verdict_rules", f"{len(run.cards)} card(s), rules {RULES_VERSION}",
+             decision["verdict"] + (f"; unreviewed {', '.join(unreviewed)}" if unreviewed else ""),
              status="success")
-    report = writer.write(ctx, decision, cards, reviews)
-    report["blocked_cards"] = [r["card"] for r in reviews.values() if r["decision"] == evaluator.BLOCK]
-    return _output(run_id, sample, request, ctx, started, report=report, decision=decision)
+    flip = compute_flip(run.evidence)
+    ctx.step("Writer", "compute_flip", f"{len(flip['tried'])} single change(s) tried, no model", flip["sentence"],
+             target="Writer", status="success")
+    report = writer.write(ctx, decision, run.cards, run.reviews)
+    report["flip"] = flip["sentence"]
+    report["flip_tried"] = flip["tried"]
+    report["blocked_cards"] = [r["card"] for r in run.reviews.values() if r["decision"] == evaluator.BLOCK]
+    return _output(ctx.run_id, run.sample, run.request, ctx, started, report=report, decision=decision)
 
+
+# ---- what_if: one value, checked -------------------------------------------------------------
+
+EDITABLE = {
+    "alert": {"alert_date": re.compile(r"^\d{4}-\d{2}-\d{2}$"), "confidence": {"low", "high", "highest"}},
+    "plot": {"area_ha": float, "lat": float, "lon": float},
+}
+
+
+def _changed(evidence: Evidence, kind: str, key: str, field_name: str, value: Any) -> Evidence:
+    allowed = EDITABLE.get(kind, {}).get(field_name)
+    if allowed is None:
+        raise ValueError(f"can change {sorted(f'{k}.{f}' for k, fs in EDITABLE.items() for f in fs)}, "
+                         f"not {kind}.{field_name}")
+    if allowed is float:
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise ValueError(f"{field_name} takes a number")
+        value = float(value)
+    elif isinstance(allowed, set) and value not in allowed:
+        raise ValueError(f"{field_name} takes one of {sorted(allowed)}")
+    elif isinstance(allowed, re.Pattern) and not (isinstance(value, str) and allowed.match(value)):
+        raise ValueError(f"{field_name} takes a date YYYY-MM-DD")
+
+    rows = evidence.alerts if kind == "alert" else evidence.plots
+    id_field = "alert_id" if kind == "alert" else "plot_id"
+    if not any(r[id_field] == key for r in rows or []):
+        raise ValueError(f"no {kind} {key} in this run's evidence")
+    updated = [dict(r, **{field_name: value}) if r[id_field] == key else r for r in rows]
+    return replace(evidence, **{"alerts" if kind == "alert" else "plots": updated})
+
+
+def _written(ctx: RunContext, node_id: str) -> bool:
+    try:
+        return ctx.memory.view("graph", node_id, by="Pipeline") is not None
+    except Exception:  # noqa: BLE001 - an unknown id is simply not in the World Model
+        return False
+
+
+# ---- request and output ---------------------------------------------------------------------
 
 def _read_request(request: dict) -> tuple[str, str, dict]:
     body = request.get("input", request)
@@ -133,6 +255,12 @@ def _output(run_id, sample, request, ctx, started, *, report=None, decision=None
     out["log_file"] = f"logs/{run_id}.jsonl"
     out["execution_time_seconds"] = round(time.perf_counter() - started, 2)
     return out
+
+
+def _remember(run: Investigation) -> None:
+    RUNS[run.ctx.run_id] = run
+    while len(RUNS) > KEPT_RUNS:
+        RUNS.popitem(last=False)
 
 
 def checked_run_id(value: Any) -> Optional[str]:

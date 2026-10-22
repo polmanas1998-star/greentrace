@@ -15,7 +15,7 @@ PERFECT_READING = {
     13: Extracted(mentions=({"doc": "ngo_2025", "paragraph_no": 9, "supplier_name": "Agnibi", "year": 2022},)),
     15: Extracted(mentions=({"doc": "ngo_2025", "paragraph_no": 9, "supplier_name": "Agnibi",
                              "cooperative_group": "Union Kpanbia", "year": 2022},)),
-    17: Extracted(scope="certified"),
+    17: Extracted(scope="subset"),
     18: Extracted(admissions=({"doc": "rse_2025", "section": "annex", "paragraph_no": 4,
                                "plots": ["P-005", "P-011", "P-017"], "year": 2022},)),
 }
