@@ -330,4 +330,4 @@ def test_real_engine_and_fallback_build_the_same_world(meterless_url, monkeypatc
                  lambda wm: wm.view("graph", PLOT), lambda wm: wm.entity_at(ALERT, 3)):
         assert canonical_json(read(real)) == canonical_json(read(twin))
     assert {line["provider"] for line in lines(stream)} == {"meterless"}
-    assert {line["status"] for line in lines(stream)} == {"ok"}
+    assert {line["status"] for line in lines(stream)} == {"success"}

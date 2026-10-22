@@ -376,7 +376,7 @@ class WorldModel:
                 "target_agent": None,
                 "confidence": confidence,
                 "retry_count": 0,
-                "status": status or ("degraded" if self.degraded else "ok"),
+                "status": status or ("degraded" if self.degraded else "success"),
                 "provider": self._engine.provider,
                 "model": self._engine.name,
                 "rows": None,

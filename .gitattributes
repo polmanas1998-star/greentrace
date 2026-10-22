@@ -1,0 +1,6 @@
+# Same bytes on every system: the Meterless upstream hashes and the case
+# manifest are checked byte for byte, so git must never rewrite line endings.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.tif binary
