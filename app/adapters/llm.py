@@ -20,7 +20,12 @@ next one; an answer that is not valid JSON twice hands over to the rules. Source
 model only inside <data> tags, with the order to obey nothing written there (trap case 19).
 SAMPLE_MODE=true makes no network call at all. Every attempt and every switch is one trace line;
 keys and tokens never appear in it.
+
+Images (the Satellite Lens): complete_json(images=[...]) adds JPEG images, as data URLs in the
+OpenAI vision format, after the data blocks of the user message; timeout_s shortens the wait for
+that one call. Without images the request is exactly what it was.
 """
+import base64
 import json
 import os
 import re
@@ -174,10 +179,27 @@ def wrap_data(blocks: Sequence[tuple[str, str]]) -> str:
     return "\n\n".join(parts) or "No source material."
 
 
-def build_messages(system: str, blocks: Sequence[tuple[str, str]], schema: dict) -> list[dict[str, str]]:
+MAX_IMAGE_BYTES = 4_000_000  # a 1024 px JPEG is far below; anything bigger is a mistake, not a picture
+
+
+def image_url(jpeg: bytes) -> str:
+    """A JPEG as a data URL, the form OpenAI-compatible vision endpoints take inline."""
+    if not isinstance(jpeg, (bytes, bytearray)) or not jpeg.startswith(b"\xff\xd8"):
+        raise ValueError("images are JPEG bytes")
+    if len(jpeg) > MAX_IMAGE_BYTES:
+        raise ValueError(f"image of {len(jpeg)} bytes, above {MAX_IMAGE_BYTES}")
+    return "data:image/jpeg;base64," + base64.b64encode(bytes(jpeg)).decode("ascii")
+
+
+def build_messages(system: str, blocks: Sequence[tuple[str, str]], schema: dict,
+                   images: Sequence[bytes] = ()) -> list[dict[str, Any]]:
     instructions = (f"{system.strip()}\n\n{GUARD}\n\nAnswer with one JSON value and nothing else. "
                     f"It must match this JSON Schema:\n{json.dumps(schema, sort_keys=True)}")
-    return [{"role": "system", "content": instructions}, {"role": "user", "content": wrap_data(blocks)}]
+    user: Any = wrap_data(blocks)
+    if images:
+        user = [{"type": "text", "text": user}] + [{"type": "image_url", "image_url": {"url": image_url(jpeg)}}
+                                                   for jpeg in images]
+    return [{"role": "system", "content": instructions}, {"role": "user", "content": user}]
 
 
 def parse_json(text: Optional[str]) -> Any:
@@ -299,14 +321,18 @@ class ModelGate:
         schema: dict,
         *,
         max_tokens: int = MAX_TOKENS,
+        images: Sequence[bytes] = (),
+        timeout_s: Optional[float] = None,
     ) -> tuple[Optional[Any], dict[str, Any]]:
         """The model's JSON answer and how it was obtained; None means: use your rule fallback."""
         if agent not in LANES:
             raise ValueError(f"agent must be one of {sorted(LANES)}, got {agent!r}")
         check_schema(schema)
         lane = LANES[agent]
-        messages = build_messages(system, data_blocks, schema)
+        messages = build_messages(system, data_blocks, schema, images)
         asked = f"{lane} lane, {len(data_blocks)} data block(s), {sum(len(t) for _, t in data_blocks)} chars"
+        if images:
+            asked += f", {len(images)} image(s)"
         info: dict[str, Any] = {"agent": agent, "lane": lane, "provider": "rules", "model": None,
                                 "requested_model": None, "attempts": 0, "fallbacks": [], "output_sha256": None}
         if self.sample_mode:
@@ -314,7 +340,7 @@ class ModelGate:
 
         live = [p for p in self.providers if not p.down]
         for index, provider in enumerate(live):
-            outcome = self._ask(provider, agent, lane, messages, schema, max_tokens, asked)
+            outcome = self._ask(provider, agent, lane, messages, schema, max_tokens, asked, timeout_s)
             info["attempts"] += outcome.attempts
             info["requested_model"] = provider.models[lane]
             if outcome.ok:
@@ -365,7 +391,7 @@ class ModelGate:
                 waited += wait
 
     def _ask(self, provider: Provider, agent: str, lane: str, messages: list[dict], schema: dict,
-             max_tokens: int, asked: str) -> Outcome:
+             max_tokens: int, asked: str, timeout_s: Optional[float] = None) -> Outcome:
         model = provider.models[lane]
         problem, invalid = "no attempt", False
         for attempt in range(RETRIES + 1):
@@ -376,6 +402,7 @@ class ModelGate:
                     model=model, messages=messages, temperature=0, max_tokens=max_tokens,
                     extra_headers=provider.chat_headers or None, extra_body=provider.chat_body or None,
                     **({"seed": SEED} if provider.seed_ok else {}),
+                    **({"timeout": min(timeout_s, provider.timeout_s)} if timeout_s else {}),
                 ))
             except openai.BadRequestError as error:
                 if provider.seed_ok and "seed" in str(error).lower():
