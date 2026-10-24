@@ -1,12 +1,43 @@
 # GreenTrace
 
-**Our entry is for The Agent That Can Explain Why** (Open Agent Hackathon 2026). Solo team: Amir Ogan.
-
 GreenTrace checks a company's "deforestation-free" promise against the evidence, says whether it is
 PROVEN, CONTRADICTED or UNVERIFIABLE, and shows why, down to the database row. Every verdict ships
 with a receipt that one command re-derives offline.
 
-**Try it online:** https://greentrace-0qd7.onrender.com (sample mode: synthetic company, real forest maps, no key, no model call; the first visit after a quiet spell takes about 50 s to wake the free instance).
+- **Website:** https://greentrace-eudr.higgsfield.app (the public face: real Sentinel-2 scenes of one
+  plot, a plot file check, a live investigation; code in `site/`)
+- **Engine demo:** https://greentrace-0qd7.onrender.com (the engine's own interface and its API; the
+  first visit after a quiet spell takes about 50 s to wake the free instance)
+
+**Our entry is for The Agent That Can Explain Why** (Open Agent Hackathon 2026). Solo team: Amir Ogan.
+
+Both links run in sample mode: no model key is set, so the rule fallbacks take Nemotron's place
+(the "rules alone" baseline of the bench below), and the verdict comes from `app/rules.py` as in
+every mode. The company, its suppliers and its deliveries are fictional; plots P-041 and P-042 are
+real places near Soubré, Côte d'Ivoire, read on real forest maps.
+
+## What you can try in 2 minutes
+
+1. **The real plot P-042.** On https://greentrace-eudr.higgsfield.app/investigate, press "Run the
+   real plot P-042". The verdict is CONTRADICTED: "3.42 ha that the EU map counted as forest in
+   2020 were lost inside P-042 in 2021, 2022, 2023, 2024 (Hansen/UMD), while it kept delivering".
+   The home page scrolls through six real Sentinel-2 scenes of the same plot, 2019 to 2026. Locally:
+   `python run.py --input examples/05_real_plot_contradicted.json`.
+2. **What would change it.** On the same page, press "Run the demo case", then open the tab "What
+   would change it": the single changes the rules tried, each with the verdict it would give. Apply
+   the alert date of A-221 (2022-03-14 to 2020-12-31): the engine re-runs what depends on it and
+   answers PROVEN. Through the API: `POST /runs/{run_id}/what_if` with
+   `{"entity":"alert:A-221","field":"alert_date","value":"2020-12-31"}`.
+3. **Re-check a verdict offline.**
+
+   ```bash
+   python verify.py output_examples/01_contradicted_receipt.json
+   ```
+
+   It prints `VALID: CONTRADICTED re-derived offline from 522 rows of 17 answers` (exit 0). Change
+   the date of alert A-221 to 2019-03-14 in a copy and it prints `TAMPERED: Q4 row 30 (alert A-221)`
+   and the verdict the rules give on the data as found, PROVEN (exit 1). No model, no database, no
+   network: see [The verdict receipt](#the-verdict-receipt).
 
 ## The problem
 
@@ -29,6 +60,31 @@ supplier's promise. GreenTrace is decision support: not a legal opinion, not a p
 4. An Evaluator agent tries to break each finding with its own queries; a hole sends the plan back.
 5. Fixed rules in `app/rules.py` decide; the Writer words the verdict, the single change that would
    flip it, the supplier letters and the audit package with its receipt.
+
+## Features
+
+Each one reads a finished run or a plot; none decides a verdict: `app/rules.py` does, alone. One
+line per feature, with its route and its test file: [`docs/features/README.md`](docs/features/README.md).
+
+- **Court of inquiry and attack log** ([`docs/features/court.md`](docs/features/court.md)): a
+  Plaintiff argues for the promise, the Evaluator answers, the rules judge; and every refutation the
+  Evaluator tried, card by card.
+- **Explain plus** ([`docs/features/explain_plus.md`](docs/features/explain_plus.md)): the evidence
+  graph, the World Model before and after a what_if, Deep Trace (the report sentence by sentence,
+  with its rows), the declared area against the plot's outline, the Contradiction Radar, and the
+  supplier letter in English, French, Spanish and Portuguese.
+- **Geo workflow** ([`docs/features/geo_workflow.md`](docs/features/geo_workflow.md)): the next
+  Sentinel-2 passes over a plot from real TLEs (`data/tle/`), a run's calendar as `.ics` and Google
+  Calendar links, what each map source says about one plot, and the time slider.
+- **Ask GreenTrace** (`POST /runs/{run_id}/ask`, `app/explain/ask.py`): one question about a
+  finished run, answered from that run's own lines only. Without a model, the rules return the
+  closest lines and say that no model was used.
+- **For other agents** ([`docs/features/standards.md`](docs/features/standards.md)): an MCP server
+  (stdio, and `/mcp` inside the API), an A2A agent (`/a2a`), one OpenTelemetry span per trace line.
+- **Website** ([`site/README.md`](site/README.md)): the time machine over six real Sentinel-2 scenes
+  of P-042, an analysis scene driven by the run's own trace lines, the plot file check, the live
+  investigation with up to 12 tabs, and the Ask GreenTrace chat over AG-UI
+  (`site/src/routes/api/agui.ts`).
 
 ## Architecture
 
@@ -148,6 +204,9 @@ No exact outline was recorded for either plot: both are squares of the declared 
 declared point. Every number is measured, and kept in `data/reference_cells.meta.json`.
 
 ## API
+
+The routes of the features above are listed in [`docs/features/README.md`](docs/features/README.md).
+This section documents the plot file check in full.
 
 The analyst's own plot file, checked plot by plot. Routes in `app/web/features.py`, logic in
 `app/plotfile.py` (reading) and `app/plotcheck.py` (measuring, ranking, exports); every verdict comes
@@ -271,7 +330,13 @@ more. Decision support, not a legal opinion, not a public rating.
 ## Limits
 
 - The company, suppliers, deliveries, reports and alerts are synthetic (placed on real places). Only
-  the forest maps and the Sentinel-2 backgrounds are real data.
+  the forest maps, the Sentinel-2 scenes and the Sentinel-2 TLEs are real data.
+- The website and the engine demo run in sample mode, with no model key: what they show is the
+  rules-alone path. The model paths added for the court, Ask GreenTrace and the letter translation
+  are tested with a fake model client only.
+- The chat on the website speaks AG-UI to the site's own agent (`site/src/routes/api/agui.ts`), which
+  has no model and forwards each question to `POST /runs/{run_id}/ask`. CopilotKit was tried and
+  left out: its runtime was too heavy for the Cloudflare Worker the site runs on.
 - The model runs on NVIDIA's API directly: Nightshift, which serves the Meterless Runtime, needs a
   dedicated GPU we do not have. The Meterless provider is written to its contract and tested against a
   fake Runtime only (`tests/test_llm.py`).
@@ -323,6 +388,10 @@ proposes; `app/rules.py` decides, and `verify.py` re-derives every verdict witho
 - Sentinel-2 backgrounds (`python -m scripts.fetch_satellite`, public Earth Search catalogue): "Contains
   modified Copernicus Sentinel data 2026" (P-042, scene of 2026-03-12) and "Contains modified Copernicus
   Sentinel data 2025" (P-041, scene of 2025-02-05). Copernicus Sentinel data are free and open.
+- Sentinel-2 time machine scenes of P-042 (`python -m scripts.fetch_satellite --timelapse`,
+  `data/timelapse/`, shown on the website): "Contains modified Copernicus Sentinel data 2019-2026".
+- Land on the website's analysis scene: Natural Earth 1:110m, public domain. Website fonts: Geist and
+  Geist Mono, SIL Open Font License (`site/public/fonts/OFL.txt`).
 - Meterless World Model and H-MEM references: Apache-2.0, copyright Meterless (`meterless/LICENSE`,
   `meterless/hmem/LICENSE`).
 
