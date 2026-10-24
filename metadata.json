@@ -4,6 +4,12 @@
   "hackathon": "Open Agent Hackathon 2026",
   "track": "The Agent That Can Explain Why",
   "license": "Apache-2.0",
+  "links": {
+    "website": "https://greentrace-eudr.higgsfield.app",
+    "engine_demo": "https://greentrace-0qd7.onrender.com",
+    "repository": "https://github.com/polmanas1998-star/greentrace"
+  },
+  "online_demo": "both links run in sample mode with no model key: rule fallbacks take the model's place and app/rules.py decides; the company, suppliers and deliveries are fictional; plots P-041 and P-042 are real places near Soubre, Cote d'Ivoire",
   "team": {
     "type": "solo",
     "members": [
@@ -19,7 +25,13 @@
     "orchestrator": "app/orchestrator.py",
     "verdict_rules": "app/rules.py",
     "receipt_verifier": "verify.py",
-    "interface": "app/web/"
+    "interface": "app/web/",
+    "court": "app/court/",
+    "explain": "app/explain/",
+    "geo": "app/geo/",
+    "open_protocols": "app/standards/",
+    "website": "site/",
+    "features_index": "docs/features/README.md"
   },
   "sponsor_technology": {
     "zetaris": {
@@ -33,13 +45,16 @@
       ]
     },
     "meterless": {
-      "used_for": "World Model reference implementation (unmodified, conformance 8/8) as the agents' shared memory; Meterless Runtime provider coded to its contract",
+      "used_for": "World Model reference implementation (unmodified, conformance 8/8) as the agents' shared memory; H-MEM reference (unmodified, conformance 13/13) for one note per supplier, shown as 'Seen before', never deciding; Meterless Runtime provider coded to its contract",
       "code": [
         "meterless/reference/",
         "meterless/server.ts",
         "app/memory/world_model.py",
-        "app/adapters/llm.py"
-      ]
+        "app/adapters/llm.py",
+        "meterless/hmem/",
+        "app/memory/hmem.py"
+      ],
+      "not_done": "Nightshift, which serves the Meterless Runtime, needs a dedicated GPU we do not have: it is not installed, the Runtime provider is tested against a fake Runtime only (tests/test_llm.py), and model calls go to NVIDIA directly"
     },
     "nvidia": {
       "used_for": "Nemotron 3.5 on two pinned lanes (fast, deep): reading reports, planning, proposing refutations; the rules decide",
@@ -48,8 +63,13 @@
         "nvidia/nemotron-3.5-super-vl-120b-a12b"
       ],
       "code": [
-        "app/adapters/llm.py"
-      ]
+        "app/adapters/llm.py",
+        "app/court/plaintiff.py",
+        "app/explain/ask.py",
+        "app/explain/letters_i18n.py",
+        "app/lens/"
+      ],
+      "also_used_for": "the Plaintiff's arguments in the court (fast lane), Ask GreenTrace answers and the letter translation (Writer lane), Satellite Lens (vision); the court, Ask and translation model paths are tested with a fake client only"
     },
     "cursor": {
       "used_for": "build (free plan), logged honestly",
@@ -69,7 +89,95 @@
       "cp .env.example .env  (then fill it in)",
       "python -m scripts.load_zetaris",
       "docker run --rm -p 8000:8000 --env-file .env -e SAMPLE_MODE=false greentrace"
-    ]
+    ],
+    "engine_api_sample_mode": "SAMPLE_MODE=true uvicorn app.api:app --port 8000",
+    "mcp_stdio": "python -m app.standards.mcp_server",
+    "tle_copy": "python -m app.geo.tle show"
+  },
+  "routes": {
+    "investigation": [
+      "POST /run",
+      "POST /runs",
+      "GET /runs/{run_id}",
+      "GET /runs/{run_id}/events",
+      "POST /runs/{run_id}/what_if",
+      "GET /runs/{run_id}/receipt",
+      "GET /runs/{run_id}/package",
+      "GET /runs/{run_id}/timeline",
+      "GET /runs/{run_id}/suppliers"
+    ],
+    "plot_file": [
+      "POST /api/check-plots",
+      "GET /api/check-plots/{batch_id}",
+      "GET /api/check-plots/{batch_id}/plots_no_issue_found.geojson",
+      "GET /api/check-plots/{batch_id}/findings.csv",
+      "GET /api/check-plots/{batch_id}/receipt",
+      "GET /api/check-plots/{batch_id}/package",
+      "GET /api/check-plots/{batch_id}/plots/{plot_id}/timelapse"
+    ],
+    "court": [
+      "GET /runs/{run_id}/court",
+      "GET /runs/{run_id}/attacks"
+    ],
+    "explain": [
+      "GET /runs/{run_id}/graph",
+      "GET /runs/{run_id}/world_diff",
+      "GET /runs/{run_id}/sentences",
+      "GET /runs/{run_id}/radar",
+      "GET /runs/{run_id}/letter?lang=en|fr|es|pt",
+      "POST /runs/{run_id}/ask"
+    ],
+    "geo": [
+      "GET /api/plots/passes",
+      "GET /api/plots/passes.ics",
+      "GET /runs/{run_id}/calendar",
+      "GET /runs/{run_id}/calendar.ics",
+      "GET /api/plots/convergence",
+      "POST /api/plots/convergence",
+      "GET /api/plots/verdict_at",
+      "GET /api/plots/verdict_series"
+    ],
+    "open_protocols": [
+      "/mcp (MCP streamable HTTP)",
+      "GET /.well-known/agent-card.json",
+      "GET /.well-known/agent.json",
+      "POST /a2a",
+      "GET /runs/{run_id}/otel"
+    ],
+    "website": [
+      "POST /api/agui",
+      "/api/gt/*"
+    ],
+    "index": "docs/features/README.md"
+  },
+  "open_protocols": {
+    "mcp": {
+      "used_for": "five tools (check_claim, check_plots, what_if, explain, verify_receipt) and the receipt as a resource, over stdio and streamable HTTP at /mcp",
+      "code": [
+        "app/standards/mcp_server.py",
+        "app/standards/tools.py"
+      ],
+      "sdk": "mcp==2.3.0"
+    },
+    "a2a": {
+      "used_for": "the same five operations as A2A skills; JSON-RPC at /a2a, specification 1.0, still answers 0.3 clients",
+      "code": [
+        "app/standards/a2a.py"
+      ]
+    },
+    "opentelemetry": {
+      "used_for": "one span per trace line, one trace per run; logs/<run_id>.otel.jsonl, OTLP/HTTP when OTEL_EXPORTER_OTLP_ENDPOINT is set",
+      "code": [
+        "app/standards/otel.py"
+      ]
+    },
+    "ag_ui": {
+      "used_for": "the website's Ask GreenTrace chat: an AG-UI agent with no model that forwards each question to POST /runs/{run_id}/ask and streams the answer; CopilotKit was tried and left out, its runtime was too heavy for the Cloudflare Worker",
+      "code": [
+        "site/src/routes/api/agui.ts",
+        "site/src/components/gt/AskPanel.tsx"
+      ]
+    }
   },
   "sample_mode": "SAMPLE_MODE=true (default): no key, no network, same agents and rules on a synthetic company and real forest maps",
   "examples": {
@@ -86,7 +194,13 @@
     "real": [
       "EU JRC Global Forest Cover 2020 v4",
       "Hansen/UMD Global Forest Change v1.12",
-      "Copernicus Sentinel-2 L2A (map backgrounds)"
+      "Copernicus Sentinel-2 L2A (map backgrounds and the P-042 time machine scenes)",
+      "Sentinel-2 TLEs from CelesTrak (data/tle/), for the pass scheduler",
+      "Natural Earth 1:110m land (the website's analysis scene)"
+    ],
+    "real_places": [
+      "P-041",
+      "P-042"
     ]
   },
   "ai_usage": "Claude Code alongside Cursor, per the AI Usage Policy; Nemotron at run time",
@@ -95,5 +209,17 @@
     "pitch deck and presentation video",
     "technical probes of 2026-10-21",
     "official smoke_test.py and commit 5e37dee (2026-10-17)"
-  ]
+  ],
+  "website": {
+    "url": "https://greentrace-eudr.higgsfield.app",
+    "stack": "Higgsfield website: React 19 + TanStack Start on a Cloudflare Worker",
+    "pages": [
+      "/ : scroll-driven time machine over six real Sentinel-2 scenes of plot P-042",
+      "/check : plot file check",
+      "/investigate : live investigation, up to 12 tabs, Ask GreenTrace chat over AG-UI"
+    ],
+    "engine": "talks to the engine demo through its own relay /api/gt/*",
+    "doc": "site/README.md",
+    "analysis_scene": "while the engine works, both tools fly from the world to the area the engine queries, then to the plot, with the real trace lines"
+  }
 }
