@@ -263,10 +263,11 @@ export function Proof() {
           </pre>
         </div>
         <div className="flex flex-col justify-between rounded-[14px] border border-gt-line bg-[linear-gradient(160deg,#14402B_0%,#0f2a1d_100%)] p-8 md:col-span-2">
-          <div className="text-xl font-semibold tracking-tight">Same data, same verdict.</div>
+          <div className="text-xl font-semibold tracking-tight">Same verdict, live or offline.</div>
           <p className="mt-3 leading-relaxed text-gt-text/80">
-            The model never decides. Two runs on the same evidence give the same verdict and the same fingerprint, and the test
-            suite checks it on 21 trap cases.
+            Live run of 25 October 2026: 16 queries answered by Zetaris, 7 calls to NVIDIA Nemotron, facts held by the Meterless
+            World Model server. Verdict Contradicted, seal 24035b45, the same seal as the offline sample run. The model reads, the
+            rules decide.
           </p>
         </div>
         <div className="rounded-[14px] border border-gt-line bg-gt-raised p-8 md:col-span-2">

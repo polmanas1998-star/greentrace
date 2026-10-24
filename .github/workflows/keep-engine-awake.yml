@@ -1,0 +1,14 @@
+# The public demo engine runs on a free Render instance that sleeps after 15 minutes idle, and its
+# first request then answers 503 while it wakes. A judge should never meet that: ping it every 10 min.
+name: Keep the demo engine awake
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: GET /health
+        run: curl -fsS --max-time 120 https://greentrace-0qd7.onrender.com/health || echo "engine did not answer (waking up)"

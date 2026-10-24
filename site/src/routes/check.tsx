@@ -79,6 +79,11 @@ function CheckPage() {
           year its tree cover was lost, then ranked, riskiest first.
         </p>
 
+        <p className="mt-6 max-w-[70ch] rounded-[10px] border border-gt-line bg-gt-raised px-4 py-3 text-[14px] leading-relaxed text-gt-text/75">
+          <span className="font-semibold text-gt-text">Public demo, sample mode.</span> The same queries run on a local copy of
+          the data and the rules stand in for the model. With keys, the same code queries Zetaris and asks NVIDIA Nemotron; the
+          verdict is decided by the rules either way.
+        </p>
         <div className="mt-12 grid gap-6 md:grid-cols-[1.4fr_1fr]">
           <label
             onDragOver={(e) => {

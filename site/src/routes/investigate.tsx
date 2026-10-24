@@ -101,6 +101,11 @@ function InvestigatePage() {
           Type a sustainability promise. GreenTrace plans the checks, asks the data, tries to break its own evidence, and
           only then decides. The demo company, ChocoDurable, is fictional.
         </p>
+        <p className="mt-6 max-w-[70ch] rounded-[10px] border border-gt-line bg-gt-raised px-4 py-3 text-[14px] leading-relaxed text-gt-text/75">
+          <span className="font-semibold text-gt-text">Public demo, sample mode.</span> The same queries run on a local copy of
+          the data and the rules stand in for the model. With keys, the same code queries Zetaris and asks NVIDIA Nemotron; the
+          verdict is decided by the rules either way.
+        </p>
         <form
           className="mt-10"
           onSubmit={(e) => {

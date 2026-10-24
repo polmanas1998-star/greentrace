@@ -83,6 +83,7 @@ function Result({ output, lines }: { output: RunOutput; lines: TraceLine[] }) {
   const [plain, setPlain] = useState<Plain | null>(null);
   const [extra, setExtra] = useState<Record<string, unknown>>({});
   const [tab, setTab] = useState("why");
+  const [more, setMore] = useState(false);
   const style = verdictStyle(output.verdict);
 
   useEffect(() => {
@@ -107,11 +108,17 @@ function Result({ output, lines }: { output: RunOutput; lines: TraceLine[] }) {
     void optional<unknown>(t.path(runId)).then((data) => data && setExtra((e) => ({ ...e, [id]: data })));
   };
 
+  // A judge has minutes: the four views that explain the verdict come first, the rest one click away.
+  const PRIMARY = new Set(["court"]);
+  const optional = OPTIONAL_TABS.filter((t) => extra[t.id]);
   const tabs: Array<{ id: string; label: string }> = [
     { id: "why", label: "Why" },
     { id: "whatif", label: "What would change it" },
     { id: "ask", label: "Ask GreenTrace" },
-    ...OPTIONAL_TABS.filter((t) => extra[t.id]).map((t) => ({ id: t.id, label: t.label })),
+    ...optional.filter((t) => PRIMARY.has(t.id)).map((t) => ({ id: t.id, label: t.label })),
+  ];
+  const moreTabs: Array<{ id: string; label: string }> = [
+    ...optional.filter((t) => !PRIMARY.has(t.id)).map((t) => ({ id: t.id, label: t.label })),
     { id: "trace", label: `Trace (${lines.length})` },
   ];
   const active = OPTIONAL_TABS.find((t) => t.id === tab);
@@ -161,7 +168,7 @@ function Result({ output, lines }: { output: RunOutput; lines: TraceLine[] }) {
       </div>
 
       <div className="mt-14 flex gap-1 overflow-x-auto border-b border-gt-line" role="tablist">
-        {tabs.map((t) => (
+        {[...tabs, ...(more || moreTabs.some((t) => t.id === tab) ? moreTabs : [])].map((t) => (
           <button
             key={t.id}
             type="button"
@@ -174,6 +181,14 @@ function Result({ output, lines }: { output: RunOutput; lines: TraceLine[] }) {
             {t.label}
           </button>
         ))}
+        <button
+          type="button"
+          onClick={() => setMore((m) => !m)}
+          className="-mb-px ml-auto shrink-0 px-4 py-3 text-[14px] text-gt-signal"
+          aria-expanded={more}
+        >
+          {more ? "Fewer views" : `More views (${moreTabs.length})`}
+        </button>
       </div>
       <div className="pt-8" role="tabpanel">
         {tab === "why" && <WhyTab output={output} />}
