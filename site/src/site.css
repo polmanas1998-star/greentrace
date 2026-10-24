@@ -1,0 +1,143 @@
+/* GreenTrace brand layer: tokens, base, and the few hand-made pieces Tailwind does not express. */
+
+@font-face {
+  font-family: "Geist";
+  src: url("/fonts/Geist-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Geist Mono";
+  src: url("/fonts/GeistMono-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+:root {
+  --gt-ground: #0b1510;
+  --gt-raised: #111d17;
+  --gt-raised-2: #16241d;
+  --gt-line: rgba(232, 239, 234, 0.1);
+  --gt-line-strong: rgba(232, 239, 234, 0.22);
+  --gt-text: #e8efea;
+  --gt-muted: #8fa398;
+  --gt-signal: #9be3b4;
+  --gt-loss: #d9622b;
+  --gt-proven: #6fcf9a;
+  --gt-contradicted: #f08a63;
+  --gt-unverifiable: #a7b1bc;
+  --gt-radius: 14px;
+  --gt-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --gt-mono: "Geist Mono", ui-monospace, "SFMono-Regular", monospace;
+}
+
+@theme inline {
+  --color-gt-ground: var(--gt-ground);
+  --color-gt-raised: var(--gt-raised);
+  --color-gt-raised-2: var(--gt-raised-2);
+  --color-gt-line: var(--gt-line);
+  --color-gt-line-strong: var(--gt-line-strong);
+  --color-gt-text: var(--gt-text);
+  --color-gt-muted: var(--gt-muted);
+  --color-gt-signal: var(--gt-signal);
+  --color-gt-loss: var(--gt-loss);
+  --color-gt-proven: var(--gt-proven);
+  --color-gt-contradicted: var(--gt-contradicted);
+  --color-gt-unverifiable: var(--gt-unverifiable);
+  --font-gt-sans: var(--gt-sans);
+  --font-gt-mono: var(--gt-mono);
+}
+
+html.gt,
+html.gt body {
+  background: var(--gt-ground);
+  color: var(--gt-text);
+  font-family: var(--gt-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+html.gt ::selection {
+  background: rgba(155, 227, 180, 0.28);
+}
+html.gt :focus-visible {
+  outline: 2px solid var(--gt-signal);
+  outline-offset: 3px;
+}
+
+.gt-display {
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 0.98;
+}
+.gt-mono {
+  font-family: var(--gt-mono);
+  font-feature-settings: "zero" 1;
+}
+.gt-num {
+  font-family: var(--gt-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Words that rise on mount (never gated by an observer, so a full-page capture shows them). */
+@keyframes gt-rise {
+  from { transform: translateY(0.45em); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.gt-rise > * {
+  display: inline-block;
+  animation: gt-rise 0.9s cubic-bezier(0.2, 0.7, 0.1, 1) both;
+}
+
+/* Scroll-linked reveal: transform only, driven by --gt-p (0..1) set from script. */
+.gt-drift {
+  transform: translateY(calc((1 - var(--gt-p, 1)) * 28px));
+}
+
+/* The plot outline draws itself. */
+@keyframes gt-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+.gt-outline-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: gt-draw 1.6s 0.3s cubic-bezier(0.6, 0, 0.2, 1) both;
+}
+
+@keyframes gt-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(155, 227, 180, 0.55); }
+  100% { box-shadow: 0 0 0 10px rgba(155, 227, 180, 0); }
+}
+
+/* Trace lines arriving in the live investigation. */
+@keyframes gt-line-in {
+  from { transform: translateX(-8px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.gt-line-in {
+  animation: gt-line-in 0.45s cubic-bezier(0.2, 0.7, 0.1, 1) both;
+}
+
+/* Skeletons shaped like what they stand for. */
+@keyframes gt-shimmer {
+  from { background-position: -200% 0; }
+  to { background-position: 200% 0; }
+}
+.gt-skeleton {
+  background: linear-gradient(90deg, var(--gt-raised) 0%, var(--gt-raised-2) 50%, var(--gt-raised) 100%);
+  background-size: 200% 100%;
+  animation: gt-shimmer 1.6s linear infinite;
+  border-radius: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gt-rise > *,
+  .gt-outline-draw,
+  .gt-line-in,
+  .gt-skeleton {
+    animation: none !important;
+  }
+  .gt-drift {
+    transform: none !important;
+  }
+}
