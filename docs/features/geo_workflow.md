@@ -56,7 +56,7 @@ In SAMPLE_MODE nothing touches the network: the TLEs come from the copy in `data
 
 ## Honest limits
 
-- **No TLE copy is committed yet.** The environment that built this could not reach CelesTrak: its proxy refused the host. Until someone runs `python -m app.geo.tle refresh` somewhere CelesTrak is reachable and commits the file, the passes answer `"status": "not_queried"` and give that reason. The tests use made-up orbits built with `sgp4`, never the real elements.
+- **The TLE copy ages.** `data/tle/sentinel-2_20261024T1624Z.json` was fetched from CelesTrak on 2026-10-24 at 16:24 UTC. SAMPLE_MODE reads it as is, so its passes drift as it gets older: run `python -m app.geo.tle refresh` where CelesTrak is reachable and commit the new file. Without any copy, the passes answer `"status": "not_queried"` and give the reason. The tests use made-up orbits built with `sgp4`, never the real elements.
 - **A pass is geometry, not an acquisition.** The ESA acquisition plan, clouds and whether each satellite is currently imaging are not checked. Accuracy also drops as a TLE ages: the answer gives the age and flags a TLE older than `TLE_STALE_AFTER_DAYS`. UT1-UTC and polar motion are ignored (under a second). The swath threshold is computed on a spherical Earth.
 - **The sample documents declare only a year** (`rse_2025`, `ngo_2025`). Their expiry is therefore counted from the 31 December of that year (`DOCUMENT_YEAR_ONLY_MONTH_DAY`), and the event says so.
 - **The sources are not all independent.** JRC GFC2020 and Hansen come from the same committed cells file. The GFW tiles serve the same Hansen/UMD layer (tree cover ≥ 30 % in 2000), and the answer says `same_layer_as`. Offline, only the Soubré extent of the committed maps can be measured.

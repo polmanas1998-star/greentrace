@@ -68,8 +68,7 @@ had to send the plan back before it could run that attack (R3 waits for the deli
 - `source_unavailable` in the attack log means the run holds no answer to that attack's query.
   A query that fails inside the Evaluator stops the run today, so a finished run rarely shows it.
 - The model path (Plaintiff and Writer) is tested with a fake client only. The `Plaintiff` lane
-  is registered from `app/court/plaintiff.py` (`LANES.setdefault("Plaintiff", "fast")`), not in
-  `app/adapters/llm.py`.
+  (fast) is declared with the other lanes in `LANES`, `app/adapters/llm.py`.
 - The court is computed on the first request and kept with the run in memory; a what_if makes
   the next request compute it again. A run lost with the process (restart) has no court.
 - The attack log needs the trace file; if it is gone the route answers 404 and says so.
