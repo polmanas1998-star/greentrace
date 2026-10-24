@@ -69,8 +69,8 @@ docker build -t greentrace .
 docker run --rm -p 8000:8000 greentrace        # open http://localhost:8000
 ```
 
-The image (about 590 MB on disk) runs the API and, beside it, the Meterless World Model server
-(Node 24) inside the container. Without Docker (Python 3.11 or 3.13, both tested):
+The image (648 MB on disk, measured on 24 October 2026) runs the API and, beside it, the Meterless
+World Model server (Node 24) inside the container. Without Docker (Python 3.11 or 3.13, both tested):
 `pip install -r requirements.txt`, then `python run.py` (API) or
 `python run.py --input examples/01_contradicted.json` (one run, JSON on stdout, trace in `logs/`).
 
