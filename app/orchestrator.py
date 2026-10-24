@@ -29,6 +29,7 @@ from app.adapters.llm import ModelGate
 from app.agents import evaluator, extractor, investigator, planner, writer
 from app.agents.context import RunContext
 from app.canonical import sha256_of
+from app.checks import geofence
 from app.explain import exports
 from app.explain.flip import compute_flip
 from app.memory import hmem as hmem_notes
@@ -140,6 +141,7 @@ def what_if(run_id: str, entity: str, field_name: str, value: Any) -> dict[str, 
              target="Investigator", status="success")
 
     changed_id = entity_id(kind, key)
+    ctx.notes.setdefault("what_if_ticks", []).append(ctx.memory.tick)  # where app/explain/world_diff.py starts
     stale = ctx.memory.invalidate(changed_id, source=Source("Pipeline")) if _written(ctx, changed_id) else []
 
     previous = {(c["code"], c["refs"]) for c in run.cards}
@@ -206,6 +208,7 @@ def _conclude(run: Investigation, started: float) -> dict[str, Any]:
         report["seen_before"] = hmem_notes.seen_before(ctx.notes.get("remembered", []), now)
     report["eudr_export"] = exports.eudr_geojson(run.evidence, decision)
     report["supplier_letters"] = exports.supplier_letters(run.evidence, report)
+    report["geofence"] = geofence.investigation(run.evidence.plots)  # a constat: never read by the rules
     ctx.step("Writer", "export_files", "plot file and supplier letters, no model",
              f"{len(report['eudr_export']['plots_no_issue_found']['features'])} delivering plot(s) with no issue "
              f"found, {len(report['eudr_export']['excluded'])} left out; "
