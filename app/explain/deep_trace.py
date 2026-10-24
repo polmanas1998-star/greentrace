@@ -15,7 +15,8 @@ what the Writer cites, not from reading the words:
              "evidence": [] and "unsupported": true, as any sentence without a source would.
 
 A ref finds its rows by id in the answers that hold that kind of row (REF_ROWS); the whole answer
-when the ref names a source, a company or the cells around a plot. At most MAX_ROWS rows are
+when the ref names a source or the cells around a drawn plot (Q10), and the fiscal year's rows for a
+company. At most MAX_ROWS rows are
 shown per answer; row_count is always the full count.
 """
 import json
@@ -41,7 +42,6 @@ REF_ROWS: dict[str, tuple[tuple[str, ...], Callable[[dict, str], bool]]] = {
     "supplier": (("Q2", "Q6", "Q8"), lambda row, key: row.get("supplier_id") == key),
     "delivery": (("Q5", "Q6"), lambda row, key: f"{row.get('plot_id')}:{row.get('year')}" == key),
     "doc": (("Q1",), lambda row, key: f"{row.get('doc_id')}:{row.get('section')}:{row.get('paragraph_no')}" == key),
-    "cells": (("Q10",), lambda row, key: True),  # the cells read around that plot, all of them
 }
 COMPANY_QUERIES = ("Q2", "Q3", "Q6")  # what the traced share reads: suppliers and total, plots, deliveries
 
@@ -74,37 +74,38 @@ def sentences(run: Any) -> dict[str, Any]:
     out = []
     for n, piece in enumerate(pieces(facts), start=1):
         evidence = evidence_for(facts, piece["refs"], piece["queries"])
-        out.append({"n": n, "text": piece["text"], "section": piece["section"], "cites": piece["refs"],
-                    "evidence": evidence, "unsupported": not evidence})
+        out.append({"n": n, "text": piece["text"], "section": piece["section"], "cards": piece["cards"],
+                    "cites": piece["refs"], "evidence": evidence, "unsupported": not evidence})
     return {"run_id": facts.run_id, "verdict": facts.output.get("verdict"), "engine": facts.engine,
             "sentences": out, "unsupported": sum(1 for s in out if s["unsupported"])}
 
 
 def pieces(facts: RunFacts) -> list[dict[str, Any]]:
-    """Every sentence of the report, in reading order, with the refs (or whole queries) the Writer rests it on."""
+    """Every sentence of the report, in reading order, with the cards and refs (or whole queries) behind it."""
     out = facts.output
     verdict = out["verdict"]
     everything = _plan_queries(facts)
     deciding = [c for c in facts.cards if c["verdict"] == verdict]  # the Writer quotes deciding[0]
     found: list[dict] = []
 
-    def add(section: str, text: str, refs: Iterable[str] = (), queries: Iterable[str] = ()) -> None:
+    def add(section: str, text: str, cards: list[dict] = (), refs: Iterable[str] = (),
+            queries: Iterable[str] = ()) -> None:
+        refs = list(refs) + [ref for card in cards for ref in card["refs"]]
         for sentence in split(text):
-            found.append({"section": section, "text": sentence, "refs": list(dict.fromkeys(refs)),
-                          "queries": list(dict.fromkeys(queries))})
+            found.append({"section": section, "text": sentence, "cards": [c["id"] for c in cards],
+                          "refs": list(dict.fromkeys(refs)), "queries": list(dict.fromkeys(queries))})
 
     if verdict == PROVEN:
         add("verdict", out["summary"], queries=everything)
     else:
-        add("verdict", out["summary"], refs=(deciding[0]["refs"] if deciding else _all_refs(facts.cards)))
-    for finding in out.get("findings", []):
-        add("finding", finding["finding"], refs=[f"{e['source']}:{e['id']}" for e in finding["evidence"]])
+        add("verdict", out["summary"], cards=deciding[:1] or facts.cards)
+    for card, finding in zip(facts.cards, out.get("findings", [])):  # the Writer words the cards in order
+        add("finding", finding["finding"], cards=[card])
     add("flip", out.get("flip", ""), **_flip_basis(out, facts.cards, everything))
     for section, key, templates in (("untested", "untested_factors", writer.UNTESTED),
                                     ("action", "recommended_actions", writer.ACTIONS)):
         for line in out.get(key, []):
-            cards = [c for c in facts.cards if line in writer._filled(templates, [c])]
-            add(section, line, refs=_all_refs(cards))
+            add(section, line, cards=[c for c in facts.cards if line in writer._filled(templates, [c])])
     for line in out.get("limitations", []):
         add("limitation", line)
     add("human_review", out.get("human_review", ""))
@@ -120,11 +121,7 @@ def _plan_queries(facts: RunFacts) -> list[str]:
     return [q for h in facts.hypotheses for q in h["queries"]]
 
 
-def _all_refs(cards: list[dict]) -> list[str]:
-    return [ref for card in cards for ref in card["refs"]]
-
-
-def _flip_basis(out: dict, cards: list[dict], everything: list[str]) -> dict[str, list[str]]:
+def _flip_basis(out: dict, cards: list[dict], everything: list[str]) -> dict[str, Any]:
     tried = out.get("flip_tried") or []
     first = next((t for t in tried if t["verdict"] != out["verdict"]), None)
     if first is not None:
@@ -134,7 +131,7 @@ def _flip_basis(out: dict, cards: list[dict], everything: list[str]) -> dict[str
     if out.get("flip") == NOTHING_AGAINST:
         return {"queries": everything}
     if out.get("flip") == NOTHING_TO_CHANGE:
-        return {"refs": _all_refs([c for c in cards if c["verdict"] == out["verdict"]])}
+        return {"cards": [c for c in cards if c["verdict"] == out["verdict"]]}
     return {}
 
 
@@ -149,7 +146,7 @@ def evidence_for(facts: RunFacts, refs: Iterable[str], queries: Iterable[str] = 
     for ref in refs:
         for index, rows in rows_for_ref(facts, ref).items():
             picked.setdefault(index, set()).update(rows)
-        failed += [e for e in _not_answered(facts, ref) if e not in failed]
+        failed += [e for e in failed_attempts(facts, ref) if e not in failed]
     for query_id in queries:
         for index, answer in enumerate(facts.answers):
             if answer.query_id == query_id and answer.agent in ("Investigator", "Extractor"):
@@ -172,10 +169,11 @@ def rows_for_ref(facts: RunFacts, ref: str) -> dict[int, list[int]]:
                 found[index] = [n for n, row in enumerate(answer.rows)
                                 if answer.query_id != "Q6" or row.get("year") == fiscal]
         return {i: rows for i, rows in found.items() if rows}
-    if kind == "source":
+    if kind in ("source", "cells"):  # the whole answer, all of it: an empty answer is evidence too
         for index, answer in enumerate(facts.answers):
-            if answer.agent == "Investigator" and SOURCE_OF.get(answer.query_id) == key:
-                found[index] = list(range(len(answer.rows)))  # an empty answer is evidence too
+            if (SOURCE_OF.get(answer.query_id) == key and answer.agent == "Investigator") if kind == "source" \
+                    else answer.query_id == "Q10":
+                found[index] = list(range(len(answer.rows)))
         return found
     if kind not in REF_ROWS:
         return found
@@ -195,7 +193,7 @@ def _entry(facts: RunFacts, index: int, rows: list[int]) -> dict[str, Any]:
             "sql": answer.sql, "rows": shown, "row_count": len(rows), "truncated": len(rows) > MAX_ROWS}
 
 
-def _not_answered(facts: RunFacts, ref: str) -> list[dict[str, Any]]:
+def failed_attempts(facts: RunFacts, ref: str) -> list[dict[str, Any]]:
     """source:X with no answer from X: the Investigator's failed attempts, read back from the trace."""
     kind, _, key = ref.partition(":")
     if kind != "source" or any(a.agent == "Investigator" and SOURCE_OF.get(a.query_id) == key for a in facts.answers):
