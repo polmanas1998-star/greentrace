@@ -150,11 +150,15 @@ def read_copy(path: Path) -> TleSet:
             problems.append(f"{path.name}: {error}")
     if not tles:
         raise TleError(f"{path.name}: no usable TLE ({'; '.join(problems)})")
+    return TleSet(tles, "cache", parse_iso(body["fetched_at"]), shown(path), problems)
+
+
+def shown(path: Path) -> str:
+    """A copy's path as answers give it: relative to the repository when it lies inside."""
     try:
-        file = str(path.relative_to(ROOT))
+        return str(path.relative_to(ROOT))
     except ValueError:
-        file = str(path)
-    return TleSet(tles, "cache", parse_iso(body["fetched_at"]), file, problems)
+        return str(path)
 
 
 def newest_copy(directories: tuple[Path, ...]) -> Optional[TleSet]:
@@ -186,8 +190,8 @@ def current(sample: bool, now: datetime, *, fetch: Callable[[str], str] = defaul
         copy.problems.append(f"CelesTrak did not answer ({error}): the copy fetched {iso(copy.fetched_at)} is used")
         return copy, None
     try:
-        fresh.file = str(write_copy(fresh, cache).relative_to(ROOT))
-    except (OSError, ValueError) as error:  # a read-only disk: the TLEs are still good for this answer
+        fresh.file = shown(write_copy(fresh, cache))
+    except OSError as error:  # a read-only disk: the TLEs are still good for this answer
         fresh.problems.append(f"the fetched TLEs could not be kept in {cache}: {error}")
     return fresh, None
 
@@ -214,8 +218,7 @@ def main(argv: list[str]) -> int:
         except TleError as error:
             print(f"CelesTrak did not answer: {error}", file=sys.stderr)
             return 1
-        path = write_copy(fetched, SHIPPED_DIR)
-        print(f"wrote {path.relative_to(ROOT)}")
+        print(f"wrote {shown(write_copy(fetched, SHIPPED_DIR))}")
         for problem in fetched.problems:
             print(f"not fetched: {problem}", file=sys.stderr)
     elif command != "show":

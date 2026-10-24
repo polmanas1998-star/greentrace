@@ -25,7 +25,7 @@ WGS84_A_KM, WGS84_F = 6378.137, 1.0 / 298.257223563
 J2000_JD = 2451545.0
 GOLDEN = (math.sqrt(5.0) - 1.0) / 2.0
 NOTE = ("pass over the plot: the plot lies inside the satellite's nominal 290 km swath geometry at that time, "
-        "in daylight. Not an image guaranteed: the acquisition plan, clouds and the instrument are not checked.")
+        "in daylight. No image is promised: the acquisition plan, clouds and the instrument are not checked.")
 
 
 # ---- frames and time ---------------------------------------------------------------------------------------------
