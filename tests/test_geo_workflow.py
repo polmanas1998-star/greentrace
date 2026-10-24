@@ -347,9 +347,8 @@ def test_an_unverifiable_run_gets_a_pass_its_expiry_dates_and_two_follow_ups(tle
 def test_a_proven_run_has_no_follow_up(tle_dirs, tmp_path):
     answer, _ = events.run_events(finished(case(1, "geo-cal-1"), tmp_path), sample=True)
     assert answer["verdict"] == PROVEN and "follow_up" not in [e["kind"] for e in answer["events"]]
-    assert [e["title"] for e in answer["events"] if e["kind"] == "pass"] == [
-        next(e["title"] for e in answer["events"] if e["kind"] == "pass")]
-    assert "the supply area of run geo-cal-1" in answer["events"][0]["title"]
+    passing = [e for e in answer["events"] if e["kind"] == "pass"]
+    assert len(passing) == 1 and passing[0]["title"].endswith("pass over the supply area of run geo-cal-1")
 
 
 def test_alerts_that_did_not_answer_are_not_scheduled(tle_dirs, tmp_path):
