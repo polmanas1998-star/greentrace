@@ -32,7 +32,7 @@ from app import plotfile, userdocs
 from app.agents import extractor
 from app.agents.context import RunContext
 from app.canonical import sha256_of
-from app.checks import gfw, landcover
+from app.checks import geofence, gfw, landcover
 from app.queries import Answer, DataGate, SourceUnavailable
 from app.receipt import RECEIPT_VERSION, ZIP_DATE, rules_sha256
 from app.rules import CONTRADICTED, RULES_VERSION, UNVERIFIABLE, Extracted, check_plot, decide_promise
@@ -182,6 +182,7 @@ def _result(plot: dict, cells: Optional[list[dict]], source: Optional[int], find
         | {"cells": len(measured["cells"])},
         "evidence": {"query": answer.query_id, "answer": source, "maps": maps} if answer is not None else None,
         "note": note,
+        "geofence": geofence.file_plot(plot),  # declared area against the outline: a constat, not a verdict
         "properties": plot["properties"],
     }
 
