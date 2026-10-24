@@ -85,7 +85,9 @@ from app.web import mount  # noqa: E402 - the interface (app/web), on top of the
 from app.web import features  # noqa: E402 - suppliers to check first, citizen mode, satellite time machine
 from app.court import routes as court  # noqa: E402 - /runs/{id}/court, /runs/{id}/attacks
 from app.explain.routes import router as explain_plus  # noqa: E402 - graph, world_diff, sentences, radar, letter
+from app.geo.router import router as geo_router  # noqa: E402 - passes, calendars, convergence, time slider
 mount(app)
 app.include_router(features.router)
 app.include_router(court.router)
 app.include_router(explain_plus)
+app.include_router(geo_router)
