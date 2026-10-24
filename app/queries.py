@@ -9,6 +9,7 @@ one is checked against a strict pattern first: nothing a user types reaches SQL 
 """
 import re
 import sqlite3
+import threading
 from dataclasses import dataclass
 from typing import Any, Callable, Optional
 
@@ -93,12 +94,14 @@ class SQLiteEngine:
 
     def __init__(self, connection: sqlite3.Connection, unavailable: tuple[str, ...] = ()):
         self.connection, self.unavailable = connection, set(unavailable)
+        self._lock = threading.Lock()  # the connection is shared across request threads
 
     def run(self, query_id: str, sql: str) -> list[dict[str, Any]]:
         if SOURCE_OF[query_id] in self.unavailable:
             raise SourceUnavailable(f"source '{SOURCE_OF[query_id]}' did not answer")
         try:
-            return [dict(row) for row in self.connection.execute(sql)]
+            with self._lock:
+                return [dict(row) for row in self.connection.execute(sql)]
         except sqlite3.OperationalError as error:
             if "no such table" not in str(error):
                 raise

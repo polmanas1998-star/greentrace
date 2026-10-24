@@ -43,7 +43,8 @@ def world_sha256(world: dict[str, Any]) -> str:
 def to_sqlite(world: dict[str, Any], path: str | Path = ":memory:") -> sqlite3.Connection:
     if str(path) != ":memory:":
         Path(path).unlink(missing_ok=True)
-    connection = sqlite3.connect(str(path))
+    # A run is created in one request thread and questioned again by what_if in another.
+    connection = sqlite3.connect(str(path), check_same_thread=False)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
     connection.executescript(SCHEMA_SQL.read_text(encoding="utf-8"))
