@@ -110,15 +110,15 @@ function Result({ output, lines }: { output: RunOutput; lines: TraceLine[] }) {
 
   // A judge has minutes: the four views that explain the verdict come first, the rest one click away.
   const PRIMARY = new Set(["court"]);
-  const optional = OPTIONAL_TABS.filter((t) => extra[t.id]);
+  const available = OPTIONAL_TABS.filter((t) => extra[t.id]);
   const tabs: Array<{ id: string; label: string }> = [
     { id: "why", label: "Why" },
     { id: "whatif", label: "What would change it" },
     { id: "ask", label: "Ask GreenTrace" },
-    ...optional.filter((t) => PRIMARY.has(t.id)).map((t) => ({ id: t.id, label: t.label })),
+    ...available.filter((t) => PRIMARY.has(t.id)).map((t) => ({ id: t.id, label: t.label })),
   ];
   const moreTabs: Array<{ id: string; label: string }> = [
-    ...optional.filter((t) => !PRIMARY.has(t.id)).map((t) => ({ id: t.id, label: t.label })),
+    ...available.filter((t) => !PRIMARY.has(t.id)).map((t) => ({ id: t.id, label: t.label })),
     { id: "trace", label: `Trace (${lines.length})` },
   ];
   const active = OPTIONAL_TABS.find((t) => t.id === tab);
