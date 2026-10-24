@@ -16,6 +16,7 @@ text and the operation's JSON. Tasks are kept in memory, the last KEPT_TASKS. No
 notifications: the card says so. GreenTrace answers other agents; it calls none.
 """
 import json
+import logging
 import os
 import uuid
 from collections import OrderedDict
@@ -36,9 +37,10 @@ METHODS = {"1.0": {"SendMessage": "send", "GetTask": "get"}, "0.3": {"message/se
 KEPT_TASKS = orchestrator.KEPT_RUNS
 TASKS: "OrderedDict[str, dict]" = OrderedDict()
 REPOSITORY = "https://github.com/polmanas1998-star/greentrace"
+log = logging.getLogger(__name__)
 
 # JSON-RPC codes: the standard ones and the A2A errors used here (A2A 1.0, section 5.4).
-PARSE_ERROR, INVALID_REQUEST, METHOD_NOT_FOUND, INVALID_PARAMS = -32700, -32600, -32601, -32602
+PARSE_ERROR, INVALID_REQUEST, METHOD_NOT_FOUND, INVALID_PARAMS, INTERNAL_ERROR = -32700, -32600, -32601, -32602, -32603
 TASK_NOT_FOUND, PUSH_NOT_SUPPORTED, UNSUPPORTED, CONTENT_TYPE, VERSION_NOT_SUPPORTED = -32001, -32003, -32004, -32005, -32009
 A2A_ERRORS = {TASK_NOT_FOUND: "TASK_NOT_FOUND", PUSH_NOT_SUPPORTED: "PUSH_NOTIFICATION_NOT_SUPPORTED",
               UNSUPPORTED: "UNSUPPORTED_OPERATION", CONTENT_TYPE: "CONTENT_TYPE_NOT_SUPPORTED",
@@ -157,6 +159,10 @@ def answer(raw: bytes, requested_version: Optional[str]) -> dict[str, Any]:
         return {"jsonrpc": "2.0", "id": request_id, "result": result}
     except RpcError as error:
         return {"jsonrpc": "2.0", "id": request_id, "error": error.body()}
+    except Exception as error:  # noqa: BLE001 - a crash is still a JSON-RPC answer; the trace stays in the log
+        log.exception("A2A request failed")
+        return {"jsonrpc": "2.0", "id": request_id,
+                "error": RpcError(INTERNAL_ERROR, "Internal error", detail=type(error).__name__).body()}
 
 
 def _version(requested: Optional[str], method: str) -> str:
@@ -177,6 +183,9 @@ def send(params: dict, version: str) -> dict[str, Any]:
     for required in ("messageId", "role", "parts"):
         if required not in message:
             raise RpcError(INVALID_PARAMS, "Invalid parameters", detail=f"params.message.{required} is required")
+    for name in ("messageId", "contextId", "taskId"):
+        if name in message and message[name] is not None and not isinstance(message[name], str):
+            raise RpcError(INVALID_PARAMS, "Invalid parameters", detail=f"params.message.{name} must be a string")
     if message["role"] not in ("ROLE_USER", "user"):
         raise RpcError(INVALID_PARAMS, "Invalid parameters", detail="params.message.role must be the user's")
     config = params.get("configuration") or {}

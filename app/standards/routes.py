@@ -11,7 +11,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException
 
-from app import tracing
+from app import orchestrator, tracing
 from app.standards import a2a, mcp_server, otel
 
 router = APIRouter(lifespan=mcp_server.lifespan)
@@ -23,8 +23,10 @@ for path in ("/mcp", "/mcp/"):
 @router.get("/runs/{run_id}/otel")
 def otel_spans(run_id: str) -> dict[str, Any]:
     """{"run_id", "trace_id": 32 hex, "spans": [{span_id, parent_span_id, name, start, end, attributes}]}."""
-    if not tracing._RUN_ID.match(run_id):
-        raise HTTPException(status_code=404, detail=f"no run {run_id!r}: a run_id matches {tracing._RUN_ID.pattern}")
+    try:
+        orchestrator.checked_run_id(run_id)  # it becomes a file name: the same safe alphabet as the trace
+    except ValueError as error:
+        raise HTTPException(status_code=404, detail=f"no run {run_id!r}: {error}") from error
     spans = otel.read(run_id, tracing.LOG_DIR)
     if spans is None:
         why = "OpenTelemetry is off (GREENTRACE_OTEL=0)" if not otel.enabled() else "no such run in logs/"
