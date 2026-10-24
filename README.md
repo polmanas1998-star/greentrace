@@ -70,12 +70,14 @@ docker run --rm -p 8000:8000 greentrace        # open http://localhost:8000
 ```
 
 The image (648 MB on disk, measured on 24 October 2026) runs the API and, beside it, the Meterless
-World Model server (Node 24) inside the container. Without Docker (Python 3.11 or 3.13, both tested):
-`pip install -r requirements.txt`, then `python run.py` (API) or
-`python run.py --input examples/01_contradicted.json` (one run, JSON on stdout, trace in `logs/`).
+World Model server (Node 24) inside the container. Without Docker (Python 3.11 or 3.13, both
+tested), in a virtual environment (`python3 -m venv .venv && . .venv/bin/activate`; on Windows
+`python -m venv .venv` then `.venv\Scripts\activate`): `pip install -r requirements.txt`, then
+`python run.py` (API) or `python run.py --input examples/01_contradicted.json` (one run, JSON on
+stdout, trace in `logs/`).
 
-Tests: `python -m pytest -q`, in sample mode (no key, no network). A few are skipped unless their tool
-is there: the Meterless conformance suites (8/8 and 13/13) need Node and, once,
+Tests: `python -m pytest -q`, in sample mode (no key, no network). A few are skipped unless their
+tool is there: the Meterless conformance suites (8/8 and 13/13) need Node and, once,
 `cd meterless && npm ci`; the map-script tests need `pip install -r scripts/requirements-maps.txt`
 (rasterio); the live Zetaris test needs `GT_LIVE_TESTS=1` with Zetaris running.
 
