@@ -40,7 +40,13 @@ def main(argv: list[str]) -> int:
     for r in results:
         print(f"{'ok  ' if r['ok'] else 'MISS'} {r['case']:02d} {r['slug']:<32} expected {r['expected']:<13} got {r['got']}")
     score = sum(r["ok"] for r in results)
-    print(f"\n{'with the model' if use_model else 'sample mode (rules alone)'}: {score}/{len(results)}")
+    if not use_model:
+        label = "sample mode (rules alone)"
+    elif all(r["degraded"] for r in results):  # no provider configured: every agent fell back to its rules
+        label = "--model, but no model is configured (MODEL_API_KEY in .env), so rules alone"
+    else:
+        label = "with the model"
+    print(f"\n{label}: {score}/{len(results)}")
     if "--save" in argv and not use_model:
         BASELINE.write_text(json.dumps({"score": score, "results": results}, indent=2) + "\n",
                             encoding="utf-8", newline="\n")

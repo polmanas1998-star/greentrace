@@ -1459,6 +1459,15 @@
       "letter": "DRAFT prepared by GreenTrace, to be reviewed by our compliance team before sending.\n\n[date]\n\nDear Agnibi (F-007),\n\nAs part of our review of the cocoa we bought in 2025, our checks found the following points about the plots and volumes in our records for you:\n\n- 3.42 ha that the EU map counted as forest in 2020 were lost inside P-042 in 2021, 2022, 2023, 2024 (Hansen/UMD), while it kept delivering (threshold 0.50 ha: 0.5 ha or 10 % of the plot).\n\nThese points come from public satellite data and from our own registry. They may have a simple explanation, and we would like to understand them with you.\n\nTo complete our file, could you send us:\n\n- A field report on P-042.\n\nThank you for your help.\n\nKind regards,\n\n[name, compliance team]\n"
     }
   ],
+  "geofence": {
+    "threshold_share": 0.1,
+    "projection": "Lambert azimuthal equal-area on the WGS84 ellipsoid, centred on each plot",
+    "checked": 33,
+    "not_checked": 8,
+    "findings": [],
+    "sentence": "Every plot with an outline and a declared area matches it within 10% (33 checked).",
+    "decides_verdict": false
+  },
   "verdict_sha256": "06a4fbad34ecde7169959940d16fad47d916185d812bf41530fbdbd4ed57fb9d",
   "fingerprints": {
     "input_sha256": "dc9e667576f2247f30fe9c7742b80f2107d5d995784ac51352a1cbf49e3fd671",
@@ -1467,5 +1476,5 @@
     "rules_sha256": "22aeb9b31545946485e497d3a71117a584fac1d5c5df5ce48dae1cbcde763b8a"
   },
   "log_file": "logs/example-05.jsonl",
-  "execution_time_seconds": 0.07
+  "execution_time_seconds": 0.14
 }

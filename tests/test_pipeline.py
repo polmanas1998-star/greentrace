@@ -58,3 +58,14 @@ def test_bench_matches_the_committed_baseline():
     """Any change in a sample-mode verdict must be deliberate: rerun scripts.bench --save."""
     baseline = json.loads(BASELINE.read_text(encoding="utf-8"))
     assert [(r["case"], r["got"]) for r in run_all()] == [(r["case"], r["got"]) for r in baseline["results"]]
+
+
+def test_bench_with_model_but_no_key_does_not_call_its_score_the_model_s(monkeypatch, capsys):
+    """A judge without .env who runs scripts.bench --model gets the rules' score, and is told so."""
+    import scripts.bench as bench
+    monkeypatch.setattr(bench, "load_dotenv", lambda: None)
+    for name in ("MODEL_API_KEY", "METERLESS_RUNTIME_TOKEN"):
+        monkeypatch.delenv(name, raising=False)
+    assert bench.main(["--model"]) == 0
+    last = capsys.readouterr().out.strip().splitlines()[-1]
+    assert "with the model" not in last and last.endswith("so rules alone: 18/21")

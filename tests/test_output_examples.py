@@ -1,4 +1,4 @@
-"""output_examples/ holds real runs: rerunning each input gives the same verdict and the same seal."""
+"""output_examples/ holds real runs: rerunning each input gives the same verdict, the same seal and the same fields."""
 import io
 import json
 from pathlib import Path
@@ -30,6 +30,9 @@ def test_rerunning_the_input_gives_the_same_verdict_and_seal(example):
     assert shipped["mode"] == "sample"
     assert (again["verdict"], again["verdict_sha256"]) == (shipped["verdict"], shipped["verdict_sha256"])
     assert again["fingerprints"]["data_sha256"] == shipped["fingerprints"]["data_sha256"]
+    # A field the code now writes but the shipped file lacks means output_examples/ is stale: a judge's
+    # own run would not look like it. Rewrite them with python -m scripts.make_output_examples.
+    assert sorted(again) == sorted(shipped)
 
 
 def test_the_shipped_receipt_is_valid_and_carries_the_shipped_seal():

@@ -1469,6 +1469,15 @@
       "letter": "DRAFT prepared by GreenTrace, to be reviewed by our compliance team before sending.\n\n[date]\n\nDear Wawassi (F-031),\n\nAs part of our review of the cocoa we bought in 2025, our checks found the following points about the plots and volumes in our records for you:\n\n- Alert A-225 (2022-08-21, high) lies inside P-030, which delivered in 2022 or later.\n\nThese points come from public satellite data and from our own registry. They may have a simple explanation, and we would like to understand them with you.\n\nTo complete our file, could you send us:\n\n- A field report on P-030.\n\nThank you for your help.\n\nKind regards,\n\n[name, compliance team]\n"
     }
   ],
+  "geofence": {
+    "threshold_share": 0.1,
+    "projection": "Lambert azimuthal equal-area on the WGS84 ellipsoid, centred on each plot",
+    "checked": 33,
+    "not_checked": 7,
+    "findings": [],
+    "sentence": "Every plot with an outline and a declared area matches it within 10% (33 checked).",
+    "decides_verdict": false
+  },
   "verdict_sha256": "e31226345c161aca730b1a2092edd37276a92bfd5db21f77ca5e8e19f616b094",
   "fingerprints": {
     "input_sha256": "530f4ca95cf16a81c1ff7623b22fb5bc3150170a39e6b4433c1ba451be3b4941",
@@ -1477,5 +1486,5 @@
     "rules_sha256": "22aeb9b31545946485e497d3a71117a584fac1d5c5df5ce48dae1cbcde763b8a"
   },
   "log_file": "logs/example-04.jsonl",
-  "execution_time_seconds": 0.06
+  "execution_time_seconds": 0.11
 }
