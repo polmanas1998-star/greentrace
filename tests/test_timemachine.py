@@ -41,8 +41,9 @@ def test_the_analysts_p042_gets_the_shipped_scenes_and_the_orange_cells(monkeypa
     batch_id = batch(square("P-042", 5.7300, -6.5220, 10.0))
     out = TestClient(app).get(f"/api/check-plots/{batch_id}/plots/P-042/timelapse").json()
     assert out["plot"] == "P-042" and out["frame"] == sat.frame(5.73, -6.522)
+    # the analyst's own square around P-042 has the frame of the shipped P-042 scenes
     assert {y["year"]: y["image"] for y in out["years"] if y["image"]} == {
-        2020: "/static/maps/P-042_2020.jpg", 2026: "/static/maps/P-042.jpg"}
+        year: f"/api/timelapse/image/P-042_{year}.jpg" for year in range(2019, 2027)}
     year_2021 = next(y for y in out["years"] if y["year"] == 2021)
     lost = year_2021["hansen_loss"]["lost"]
     assert len(lost) == year_2021["hansen_loss"]["cells"] > 0

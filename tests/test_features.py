@@ -165,14 +165,16 @@ def quiet(**kwargs):
 
 
 def test_sample_mode_shows_only_the_scenes_the_repository_ships():
+    # data/timelapse ships one dry-season scene a year for P-042 (scripts/fetch_satellite.py --timelapse)
     out = quiet(plot="P-042", sample=True)
-    assert [y["year"] for y in out["years"]] == list(range(2019, 2027))
+    years = list(range(2019, 2027))
+    assert [y["year"] for y in out["years"]] == years
     with_image = {y["year"]: y["image"] for y in out["years"] if y["image"]}
-    assert with_image == {2020: "/static/maps/P-042_2020.jpg", 2026: "/static/maps/P-042.jpg"}
+    assert with_image == {year: f"/api/timelapse/image/P-042_{year}.jpg" for year in years}
     assert with_image.keys() == {y["year"] for y in out["years"] if y["status"] == "scene"}
-    assert all(y["status"] == tl.NOT_IN_SAMPLE for y in out["years"] if not y["image"])
     dates = {y["year"]: y["scene"]["date"] for y in out["years"] if y["scene"]}
-    assert dates == {2020: "2020-01-03", 2026: "2026-03-12"}
+    assert dates[2020] == "2020-01-03" and dates[2026] == "2026-03-12"
+    assert all(date[:4] in (str(year - 1), str(year)) for year, date in dates.items())  # the dry season straddles new year
 
 
 def test_the_frame_is_the_maps_frame_and_the_interface_frame():
