@@ -14,7 +14,7 @@ const ALLOWED = [
   /^citizen$/,
   /^api\/(check-plots|timelapse|plot-map|plot-measure|lens|plots)(\/[A-Za-z0-9_.-]+)*$/,
   /^static\/(example_plots\.geojson|maps\/[A-Za-z0-9_.-]+)$/,
-  /^\.well-known\/agent\.json$/,
+  /^\.well-known\/agent(-card)?\.json$/,
 ];
 
 const PASS_RESPONSE_HEADERS = ["content-type", "content-disposition", "cache-control", "last-modified", "etag"];

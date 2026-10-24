@@ -153,7 +153,7 @@ type Court = {
   rounds: Array<{
     n: number;
     plaintiff: Array<{ id: string; claim: string; status: string; cites: Array<{ source: string; ref: string; quote?: string }> }>;
-    defense: Array<{ id: string; answers: string; refutation: string; query_id: string; sql?: string; holds: boolean }>;
+    defense: Array<{ id: string; answers: string; refutation: string | null; query_id: string | null; sql?: string | null; holds: boolean; detail?: string }>;
     judge: { rule: string; finding: string; standing: string[]; refuted: string[] };
   }>;
   judgment: string;
@@ -190,8 +190,10 @@ function CourtTab({ data }: { data: Court }) {
                   <li key={d.id}>
                     <div className="text-[15px]">
                       <span className="gt-mono text-gt-muted">{d.id} </span>
-                      answers {d.answers} with {d.refutation} ({d.query_id}): {d.holds ? "holds" : "does not hold"}
+                      answers {d.answers}
+                      {d.query_id ? ` with ${d.query_id}` : ""}: {d.holds ? "the evidence holds" : "the evidence gives way"}
                     </div>
+                    {d.detail && <p className="mt-1 text-[14px] leading-relaxed text-gt-text/75">{d.detail}</p>}
                     {d.sql && <pre className="gt-mono mt-2 overflow-x-auto rounded-md bg-gt-ground p-3 text-[11px] text-gt-text/70">{d.sql}</pre>}
                   </li>
                 ))}
@@ -398,6 +400,55 @@ function RadarTab({ data }: { data: Radar }) {
   );
 }
 
+type Letters = { lang: string; letters: Array<{ supplier_id: string; name: string; letter: string; translated_by?: string }>; status?: string; reason?: string };
+
+const LANGS = [
+  ["en", "English"],
+  ["fr", "Français"],
+  ["es", "Español"],
+  ["pt", "Português"],
+] as const;
+
+function LetterTab({ data, runId }: { data: Letters; runId: string }) {
+  const [current, setCurrent] = useState<Letters>(data);
+  const [busy, setBusy] = useState(false);
+  async function pick(lang: string) {
+    setBusy(true);
+    try {
+      setCurrent(await engine<Letters>(`/runs/${runId}/letter?lang=${lang}`));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <div>
+      <div className="flex flex-wrap gap-2">
+        {LANGS.map(([code, label]) => (
+          <button
+            key={code}
+            type="button"
+            disabled={busy}
+            onClick={() => void pick(code)}
+            className="rounded-full border px-4 py-1.5 text-[14px] transition-colors disabled:opacity-50"
+            style={{ borderColor: current.lang === code ? "var(--gt-signal)" : "var(--gt-line)", color: current.lang === code ? "var(--gt-text)" : "var(--gt-muted)" }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {current.letters.length === 0 && <p className="mt-6 text-gt-text/70">{current.reason ?? "No supplier needs a letter for this verdict."}</p>}
+      {current.letters.map((l) => (
+        <article key={l.supplier_id} className="mt-6 rounded-[14px] border border-gt-line bg-gt-raised p-7">
+          <div className="gt-mono text-[12px] text-gt-muted">
+            {l.name} ({l.supplier_id}){l.translated_by ? ` · translated by ${l.translated_by}` : ""}
+          </div>
+          <pre className="mt-4 whitespace-pre-wrap font-sans text-[15px] leading-relaxed text-gt-text/90">{l.letter}</pre>
+        </article>
+      ))}
+    </div>
+  );
+}
+
 export const OPTIONAL_TABS: Array<{ id: string; label: string; path: (runId: string) => string; render: (data: unknown, runId: string) => ReactNode }> = [
   { id: "court", label: "Court", path: (r) => `/runs/${r}/court`, render: (d) => <CourtTab data={d as Court} /> },
   { id: "attacks", label: "Attack log", path: (r) => `/runs/${r}/attacks`, render: (d) => <AttacksTab data={d as Attacks} /> },
@@ -406,4 +457,5 @@ export const OPTIONAL_TABS: Array<{ id: string; label: string; path: (runId: str
   { id: "world_diff", label: "Memory before / after", path: (r) => `/runs/${r}/world_diff`, render: (d) => <WorldDiffTab data={d as WorldDiff} /> },
   { id: "radar", label: "Contradiction radar", path: (r) => `/runs/${r}/radar`, render: (d) => <RadarTab data={d as Radar} /> },
   { id: "calendar", label: "Calendar", path: (r) => `/runs/${r}/calendar`, render: (d, r) => <CalendarTab data={d as Calendar} runId={r} /> },
+  { id: "letter", label: "Letter to the supplier", path: (r) => `/runs/${r}/letter?lang=en`, render: (d, r) => <LetterTab data={d as Letters} runId={r} /> },
 ];

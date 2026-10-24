@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState, type DragEvent } from "react";
+import { useEffect, useRef, useState, type DragEvent } from "react";
 
 import { Page } from "../components/gt/shell";
-import { API, engine, verdictStyle, type PlotCheck, type PlotResult } from "../lib/gt";
+import { API, engine, optional, verdictStyle, type PlotCheck, type PlotResult } from "../lib/gt";
 
 export const Route = createFileRoute("/check")({
   head: () => ({
@@ -232,6 +232,49 @@ type Timelapse = {
   }>;
 };
 
+type Passes = {
+  status: string;
+  reason?: string;
+  tle_age_days?: number;
+  note?: string;
+  passes: Array<{ satellite: string; time: string; max_elevation_deg: number }>;
+};
+
+function NextPasses({ lat, lon }: { lat: number; lon: number }) {
+  const [data, setData] = useState<Passes | null | "error">(null);
+  useEffect(() => {
+    let alive = true;
+    optional<Passes>(`/api/plots/passes?lat=${lat}&lon=${lon}&days=30`)
+      .then((d) => alive && setData(d))
+      .catch(() => alive && setData("error"));
+    return () => {
+      alive = false;
+    };
+  }, [lat, lon]);
+  if (data === null || data === "error") return null;
+  return (
+    <div className="mt-6">
+      <div className="text-[14px] text-gt-muted">Next Sentinel-2 passes over the plot (30 days)</div>
+      {data.status !== "success" ? (
+        <p className="mt-2 text-[14px] text-gt-text/70">{data.reason}</p>
+      ) : (
+        <>
+          <ul className="gt-num mt-2 flex flex-wrap gap-x-5 gap-y-1 text-[13px]">
+            {data.passes.slice(0, 6).map((p) => (
+              <li key={`${p.satellite}${p.time}`}>
+                {p.satellite.replace("Sentinel-", "S")} {new Date(p.time).toUTCString().slice(5, 22)} UTC
+              </li>
+            ))}
+          </ul>
+          <a href={`${API}/api/plots/passes.ics?lat=${lat}&lon=${lon}`} className="mt-2 inline-block text-[14px] text-gt-signal underline-offset-4 hover:underline">
+            Add the passes to a calendar (.ics)
+          </a>
+        </>
+      )}
+    </div>
+  );
+}
+
 function PlotRow({ plot, batchId }: { plot: PlotResult; batchId: string }) {
   const [open, setOpen] = useState(false);
   const [tl, setTl] = useState<Timelapse | null>(null);
@@ -280,7 +323,7 @@ function PlotRow({ plot, batchId }: { plot: PlotResult; batchId: string }) {
             <dd className="gt-num">{plot.rule ?? "none"}</dd>
           </dl>
           <div>
-            <div className="text-[14px] text-gt-muted">Year by year (Hansen loss on 2020 forest)</div>
+            <div className="text-[14px] text-gt-muted">Year by year in the 1.2 km frame around the plot (Hansen loss on EU 2020 forest, ha)</div>
             {tlError && <p className="mt-2 text-[14px] text-gt-text/70">{tlError}</p>}
             {!tl && !tlError && <div className="gt-skeleton mt-3 h-24" />}
             {tl && (
@@ -306,6 +349,7 @@ function PlotRow({ plot, batchId }: { plot: PlotResult; batchId: string }) {
                 })}
               </div>
             )}
+            <NextPasses lat={plot.centre[0]} lon={plot.centre[1]} />
           </div>
         </div>
       )}

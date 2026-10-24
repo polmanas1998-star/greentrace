@@ -142,6 +142,13 @@ export function HowItDecides() {
           </li>
         ))}
       </ol>
+      <div className="mt-16 rounded-[14px] border border-gt-line bg-gt-raised p-8 md:ml-14">
+        <div className="text-xl font-semibold tracking-tight">Then it argues with itself.</div>
+        <p className="mt-3 max-w-[64ch] leading-relaxed text-gt-text/75">
+          A Plaintiff makes the supplier&apos;s best case from the documents, citing every line. The Evaluator answers with its
+          own queries. Over up to three rounds the rules judge each argument, and the verdict never moves on rhetoric alone.
+        </p>
+      </div>
     </section>
   );
 }
@@ -262,7 +269,7 @@ export function Proof() {
             suite checks it on 21 trap cases.
           </p>
         </div>
-        <div className="rounded-[14px] border border-gt-line bg-gt-raised p-8 md:col-span-3">
+        <div className="rounded-[14px] border border-gt-line bg-gt-raised p-8 md:col-span-2">
           <div className="text-xl font-semibold tracking-tight">Real maps, cited.</div>
           <ul className="mt-5 space-y-3 text-[15px] leading-relaxed text-gt-text/75">
             <li>EU JRC Global Forest Cover 2020, v4: was it forest at the cut-off.</li>
@@ -270,7 +277,7 @@ export function Proof() {
             <li>Sentinel-2 L2A scenes: what the plot looks like, year after year.</li>
           </ul>
         </div>
-        <div className="rounded-[14px] border border-gt-line bg-gt-raised p-8 md:col-span-3">
+        <div className="rounded-[14px] border border-gt-line bg-gt-raised p-8 md:col-span-2">
           <div className="text-xl font-semibold tracking-tight">Each sponsor does one job.</div>
           <dl className="mt-5 grid grid-cols-[110px_1fr] gap-x-4 gap-y-3 text-[15px] leading-relaxed">
             <dt className="text-gt-text">Zetaris</dt>
@@ -280,6 +287,17 @@ export function Proof() {
             <dt className="text-gt-text">NVIDIA</dt>
             <dd className="text-gt-text/75">Nemotron reads the documents and writes the explanation.</dd>
           </dl>
+        </div>
+        <div className="rounded-[14px] border border-gt-line bg-gt-raised p-8 md:col-span-2">
+          <div className="text-xl font-semibold tracking-tight">Open to other agents.</div>
+          <p className="mt-3 leading-relaxed text-gt-text/75">
+            An MCP server and an A2A agent expose the same five operations: check a claim, check plots, what if, explain,
+            verify a receipt. Every trace line is also an OpenTelemetry span.
+          </p>
+          <pre className="gt-mono mt-6 overflow-x-auto rounded-[10px] border border-gt-line bg-gt-ground p-4 text-[12px] leading-5 text-gt-text/80">
+            python -m app.standards.mcp_server{"
+"}GET /.well-known/agent-card.json
+          </pre>
         </div>
       </div>
     </section>

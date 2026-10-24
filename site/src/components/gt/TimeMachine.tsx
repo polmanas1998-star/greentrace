@@ -228,7 +228,9 @@ export function TimeMachine({ map, frames }: { map: PlotMap; frames: Frame[] }) 
             <div className="text-gt-muted">
               <span ref={sceneRef}>{shown[0]?.scene}</span>
             </div>
-            <div className="text-gt-muted">P-042 · 5.7300 N, 6.5220 W</div>
+            <div className="text-gt-muted">
+              P-042<span className="max-md:hidden"> · 5.7300 N, 6.5220 W</span>
+            </div>
           </div>
           <div className="text-right">
             <div ref={forestNumRef} style={{ opacity: 0 }} className="mb-4">
@@ -244,7 +246,7 @@ export function TimeMachine({ map, frames }: { map: PlotMap; frames: Frame[] }) 
         </div>
 
         {/* chapters */}
-        <div className="absolute bottom-36 left-6 right-6 md:left-12 md:max-w-xl">
+        <div className="absolute bottom-40 left-6 right-6 md:bottom-36 md:left-12 md:max-w-xl">
           {chapters.map((c, i) => (
             <div
               key={c.title}
@@ -254,8 +256,8 @@ export function TimeMachine({ map, frames }: { map: PlotMap; frames: Frame[] }) 
               data-active={i === 0}
               className="absolute bottom-0 left-0 right-0 transition-[opacity,transform] duration-700 ease-out data-[active=false]:pointer-events-none data-[active=false]:translate-y-3 data-[active=false]:opacity-0 motion-reduce:static motion-reduce:mb-6 motion-reduce:opacity-100 motion-reduce:translate-y-0"
             >
-              <h3 className="gt-display text-4xl text-gt-text md:text-6xl">{c.title}</h3>
-              <p className="mt-3 max-w-[46ch] text-lg leading-relaxed text-gt-text/85">{c.body}</p>
+              <h3 className="gt-display text-3xl text-gt-text md:text-6xl">{c.title}</h3>
+              <p className="mt-2 max-w-[46ch] text-base leading-relaxed text-gt-text/85 md:mt-3 md:text-lg">{c.body}</p>
             </div>
           ))}
         </div>
@@ -266,7 +268,7 @@ export function TimeMachine({ map, frames }: { map: PlotMap; frames: Frame[] }) 
             <div className="absolute inset-x-0 top-5 h-px bg-gt-line-strong" />
             {years.map((y) => (
               <div key={y} className="absolute top-0 flex -translate-x-1/2 flex-col items-center" style={{ left: `${pct(Date.UTC(y, 0, 1))}%` }}>
-                <span className="gt-mono text-[11px] text-gt-muted">{y}</span>
+                <span className={`gt-mono text-[11px] text-gt-muted ${y % 2 === 0 ? "max-md:invisible" : ""}`}>{y}</span>
                 <span className="mt-1 h-2 w-px bg-gt-line-strong" />
               </div>
             ))}
@@ -277,7 +279,8 @@ export function TimeMachine({ map, frames }: { map: PlotMap; frames: Frame[] }) 
               </div>
             </div>
           </div>
-          <p className="gt-mono mt-1 text-[11px] leading-5 text-gt-muted">
+          <p className="gt-mono mt-1 text-[11px] leading-5 text-gt-muted md:hidden">Sentinel-2 L2A · EU JRC GFC2020 · Hansen/UMD. Contains modified Copernicus Sentinel data.</p>
+          <p className="gt-mono mt-1 hidden text-[11px] leading-5 text-gt-muted md:block">
             Real Sentinel-2 L2A scenes, one clean dry-season frame per year (the hazy scenes of Feb 2021 and Jan 2023 are left out). Cells: EU JRC GFC2020 v4 forest, Hansen/UMD GFC v1.12 loss year. Contains modified Copernicus Sentinel data 2019-2026.
           </p>
         </div>
