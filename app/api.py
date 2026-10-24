@@ -85,3 +85,6 @@ from app.web import mount  # noqa: E402 - the interface (app/web), on top of the
 from app.web import features  # noqa: E402 - suppliers to check first, citizen mode, satellite time machine
 mount(app)
 app.include_router(features.router)
+
+from app.standards import routes as standards  # noqa: E402 - MCP at /mcp, the A2A agent, OpenTelemetry spans
+app.include_router(standards.router)
