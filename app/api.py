@@ -84,6 +84,8 @@ def what_if(run_id: str, change: WhatIf) -> dict[str, Any]:
 from app.web import mount  # noqa: E402 - the interface (app/web), on top of the routes above
 from app.web import features  # noqa: E402 - suppliers to check first, citizen mode, satellite time machine
 from app.court import routes as court  # noqa: E402 - /runs/{id}/court, /runs/{id}/attacks
+from app.explain.routes import router as explain_plus  # noqa: E402 - graph, world_diff, sentences, radar, letter
 mount(app)
 app.include_router(features.router)
 app.include_router(court.router)
+app.include_router(explain_plus)
