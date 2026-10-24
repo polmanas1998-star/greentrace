@@ -346,6 +346,8 @@ more. Decision support, not a legal opinion, not a public rating.
 
 ## Sponsor technology
 
+Proof of a live run: `output_examples/live/` keeps one run of the demo case with Zetaris answering all 16 queries, the Meterless World Model server holding the facts and 7 NVIDIA Nemotron calls. Its verdict and seal are the same as the offline sample run (`24035b45...`): the model reads, the rules decide.
+
 - **Zetaris** (data): the Unified Semantic Layer `eudr` (`data/usl_eudr.sql`) over a Postgres
   datasource, built by `scripts/load_zetaris.py`; native data-quality rules (`REGISTER DQ`, read by Q0
   through `SHOW DQ INVALID RECORD`, `data/dq_rules.json`); the agents' only access to data is the 11
