@@ -85,3 +85,5 @@ from app.web import mount  # noqa: E402 - the interface (app/web), on top of the
 from app.web import features  # noqa: E402 - suppliers to check first, citizen mode, satellite time machine
 mount(app)
 app.include_router(features.router)
+from app.geo.router import router as geo_router  # noqa: E402 - passes, calendars, convergence, time slider
+app.include_router(geo_router)
