@@ -19,10 +19,10 @@ import verify
 from app import orchestrator
 from app.pipeline import run_case
 from app.receipt import RECEIPT_VERSION, build_receipt
+from app.standards import VERSION  # noqa: F401 - the version the MCP server and the agent card give
 from app.web import features, plain
 from app.world.cases import CASES_BY_NUMBER, DEFAULT_CLAIM
 
-VERSION = "0.1.0"  # the API's version (app/api.py)
 NAMES = ("check_claim", "check_plots", "what_if", "explain", "verify_receipt")
 DESCRIPTIONS = {
     "check_claim": "Check a company's deforestation-free claim: the agents investigate, fixed rules decide "

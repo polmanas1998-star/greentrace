@@ -8,3 +8,5 @@ routes.py      what app/api.py includes: the HTTP side of the three
 
 Nothing here decides a verdict: the rules do (app/rules.py), as for every other route.
 """
+
+VERSION = "0.1.0"  # the API's version (app/api.py), in the MCP handshake, the agent card and the spans
