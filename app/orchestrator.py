@@ -31,7 +31,7 @@ from app.agents.context import RunContext
 from app.canonical import sha256_of
 from app.checks import geofence
 from app.explain import exports
-from app.explain.flip import compute_flip
+from app.explain.flip import apply as apply_flip_change, compute_flip
 from app.memory import hmem as hmem_notes
 from app.memory.world_model import Source, entity_id
 from app.memory.world_model import WorldModel
@@ -244,8 +244,14 @@ EDITABLE = {
 }
 
 
+# The changes flip.py may propose beyond the editable fields: applied the way flip.py tried them.
+FLIP_CHANGES = {("plot", "tonnes_after_2020"), ("supplier", "untraced_tonnes"), ("plot", "position")}
+
+
 def apply_change(evidence: Evidence, kind: str, key: str, field_name: str, value: Any) -> Evidence:
     """One checked what_if change on a copy of the evidence; verify.py replays it from the receipt."""
+    if (kind, field_name) in FLIP_CHANGES:
+        return _apply_flip_change(evidence, kind, key, field_name, value)
     allowed = EDITABLE.get(kind, {}).get(field_name)
     if allowed is None:
         raise ValueError(f"can change {sorted(f'{k}.{f}' for k, fs in EDITABLE.items() for f in fs)}, "
@@ -265,6 +271,27 @@ def apply_change(evidence: Evidence, kind: str, key: str, field_name: str, value
         raise ValueError(f"no {kind} {key} in this run's evidence")
     updated = [dict(r, **{field_name: value}) if r[id_field] == key else r for r in rows]
     return replace(evidence, **{"alerts" if kind == "alert" else "plots": updated})
+
+
+def _apply_flip_change(evidence: Evidence, kind: str, key: str, field_name: str, value: Any) -> Evidence:
+    """A change "What would change it" offers: no tonnes after 2020, no untraced tonnes, or the plot moved."""
+    plots = {p["plot_id"]: p for p in evidence.plots or []}
+    if kind == "plot" and key not in plots:
+        raise ValueError(f"no plot {key} in this run's evidence")
+    if kind == "supplier" and not any(d.get("supplier_id") == key for d in evidence.deliveries or []):
+        raise ValueError(f"no deliveries from supplier {key} in this run's evidence")
+    if field_name == "position":
+        if not (isinstance(value, (list, tuple)) and len(value) == 2
+                and all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in value)):
+            raise ValueError("position takes [lat, lon]")
+        plot = plots[key]
+        change = {"entity": f"plot:{key}", "field": "position", "from": [plot["lat"], plot["lon"]],
+                  "to": [float(value[0]), float(value[1])]}
+    else:
+        if value != 0 or isinstance(value, bool):
+            raise ValueError(f"{field_name} can only be set to 0")
+        change = {"entity": f"{kind}:{key}", "field": field_name, "to": 0}
+    return apply_flip_change(evidence, change)
 
 
 def _written(ctx: RunContext, node_id: str) -> bool:
