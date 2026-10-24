@@ -85,3 +85,4 @@ from app.web import mount  # noqa: E402 - the interface (app/web), on top of the
 from app.web import features  # noqa: E402 - suppliers to check first, citizen mode, satellite time machine
 mount(app)
 app.include_router(features.router)
+app.include_router(__import__("app.court.routes", fromlist=["router"]).router)  # /runs/{id}/court, /attacks
