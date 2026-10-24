@@ -440,7 +440,7 @@ function LetterTab({ data, runId }: { data: Letters; runId: string }) {
       {current.letters.map((l) => (
         <article key={l.supplier_id} className="mt-6 rounded-[14px] border border-gt-line bg-gt-raised p-7">
           <div className="gt-mono text-[12px] text-gt-muted">
-            {l.name} ({l.supplier_id}){l.translated_by ? ` · translated by ${l.translated_by}` : ""}
+            {l.name} ({l.supplier_id}){l.translated_by && l.translated_by !== "original" ? ` · translated by ${l.translated_by}` : ""}
           </div>
           <pre className="mt-4 whitespace-pre-wrap font-sans text-[15px] leading-relaxed text-gt-text/90">{l.letter}</pre>
         </article>
