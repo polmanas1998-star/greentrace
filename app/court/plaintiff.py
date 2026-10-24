@@ -12,12 +12,8 @@ import json
 from dataclasses import dataclass
 from typing import Any, Optional
 
-from app.adapters import llm
 from app.court import pieces as P
 from app.rules import CUTOFF, PARTS
-
-# A new agent of the model chain: the fast lane, like the Writer. Its calls are traced under its own name.
-llm.LANES.setdefault("Plaintiff", "fast")
 
 CUTOFF_TEXT = "31 December 2020"
 assert CUTOFF == "2020-12-31", "CUTOFF_TEXT says the rules' cut-off in words"
