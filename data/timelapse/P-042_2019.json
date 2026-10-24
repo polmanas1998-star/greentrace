@@ -1,0 +1,66 @@
+{
+  "plot_id": "P-042",
+  "role": "timelapse",
+  "season": "the 2018-2019 dry season",
+  "scene_id": "S2A_29NQG_20190212_0_L2A",
+  "datetime": "2019-02-12T10:59:34.649000Z",
+  "date": "2019-02-12",
+  "cloud_cover_scene_percent": 0.008752,
+  "frame_bad_pixels_share": 0.0,
+  "frame": {
+    "lat_min": 5.726383,
+    "lat_max": 5.733617,
+    "lon_min": -6.527417,
+    "lon_max": -6.516583,
+    "width_m": 1200.0,
+    "height_m": 800.0
+  },
+  "crs": "EPSG:4326",
+  "pixels": [
+    960,
+    640
+  ],
+  "pixel_deg": [
+    1.1285416666666677e-05,
+    1.1303124999999248e-05
+  ],
+  "asset": "visual",
+  "sources": [
+    "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/29/N/QG/2019/2/S2A_29NQG_20190212_0_L2A/TCI.tif"
+  ],
+  "catalogue": {
+    "stac_api": "https://earth-search.aws.element84.com/v1",
+    "collection": "sentinel-2-l2a",
+    "search": {
+      "collections": [
+        "sentinel-2-l2a"
+      ],
+      "bbox": [
+        -6.52832,
+        5.723669,
+        -6.51568,
+        5.736331
+      ],
+      "datetime": "2018-12-01T00:00:00Z/2019-03-31T23:59:59Z",
+      "query": {
+        "eo:cloud_cover": {
+          "lt": 50
+        }
+      },
+      "sortby": [
+        {
+          "field": "properties.eo:cloud_cover",
+          "direction": "asc"
+        }
+      ],
+      "limit": 100
+    }
+  },
+  "licence": "Contains modified Copernicus Sentinel data 2019",
+  "licence_terms": "Copernicus Sentinel data: free, full and open access (Copernicus data policy, Commission Delegated Regulation (EU) No 1159/2013)",
+  "jpeg_quality": 90,
+  "jpg_bytes": 36641,
+  "jpg_sha256": "cad413f8c2cbeedd611c70c4e245d2f8758800e3f68f591848497314c74b6362",
+  "made_by": "scripts/fetch_satellite.py",
+  "made_on": "2026-10-24"
+}
