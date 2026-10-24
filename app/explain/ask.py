@@ -17,6 +17,7 @@ from app.explain import deep_trace
 
 MAX_QUESTION = 500
 MAX_LINES = 3
+SECTION_WEIGHT = {"verdict": 1.5, "finding": 1.0, "flip": 0.5, "limitation": -0.5, "human_review": -0.5}
 SYSTEM = (
     "You answer one question about an EUDR deforestation investigation. Use ONLY the numbered lines in "
     "<data>. Cite the line numbers you used. If the lines do not answer the question, say so plainly. "
@@ -37,6 +38,7 @@ which who why will with would you your about any not no yes does did
 le la les un une des du de et est sont que qui quoi pourquoi comment dans sur pour par pas ne plus ce cette
 """.split())
 _WORD = re.compile(r"[a-z0-9][a-z0-9.-]*", re.I)
+WHY = re.compile(r"\b(why|verdict|reason|pourquoi|raison)\b", re.I)
 _NUMBER = re.compile(r"\d+(?:[.,]\d+)?")
 
 
@@ -64,8 +66,17 @@ def _words(text: str) -> set[str]:
 
 def by_rules(question: str, numbered: list[dict[str, Any]]) -> dict[str, Any]:
     wanted = _words(question)
-    scored = sorted(((len(wanted & _words(line["text"])), line["n"]) for line in numbered), key=lambda s: (-s[0], s[1]))
-    picked = [n for score, n in scored if score > 0][:MAX_LINES]
+    # an id (R3, P-014, A-221) names one thing: it weighs twice a plain word
+    overlap = {line["n"]: sum(2 if any(ch.isdigit() for ch in w) else 1 for w in wanted & _words(line["text"]))
+               for line in numbered}
+    if WHY.search(question):  # "why this verdict?": the verdict and its findings are the answer
+        for line in numbered:
+            if line["section"] in ("verdict", "finding"):
+                overlap[line["n"]] = max(overlap[line["n"]], 1)
+    # Among lines that share words with the question, the verdict and its findings come before the caveats.
+    scored = sorted(((overlap[line["n"]] + SECTION_WEIGHT.get(line["section"], 0.0), line["n"]) for line in numbered
+                     if overlap[line["n"]] > 0), key=lambda s: (-s[0], s[1]))
+    picked = [n for _, n in scored][:MAX_LINES]
     if not picked:
         sections = sorted({line["section"] for line in numbered})
         answer = ("No line of this investigation answers that. It holds: " + ", ".join(sections) + ". "

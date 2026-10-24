@@ -38,6 +38,12 @@ def test_the_rules_answer_with_the_closest_lines(run):
     assert "No model was used" in out["answer"]
 
 
+def test_why_the_verdict_starts_with_the_verdict(run):
+    client, _ = run
+    out = client.post("/runs/ask-case-2/ask", json={"question": "Why is this the verdict?"}).json()
+    assert out["lines"][0]["section"] == "verdict"
+
+
 def test_a_question_no_line_answers_is_said_so(run):
     client, _ = run
     out = client.post("/runs/ask-case-2/ask", json={"question": "What about coffee?"}).json()
