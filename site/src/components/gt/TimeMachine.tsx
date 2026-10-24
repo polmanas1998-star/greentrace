@@ -11,23 +11,31 @@ import {
   type PlotMap,
 } from "../../lib/plots";
 
-// The signature: the visitor's scroll moves the clock over one real plot, February 2019 to
-// March 2026. Six clean dry-season Sentinel-2 scenes (two hazy ones are left out and said so
-// below the ruler), the EU 2020 forest cells, and the Hansen loss cells of each year after the
-// cut-off. Numbers are the engine's (forest_loss_ha_by_year), never recomputed here.
+// The signature: one real plot, one scroll step per real Sentinel-2 scene (six clean dry-season
+// scenes; the hazy ones of Feb 2021 and Jan 2023 are left out and said so below the ruler). At each
+// step the date, the ruler, the text, the cells and the counter all describe the SAME scene: the EU
+// 2020 forest from the 2020 scene on, and the Hansen loss years that scene can already show. Numbers
+// are the engine's (forest_loss_ha_by_year), never recomputed here.
 
 const CLEAN = new Set(["p042-2019.jpg", "p042-2020.jpg", "p042-2022.jpg", "p042-2024.jpg", "p042-2025.jpg", "p042-2026.jpg"]);
 const T0 = Date.UTC(2019, 0, 15);
 const T1 = Date.UTC(2026, 3, 1);
 const CUTOFF = Date.UTC(2020, 11, 31);
-const FOREST_FADE = 1.2e10; // the 2020 forest fades in over the ~4.6 months before the cut-off
 
 const toT = (iso: string) => Date.parse(`${iso}T00:00:00Z`);
 const pct = (t: number) => ((t - T0) / (T1 - T0)) * 100;
-// A Hansen loss year Y shows once the clock passes 1 October of Y: the next dry-season scene shows it.
-const revealOf = (year: number) => Date.UTC(year, 9, 1);
+// A loss year Y is visible on a scene taken from December of Y on (dry-season scenes come after the clearing).
+const visibleOn = (year: number, sceneDate: string) => toT(sceneDate) >= Date.UTC(year, 11, 1);
+const monthYear = (iso: string) =>
+  new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
+// Hold each scene for most of its step, then cross to the next one.
+const ease = (f: number) => {
+  const x = Math.min(1, Math.max(0, (f - 0.55) / 0.45));
+  return x * x * (3 - 2 * x);
+};
+const lerp = (a: number, b: number, m: number) => a + (b - a) * m;
 
-type Chapter = { at: number; title: string; body: string };
+type Chapter = { title: string; body: string };
 
 export function TimeMachine({ map, frames }: { map: PlotMap; frames: Frame[] }) {
   const sectionRef = useRef<HTMLElement>(null);
@@ -41,10 +49,10 @@ export function TimeMachine({ map, frames }: { map: PlotMap; frames: Frame[] }) 
   const forestNumRef = useRef<HTMLDivElement>(null);
   const chapterRefs = useRef<Array<HTMLDivElement | null>>([]);
 
-  const shown = useMemo(() => frames.filter((f) => CLEAN.has(f.file)), [frames]);
+  const shown = useMemo(() => frames.filter((f) => CLEAN.has(f.file)).sort((a, b) => toT(a.date) - toT(b.date)), [frames]);
   const lossByYear = map.measure.forest_loss_ha_by_year ?? {};
   const lossYears = Object.keys(lossByYear).map(Number).filter((y) => y > map.grid.cutoff_year).sort();
-  const totalAfter = map.measure.loss_after_2020_ha ?? 0;
+  const forest2020 = map.measure.forest_2020_ha ?? 0;
 
   const { forestCells, lossCells } = useMemo(() => {
     const forest = map.cells.filter((c) => isForest2020(map, c));
@@ -56,43 +64,52 @@ export function TimeMachine({ map, frames }: { map: PlotMap; frames: Frame[] }) 
     return { forestCells: forest, lossCells: loss };
   }, [map]);
 
-  const chapters: Chapter[] = [
-    {
-      at: T0,
-      title: "February 2019.",
-      body: "Ten hectares near Soubré, Côte d'Ivoire. A real plot, seen by Sentinel-2.",
-    },
-    {
-      at: CUTOFF - FOREST_FADE,
-      title: "31 December 2020.",
-      body: `The EU cut-off. On the EU forest map, ${map.measure.forest_2020_ha?.toFixed(2)} ha inside the outline are forest.`,
-    },
-    {
-      at: revealOf(2021),
-      title: "2021.",
-      body: `${(lossByYear["2021"] ?? 0).toFixed(2)} ha of that forest is gone in a single year.`,
-    },
-    {
-      at: revealOf(2022),
-      title: "2022 and 2023.",
-      body: `The clearing goes on: ${((lossByYear["2022"] ?? 0) + (lossByYear["2023"] ?? 0)).toFixed(2)} ha more, one 30 m cell at a time.`,
-    },
-    {
-      at: revealOf(2024),
-      title: "By 2024.",
-      body: `${totalAfter.toFixed(2)} ha lost after the cut-off, cell by cell, on the Hansen/UMD map.`,
-    },
-    {
-      at: Date.UTC(2026, 1, 20),
-      title: "Contradicted.",
-      body: "A promise of zero deforestation since 2021 does not survive this plot. Every number above is cited.",
-    },
-  ];
+  // What each scene shows: the forest map from the 2020 scene on, and the loss years it can show.
+  const steps = useMemo(
+    () =>
+      shown.map((f) => {
+        const years = lossYears.filter((y) => visibleOn(y, f.date));
+        return {
+          forest: toT(f.date) >= Date.UTC(2020, 0, 1) ? 1 : 0,
+          years,
+          lost: years.reduce((sum, y) => sum + (lossByYear[String(y)] ?? 0), 0),
+        };
+      }),
+    // derived from the map and frames only
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [shown, map],
+  );
+
+  const chapters: Chapter[] = shown.map((f, k) => {
+    if (k === shown.length - 1) {
+      return {
+        title: "Contradicted.",
+        body: `${monthYear(f.date)}: ${steps[k].lost.toFixed(2)} ha of the ${forest2020.toFixed(2)} ha of 2020 forest are gone. A promise of zero deforestation since 2021 does not survive this plot.`,
+      };
+    }
+    if (k === 0) return { title: `${monthYear(f.date)}.`, body: "Ten hectares near Soubré, Côte d'Ivoire. A real plot, seen by Sentinel-2." };
+    if (steps[k].forest && !steps[k - 1].forest) {
+      return {
+        title: `${monthYear(f.date)}.`,
+        body: `A year before the EU cut-off of 31 December 2020, the EU forest map counts ${forest2020.toFixed(2)} ha of forest inside the outline.`,
+      };
+    }
+    const fresh = steps[k].years.filter((y) => !steps[k - 1].years.includes(y));
+    const freshHa = fresh.reduce((sum, y) => sum + (lossByYear[String(y)] ?? 0), 0);
+    const when = fresh.length === 1 ? `in ${fresh[0]}` : `in ${fresh.slice(0, -1).join(", ")} and ${fresh[fresh.length - 1]}`;
+    return {
+      title: `${monthYear(f.date)}.`,
+      body: fresh.length
+        ? `${freshHa.toFixed(2)} ha of that forest cleared ${when}: ${steps[k].lost.toFixed(2)} ha lost since the cut-off.`
+        : `No new loss on the map since the last scene: ${steps[k].lost.toFixed(2)} ha lost since the cut-off.`,
+    };
+  });
 
   useEffect(() => {
     const section = sectionRef.current;
-    if (!section) return;
+    if (!section || shown.length === 0) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const last = shown.length - 1;
     let frame = 0;
 
     const paint = () => {
@@ -100,42 +117,31 @@ export function TimeMachine({ map, frames }: { map: PlotMap; frames: Frame[] }) 
       const rect = section.getBoundingClientRect();
       const span = Math.max(1, rect.height - window.innerHeight);
       const p = reduce ? 1 : Math.min(1, Math.max(0, -rect.top / span));
-      const t = T0 + p * (T1 - T0);
+      const position = p * last;
+      const i = Math.min(last, Math.floor(position));
+      const next = Math.min(last, i + 1);
+      const mix = next === i ? 0 : ease(position - i);
+      const current = mix > 0.5 ? next : i;
 
-      // Images: crossfade between the two scenes around t.
-      const times = shown.map((f) => toT(f.date));
-      let k = 0;
-      while (k < times.length - 1 && times[k + 1] <= t) k += 1;
-      const next = Math.min(times.length - 1, k + 1);
-      const mix = next === k ? 0 : Math.min(1, Math.max(0, (t - times[k]) / (times[next] - times[k])));
-      imgRefs.current.forEach((img, i) => {
-        if (!img) return;
-        img.style.opacity = i === k ? "1" : i === next ? String(mix) : "0";
+      imgRefs.current.forEach((img, k) => {
+        if (img) img.style.opacity = k === i ? "1" : k === next ? String(mix) : "0";
       });
-      const nearest = mix > 0.5 ? next : k;
-      if (dateRef.current) dateRef.current.textContent = fmtDate(shown[nearest].date);
-      if (sceneRef.current) sceneRef.current.textContent = shown[nearest].scene;
+      if (dateRef.current) dateRef.current.textContent = fmtDate(shown[current].date);
+      if (sceneRef.current) sceneRef.current.textContent = shown[current].scene;
 
-      // Forest of 2020 lights up at the cut-off; each loss year once the clock passes it.
-      const forestOn = Math.min(1, Math.max(0, (t - (CUTOFF - FOREST_FADE)) / FOREST_FADE));
+      const forestOn = lerp(steps[i].forest, steps[next].forest, mix);
       if (forestRef.current) forestRef.current.style.opacity = String(0.85 * forestOn);
       if (forestNumRef.current) forestNumRef.current.style.opacity = String(forestOn);
-      let lost = 0;
       for (const year of lossYears) {
-        const on = Math.min(1, Math.max(0, (t - revealOf(year)) / 6e9));
         const g = yearRefs.current[year];
-        if (g) g.style.opacity = String(on);
-        lost += (lossByYear[String(year)] ?? 0) * on;
+        if (g) g.style.opacity = String(lerp(steps[i].years.includes(year) ? 1 : 0, steps[next].years.includes(year) ? 1 : 0, mix));
       }
-      if (lostRef.current) lostRef.current.textContent = lost.toFixed(2);
-      if (needleRef.current) needleRef.current.style.transform = `translateX(${pct(t)}%)`;
-
-      let active = 0;
-      chapters.forEach((c, i) => {
-        if (t >= c.at) active = i;
-      });
-      chapterRefs.current.forEach((el, i) => {
-        if (el) el.dataset.active = String(i === active);
+      if (lostRef.current) lostRef.current.textContent = lerp(steps[i].lost, steps[next].lost, mix).toFixed(2);
+      if (needleRef.current) {
+        needleRef.current.style.transform = `translateX(${pct(lerp(toT(shown[i].date), toT(shown[next].date), mix))}%)`;
+      }
+      chapterRefs.current.forEach((el, k) => {
+        if (el) el.dataset.active = String(k === current);
       });
     };
 
@@ -150,14 +156,14 @@ export function TimeMachine({ map, frames }: { map: PlotMap; frames: Frame[] }) 
       window.removeEventListener("resize", onScroll);
       if (frame) cancelAnimationFrame(frame);
     };
-    // chapters and loss years derive from map, which never changes for a mounted section
+    // steps, chapters and loss years derive from map and frames, which never change for a mounted section
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shown, map]);
 
   const years = Array.from({ length: 8 }, (_, i) => 2019 + i);
 
   return (
-    <section ref={sectionRef} aria-label="Seven years over one plot" className="relative h-[560vh] motion-reduce:h-auto">
+    <section ref={sectionRef} aria-label="Seven years over one plot" className="relative h-[600vh] motion-reduce:h-auto">
       <div className="sticky top-0 h-dvh overflow-hidden motion-reduce:relative">
         {/* the scenes */}
         <div className="absolute inset-0">
@@ -249,7 +255,7 @@ export function TimeMachine({ map, frames }: { map: PlotMap; frames: Frame[] }) 
         <div className="absolute bottom-40 left-6 right-6 md:bottom-36 md:left-12 md:max-w-xl">
           {chapters.map((c, i) => (
             <div
-              key={c.title}
+              key={`${i}-${c.title}`}
               ref={(el) => {
                 chapterRefs.current[i] = el;
               }}

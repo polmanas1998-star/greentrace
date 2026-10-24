@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type DragEvent } from "react";
 
+import { AnalysisScene, MIN_SCENE_MS, type Target } from "../components/gt/AnalysisScene";
 import { Page } from "../components/gt/shell";
 import { API, engine, optional, verdictStyle, type PlotCheck, type PlotResult } from "../lib/gt";
 
@@ -16,7 +17,7 @@ export const Route = createFileRoute("/check")({
 
 type State =
   | { kind: "idle" }
-  | { kind: "working"; file: string }
+  | { kind: "working"; file: string; target: Target | null }
   | { kind: "error"; message: string }
   | { kind: "done"; file: string; result: PlotCheck };
 
@@ -36,10 +37,13 @@ function CheckPage() {
       setState({ kind: "error", message: `${name} is not valid JSON. Export the plots as GeoJSON (a FeatureCollection) and try again.` });
       return;
     }
-    setState({ kind: "working", file: name });
+    setState({ kind: "working", file: name, target: centreOf(geojson) });
+    const startedAt = performance.now();
     try {
       const body = promise.trim() ? { geojson, promise: promise.trim() } : { geojson };
       const result = await engine<PlotCheck>("/api/check-plots", { json: body });
+      // let the scene reach the plots before the table replaces it (the check itself is often faster)
+      await new Promise((resolve) => window.setTimeout(resolve, Math.max(0, MIN_SCENE_MS - (performance.now() - startedAt))));
       setState({ kind: "done", file: name, result });
     } catch (error) {
       setState({ kind: "error", message: error instanceof Error ? error.message : String(error) });
@@ -125,7 +129,7 @@ function CheckPage() {
         </div>
 
         <div aria-live="polite" className="mt-16">
-          {state.kind === "working" && <Working file={state.file} />}
+          {state.kind === "working" && <Working file={state.file} target={state.target} />}
           {state.kind === "error" && (
             <div className="rounded-[14px] border border-gt-contradicted/40 bg-gt-raised p-6">
               <div className="font-semibold text-gt-contradicted">The check did not run.</div>
@@ -139,17 +143,33 @@ function CheckPage() {
   );
 }
 
-function Working({ file }: { file: string }) {
+/** The middle of every coordinate in the file: where the camera flies while the plots are read. */
+function centreOf(geojson: unknown): Target | null {
+  let lat = 0;
+  let lon = 0;
+  let n = 0;
+  const walk = (value: unknown) => {
+    if (!Array.isArray(value)) return;
+    if (value.length >= 2 && typeof value[0] === "number" && typeof value[1] === "number") {
+      lon += value[0];
+      lat += value[1];
+      n += 1;
+      return;
+    }
+    value.forEach(walk);
+  };
+  const features = (geojson as { features?: Array<{ geometry?: { coordinates?: unknown } }> })?.features ?? [];
+  features.forEach((f) => walk(f.geometry?.coordinates));
+  return n ? { lat: lat / n, lon: lon / n } : null;
+}
+
+function Working({ file, target }: { file: string; target: Target | null }) {
   return (
     <div>
-      <p className="gt-mono text-[13px] text-gt-muted">
+      <AnalysisScene target={target} title="Checking plots" />
+      <p className="gt-mono mt-4 text-[13px] text-gt-muted">
         Reading {file}. The first request can take up to a minute while the engine wakes up.
       </p>
-      <div className="mt-6 space-y-3">
-        {Array.from({ length: 5 }, (_, i) => (
-          <div key={i} className="gt-skeleton h-16" style={{ opacity: 1 - i * 0.15 }} />
-        ))}
-      </div>
     </div>
   );
 }

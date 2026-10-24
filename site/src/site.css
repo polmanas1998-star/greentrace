@@ -130,6 +130,20 @@ html.gt :focus-visible {
   border-radius: 8px;
 }
 
+/* The analysis scene: a ring that breathes, cells that light up, a sweep across the plot. */
+@keyframes gt-ring {
+  0% { transform: scale(0.6); opacity: 0.9; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+@keyframes gt-cell {
+  0%, 100% { background: rgba(155, 227, 180, 0.12); }
+  50% { background: rgba(155, 227, 180, 0.45); }
+}
+@keyframes gt-sweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(300%); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .gt-rise > *,
   .gt-outline-draw,

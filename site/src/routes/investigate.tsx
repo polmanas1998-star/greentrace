@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
+import { MIN_SCENE_MS } from "../components/gt/AnalysisScene";
 import { RunView } from "../components/gt/RunView";
 import { Page } from "../components/gt/shell";
 import { API, DEMO_CASE, REAL_PLOT_CASE, engine, type RunOutput, type TraceLine } from "../lib/gt";
@@ -30,6 +31,7 @@ export type Live = {
 
 const EMPTY: Live = { runId: null, lines: [], output: null, error: null, running: false };
 
+
 function InvestigatePage() {
   const { demo } = Route.useSearch();
   const [claim, setClaim] = useState(DEMO_CASE.input.claim);
@@ -41,6 +43,7 @@ function InvestigatePage() {
 
   async function start(body: unknown) {
     source.current?.close();
+    const startedAt = performance.now();
     setLive({ ...EMPTY, running: true });
     let runId: string;
     try {
@@ -62,7 +65,9 @@ function InvestigatePage() {
     });
     es.addEventListener("result", (event) => {
       es.close();
-      setLive((l) => ({ ...l, output: JSON.parse((event as MessageEvent).data) as RunOutput, running: false }));
+      const output = JSON.parse((event as MessageEvent).data) as RunOutput;
+      const wait = Math.max(0, MIN_SCENE_MS - (performance.now() - startedAt));
+      window.setTimeout(() => setLive((l) => ({ ...l, output, running: false })), wait);
     });
     es.addEventListener("failed", (event) => {
       es.close();

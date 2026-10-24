@@ -12,6 +12,8 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+# GreenTrace adds no npm dependency to the template.
+DEPENDENCIES: dict[str, str] = {}
 COVER_URL = "https://d2ol7oe51mr4n9.cloudfront.net/user_3L8gjUj2lTtb47gRJIU0QEolkkO/a31c2dac-d4b6-4fe9-9319-d7356faeeccc.jpg"
 
 
@@ -23,6 +25,14 @@ def main(app: Path) -> None:
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(path, target)
     shutil.copy2(HERE / "design-brief.md", app / "design-brief.md")
+
+    package = app / "package.json"
+    manifest = json.loads(package.read_text(encoding="utf-8"))
+    if any(manifest["dependencies"].get(name) != version for name, version in DEPENDENCIES.items()):
+        manifest["dependencies"].update(DEPENDENCIES)
+        manifest["dependencies"] = dict(sorted(manifest["dependencies"].items()))
+        package.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+        print("package.json changed: run `bun install` in app/")
 
     styles = app / "src" / "styles.css"
     css = styles.read_text(encoding="utf-8")

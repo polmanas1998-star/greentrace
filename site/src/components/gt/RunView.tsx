@@ -1,8 +1,12 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 
 import { API, optional, verdictStyle, type RunOutput, type TraceLine } from "../../lib/gt";
 import type { Live } from "../../routes/investigate";
+import { AnalysisScene } from "./AnalysisScene";
 import { OPTIONAL_TABS, WhatIfTab, WhyTab } from "./runTabs";
+
+// The chat is only needed when its tab opens: loaded on demand.
+const AskPanel = lazy(() => import("./AskPanel"));
 
 const AGENT_COLOR: Record<string, string> = {
   Planner: "#C9D6CE",
@@ -31,23 +35,21 @@ export function RunView({ live }: { live: Live }) {
 
 function LiveTrace({ lines, running }: { lines: TraceLine[]; running: boolean }) {
   return (
-    <div className="rounded-[14px] border border-gt-line bg-gt-raised">
-      <div className="flex items-center justify-between border-b border-gt-line px-6 py-4">
-        <span className="text-[15px] font-semibold tracking-tight">Live trace</span>
-        <span className="gt-mono text-[12px] text-gt-muted">
-          {lines.length} line{lines.length === 1 ? "" : "s"}
-          {running ? " · running" : ""}
-        </span>
-      </div>
-      {lines.length === 0 && running && (
-        <div className="space-y-3 p-6">
-          <p className="gt-mono text-[13px] text-gt-muted">Starting. The first request can take up to a minute while the engine wakes up.</p>
-          {Array.from({ length: 4 }, (_, i) => (
-            <div key={i} className="gt-skeleton h-10" />
-          ))}
+    <div>
+      {running && <AnalysisScene lines={lines} title="Investigating" />}
+      <div className="mt-6 rounded-[14px] border border-gt-line bg-gt-raised">
+        <div className="flex items-center justify-between border-b border-gt-line px-6 py-4">
+          <span className="text-[15px] font-semibold tracking-tight">Live trace</span>
+          <span className="gt-mono text-[12px] text-gt-muted">
+            {lines.length} line{lines.length === 1 ? "" : "s"}
+            {running ? " · running" : ""}
+          </span>
         </div>
-      )}
-      <TraceList lines={lines} animate />
+        {lines.length === 0 && running && (
+          <p className="gt-mono px-6 py-5 text-[13px] text-gt-muted">Starting. The first request can take up to a minute while the engine wakes up.</p>
+        )}
+        <TraceList lines={lines} animate />
+      </div>
     </div>
   );
 }
@@ -108,6 +110,7 @@ function Result({ output, lines }: { output: RunOutput; lines: TraceLine[] }) {
   const tabs: Array<{ id: string; label: string }> = [
     { id: "why", label: "Why" },
     { id: "whatif", label: "What would change it" },
+    { id: "ask", label: "Ask GreenTrace" },
     ...OPTIONAL_TABS.filter((t) => extra[t.id]).map((t) => ({ id: t.id, label: t.label })),
     { id: "trace", label: `Trace (${lines.length})` },
   ];
@@ -175,6 +178,11 @@ function Result({ output, lines }: { output: RunOutput; lines: TraceLine[] }) {
       <div className="pt-8" role="tabpanel">
         {tab === "why" && <WhyTab output={output} />}
         {tab === "whatif" && <WhatIfTab runId={runId} output={output} onChanged={() => ["world_diff", "graph", "sentences"].forEach(refresh)} />}
+        {tab === "ask" && (
+          <Suspense fallback={<div className="gt-skeleton h-[560px]" />}>
+            <AskPanel runId={runId} />
+          </Suspense>
+        )}
         {tab === "trace" && (
           <div className="rounded-[14px] border border-gt-line bg-gt-raised">
             <TraceList lines={lines} />
