@@ -45,7 +45,8 @@ def start(client, **options):
 def test_the_page_is_served_with_its_own_fonts_and_no_cdn(client):
     page = client.get("/")
     assert page.status_code == 200 and page.headers["content-type"].startswith("text/html")
-    for needed in ("Run the demo case", CLAIM, 'aria-live="polite"', "Try to fool it", "What would change its mind"):
+    for needed in ("Upload your plots (GeoJSON)", "Load example data", 'aria-live="polite"', "Try to fool it",
+                   "What would change its mind"):
         assert needed in page.text
     for path in ("app.css", "app.js", "mark.svg", "fonts/Geist-Variable.woff2", "fonts/GeistMono-Variable.woff2",
                  "fonts/OFL.txt"):
@@ -141,13 +142,14 @@ def test_the_stream_publishes_whole_lines_only():
 
 def test_the_page_has_the_mockup_tabs_and_no_silent_button(client):
     page = client.get("/").text
-    for tab in ("Check a claim", "Evidence files", "Reliability tests", "Download audit package",
-                "Or paste your supplier's claim", "Check this claim"):
+    for tab in ("Check plots", "Evidence files", "Reliability tests", "Download audit package",
+                "Your supplier's promise", "Check this plot"):
         assert tab in page
-    # Upload and drawing are wired to input.plot now: live buttons, a real file input, nothing "coming".
-    buttons = re.findall(r"<button[^>]*id=\"(?:plot-upload|plot-draw|draw-undo|draw-clear|draw-check)\"[^>]*>.*?</button>", page)
-    assert len(buttons) == 5 and not any(" disabled" in b or "coming" in b for b in buttons)
-    assert 'id="plot-file"' in page and client.get("/ui/setup").json()["plot_input"] is True
+    # Upload, example and drawing are live buttons with a real file input: nothing "coming".
+    ids = ("plots-upload", "load-example", "plot-draw", "draw-undo", "draw-clear", "draw-check", "tour-start")
+    buttons = re.findall(r"<button[^>]*id=\"(?:%s)\"[^>]*>.*?</button>" % "|".join(ids), page)
+    assert len(buttons) == len(ids) and not any(" disabled" in b or "coming" in b for b in buttons)
+    assert 'id="plots-file"' in page and client.get("/ui/setup").json()["plot_input"] is True
     examples = client.get("/ui/setup").json()["examples"]
     assert [(e["label"], e["case"]) for e in examples] == [("A clean supply chain", 1),
                                                            ("An admission hidden in an annex", 18)]
@@ -268,3 +270,211 @@ def test_a_drawn_plot_runs_live_and_its_timeline_shows_the_loss(client):
     assert output["verdict"] == "CONTRADICTED" and output["findings"][0]["evidence"][0] == {"source": "plot", "id": "P-900"}
     (plot,) = client.get(f"/runs/{run_id}/timeline").json()["plots"]
     assert plot["plot_id"] == "P-900" and plot["reference_maps"]["loss_after_2020_ha"] == pytest.approx(3.42, abs=0.01)
+
+
+# ---- plain words: what a judge who is not an expert reads first --------------------------------------
+
+def run_case_no(client, case_no, **body):
+    response = client.post("/run", json={"input": {"claim": CLAIM, **body}, "options": {"sample_mode": True, "case": case_no}})
+    assert response.status_code == 200
+    return response.json()
+
+
+def plain_words(client, run_id):
+    response = client.get(f"/ui/runs/{run_id}/plain")
+    assert response.status_code == 200
+    return response.json()["sentence"]
+
+
+OPENING = {"PROVEN": "This promise holds: ", "CONTRADICTED": "This promise is false: ",
+           "UNVERIFIABLE": "This promise cannot be checked yet: "}
+
+
+def test_every_verdict_has_one_plain_sentence_without_jargon(client):
+    from app.world.cases import CASES
+
+    for case in CASES:
+        out = run_case_no(client, case.number)
+        sentence = plain_words(client, out["run_id"])
+        assert sentence.startswith(OPENING[out["verdict"]]), (case.number, sentence)
+        assert sentence.endswith(".") and sentence.count(". ") <= 1, (case.number, sentence)
+        # no rule code, refutation id, query id or snake_case code in the words a non-expert reads
+        assert not re.search(r"\b[a-z]+_[a-z_]+\b|\b[RQ]\d\b|\brule\b|sha256", sentence), (case.number, sentence)
+        for finding in out["findings"]:  # the farm the deciding finding names is the one the sentence names
+            plots = [e["id"] for e in finding["evidence"] if e["source"] == "plot"]
+            if finding["verdict"] == out["verdict"] and plots:
+                assert plots[0] in sentence, (case.number, sentence)
+
+
+def test_the_plain_sentence_is_built_from_the_run_not_written_in_advance(client):
+    from app import orchestrator
+
+    run_id = start(client, case=2)  # "try to fool it" runs on a live run, as on the page
+    assert json.loads(events(client, run_id)[-1]["data"])["verdict"] == "CONTRADICTED"
+    last = max(d["year"] for d in orchestrator.RUNS[run_id].evidence.deliveries if d["plot_id"] == "P-014")
+    assert plain_words(client, run_id) == ("This promise is false: a satellite alert shows forest cut on 14 March 2022 "
+                                           f"on farm P-014, which kept selling cocoa to this company until {last}.")
+    # Change the alert's date: the sentence follows the evidence, then the verdict.
+    client.post(f"/runs/{run_id}/what_if", json={"entity": "alert:A-221", "field": "alert_date", "value": "2021-06-02"})
+    assert "forest cut on 2 June 2021 on farm P-014" in plain_words(client, run_id)
+    client.post(f"/runs/{run_id}/what_if", json={"entity": "alert:A-221", "field": "alert_date", "value": "2019-03-14"})
+    assert plain_words(client, run_id).startswith("This promise holds: ")
+
+    untraced = run_case_no(client, 8)
+    share = float(re.search(r"([\d.]+)% of", untraced["findings"][0]["finding"])[1])
+    assert f"{100 - share:.0f}% of the cocoa bought in" in plain_words(client, untraced["run_id"])
+    from dataclasses import replace
+
+    from app.checks import registry
+    from app.web.plain import sentence
+    e = orchestrator.RUNS[untraced["run_id"]].evidence
+    doubled = replace(e, company={**e.company, "total_tonnes": e.company["total_tonnes"] * 2})
+    gap = 100 * (1 - registry.traced_share(doubled.company, doubled.deliveries, doubled.plots))
+    assert round(gap) != round(100 - share) and sentence(doubled).startswith(f"This promise cannot be checked yet: {gap:.0f}% ")
+
+    drawn = run_case_no(client, 1, plot=square(5.7300, -6.5220, 10.0))
+    lost = float(drawn["findings"][0]["finding"].split(" ha ")[0])
+    assert f"satellite maps show {lost:.1f} ha of forest cut after 2020 on farm P-900" in plain_words(client, drawn["run_id"])
+
+
+def test_plain_words_for_a_vague_claim_and_an_unknown_run(client):
+    response = client.post("/runs", json={"input": {"claim": "We are good people."}, "options": {"sample_mode": True}})
+    run_id = response.json()["run_id"]
+    assert json.loads(events(client, run_id)[-1]["data"])["status"] == "too_vague"
+    assert plain_words(client, run_id).startswith("This promise is too vague to check")
+    assert client.get("/ui/runs/nope/plain").status_code == 404
+    assert client.get("/ui/runs/nope/where").status_code == 404
+
+
+def test_where_it_happened_is_the_deciding_farm_and_alert(client):
+    from shapely.geometry import Point, Polygon
+
+    where = client.get(f"/ui/runs/{run_case_no(client, 2)['run_id']}/where").json()
+    assert where["verdict"] == "CONTRADICTED" and where["plot"]["plot_id"] == "P-014"
+    assert where["alert"]["alert_id"] == "A-221" and where["alert"]["alert_date"] == "2022-03-14"
+    ring = Polygon([(lon, lat) for lat, lon in where["plot"]["ring"]])
+    assert ring.covers(Point(where["alert"]["lon"], where["alert"]["lat"]))
+    point = client.get(f"/ui/runs/{run_case_no(client, 7)['run_id']}/where").json()
+    assert point["plot"]["plot_id"] == "P-021" and point["plot"]["ring"] is None and point["alert"] is None
+    assert client.get(f"/ui/runs/{run_case_no(client, 1)['run_id']}/where").json()["plot"] is None
+
+
+def test_the_page_explains_itself_before_the_jargon(client):
+    page = client.get("/").text
+    for words in ("Check your suppliers' plots against the EU forest map, before 30 December 2026.",
+                  "Upload your plots", "Every plot is measured", "A verdict you can verify",
+                  "no forest lost after 2020 inside the plot", "the evidence shows forest was lost after 2020",
+                  "the evidence is missing, and GreenTrace says which", "Take the tour", "Five AI agents at work"):
+        assert words in page, words
+    # on top of a plot check (and its table's column), of each plot's file, of the agents' live verdict and file
+    assert page.count("In plain words") == 5
+    # The jargon is folded, not removed: the trace, the counters, the seal and the fingerprints, the rules
+    # and the codes, every single change tried, each sit in a "Technical details" block closed by default.
+    details = re.findall(r"<details[^>]*>", page)
+    assert len(details) >= 4 and all('class="tech' in d and " open" not in d for d in details)
+    folded = page.split('<details class="tech" id="trace-tech">', 1)[1].split("</details>", 1)[0]
+    assert 'id="trace"' in folded and 'id="live-stats"' in folded
+    seal = page.split('id="seal-tech">', 1)[1].split("</details>", 1)[0]
+    assert 'id="seal"' in seal and 'id="prints"' in seal
+    assert 'id="flip-tried"' in page.split('id="flip"', 1)[1].split("</details>", 1)[0]
+    script = (STATIC / "app.js").read_text(encoding="utf-8")
+    assert "Checks the AI tried to break it with" in script and "Refutations tried" not in script
+    assert "Technical details" in script  # the findings' rules and ids, the World Model facts of "try to fool it"
+
+
+def test_the_tour_has_five_bubbles_and_can_be_closed_from_the_keyboard():
+    page = (STATIC / "index.html").read_text(encoding="utf-8")
+    script = (STATIC / "app.js").read_text(encoding="utf-8")
+    tour = script.split("const TOUR = [", 1)[1].split("];", 1)[0]
+    targets = re.findall(r'target: "([\w-]+)"', tour)
+    assert targets == ["drop", "plots-table", "batch-map-card", "plot-plain-box", "why"]
+    assert re.search(r'<button[^>]*id="tour-start"[^>]*\shidden>', page)  # built, not offered for now
+    for target in targets:
+        assert f'id="{target}"' in page, target
+    assert not re.search(r"\d", tour)  # no number written in advance: the run shows its own
+    bubble = page.split('id="tour"', 1)[1].split("</div>\n</div>", 1)[0]
+    assert 'role="dialog"' in page and 'aria-labelledby="tour-title"' in page
+    assert all(f'id="tour-{b}"' in bubble for b in ("close", "back", "next"))
+    assert 'event.key === "Escape" && state.tour' in script and "reducedMotion" in script.split("function tourRefresh", 1)[1]
+
+
+# ---- the product: the analyst's own plot file, its results and each plot's file -----------------------
+
+def example_check(client):
+    example = json.loads((STATIC / "example_plots.geojson").read_text(encoding="utf-8"))
+    response = client.post("/api/check-plots", json={"geojson": example})
+    assert response.status_code == 200
+    return example, response.json()
+
+
+def test_the_example_file_is_real_places_with_example_names(client):
+    from shapely import wkt as shapely_wkt
+
+    from app.checks.landcover import load_meta
+    example, out = example_check(client)
+    assert all(f["properties"]["supplier"].startswith("Example cooperative") for f in example["features"])
+    # the two plots measured before are the same squares as data/reference_cells.meta.json describes
+    from shapely.geometry import Polygon
+
+    measured = load_meta()["measured"]
+    by_id = {f["properties"]["plot_id"]: f for f in example["features"]}
+    for plot_id in ("P-042", "P-041"):
+        ring = Polygon(by_id[plot_id]["geometry"]["coordinates"][0])
+        assert ring.symmetric_difference(shapely_wkt.loads(measured[plot_id]["polygon_wkt"])).area < 1e-9, plot_id
+    # the verdicts are the rules', not written in the file
+    assert "verdict" not in json.dumps(example).lower()
+    assert {r["verdict"] for r in out["plots"]} == {"CONTRADICTED", "UNVERIFIABLE", "NO_ISSUE"}
+
+
+def test_every_plot_of_a_check_has_one_plain_sentence_built_from_its_measure(client):
+    _, out = example_check(client)
+    view = client.get(f"/ui/check-plots/{out['batch_id']}/view").json()
+    assert set(view["plain"]) == {r["plot_id"] for r in out["plots"]}
+    for r in out["plots"]:
+        sentence = view["plain"][r["plot_id"]]
+        assert sentence.endswith(".") and not re.search(r"\b[a-z]+_[a-z_]+\b|\brule\b", sentence), sentence
+        if r["verdict"] == "NO_ISSUE":
+            assert sentence.startswith("No issue found: ")
+        if r["code"] == "forest_loss_in_delivering_plot":
+            assert f"{r['measure']['loss_after_2020_ha']:.1f} ha of the land the EU map counted as forest" in sentence
+    shapes = {s["plot_id"]: s for s in view["shapes"]}
+    assert shapes["P-042"]["rings"] and shapes["P-042"]["verdict"] == "CONTRADICTED"
+    assert shapes["P-131"]["rings"] is None and shapes["P-131"]["radius_m"] > 0  # a point, drawn as its area's disk
+
+
+def test_the_plain_sentence_of_a_plot_follows_its_numbers():
+    from app.web.plain import plot_sentence
+
+    result = {"verdict": "CONTRADICTED", "code": "forest_loss_in_delivering_plot", "area_ha": 5.0,
+              "measure": {"loss_after_2020_ha": 1.26, "forest_loss_ha_by_year": {"2020": 0.1, "2023": 1.26}}}
+    assert plot_sentence(result) == ("Forest was cut here after 2020: 1.3 ha of the land the EU map counted as forest in "
+                                     "2020 was lost inside this plot, in 2023.")
+    clear = {"verdict": "NO_ISSUE", "code": None, "area_ha": 2.0, "measure": {"forest_2020_ha": 0.42}}
+    assert "the 0.42 ha of forest the EU map counted here in 2020" in plot_sentence(clear)
+
+
+def test_one_plot_gives_its_outline_and_the_cells_its_verdict_rests_on(client):
+    from app import plotcheck
+
+    _, out = example_check(client)
+    batch_id = out["batch_id"]
+    plot = client.get(f"/ui/check-plots/{batch_id}/P-042").json()
+    answer = plotcheck.BATCHES[batch_id].answers[plot["result"]["evidence"]["answer"]]
+    assert plot["cells"] == [[c["lat"], c["lon"], c["forest_fraction_2020"], c["loss_year"]] for c in answer.rows]
+    assert plot["result"]["measure"]["cells"] <= len(plot["cells"]) and plot["rings"][0][0] == plot["rings"][0][-1]
+    assert client.get(f"/ui/check-plots/{batch_id}/P-150").json()["cells"] == []  # outside the maps: nothing read
+    assert client.get(f"/ui/check-plots/{batch_id}/NOPE").status_code == 404
+    assert client.get("/ui/check-plots/nope/view").status_code == 404
+    assert client.get("/ui/check-plots").json()[0]["batch_id"] == batch_id
+
+
+def test_the_page_has_the_product_screens():
+    page = (STATIC / "index.html").read_text(encoding="utf-8")
+    for view in ("view-check", "view-plot"):
+        assert f'id="{view}"' in page
+    for export in ("export-geojson", "export-csv", "export-package", "plot-receipt", "why-run"):
+        assert f'id="{export}"' in page
+    script = (STATIC / "app.js").read_text(encoding="utf-8")
+    for route in ("/api/check-plots", "/ui/check-plots/", "/static/example_plots.geojson"):
+        assert route in script
+    assert 'addEventListener("drop"' in script  # drag and drop, not only the button
