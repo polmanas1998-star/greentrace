@@ -22,6 +22,7 @@ from app.receipt import RECEIPT_VERSION, build_receipt
 from app.web import features, plain
 from app.world.cases import CASES_BY_NUMBER, DEFAULT_CLAIM
 
+VERSION = "0.1.0"  # the API's version (app/api.py)
 NAMES = ("check_claim", "check_plots", "what_if", "explain", "verify_receipt")
 DESCRIPTIONS = {
     "check_claim": "Check a company's deforestation-free claim: the agents investigate, fixed rules decide "
