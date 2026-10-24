@@ -295,8 +295,7 @@ export function Proof() {
             verify a receipt. Every trace line is also an OpenTelemetry span.
           </p>
           <pre className="gt-mono mt-6 overflow-x-auto rounded-[10px] border border-gt-line bg-gt-ground p-4 text-[12px] leading-5 text-gt-text/80">
-            python -m app.standards.mcp_server{"
-"}GET /.well-known/agent-card.json
+            python -m app.standards.mcp_server{"\n"}GET /.well-known/agent-card.json
           </pre>
         </div>
       </div>
