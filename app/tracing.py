@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Optional, TextIO
 
 from app.canonical import canonical_json
+from app.standards import otel
 
 OFFICIAL_FIELDS = (
     "timestamp",
@@ -60,6 +61,7 @@ def trace(
     directory.mkdir(parents=True, exist_ok=True)
     with open(directory / f"{run_id}.jsonl", "a", encoding="utf-8") as handle:
         handle.write(line + "\n")
+    otel.record(record, directory)  # one OpenTelemetry span per line (app/standards/otel.py); GREENTRACE_OTEL=0: off
 
     out = stream if stream is not None else sys.stdout
     out.write(line + "\n")
