@@ -1319,6 +1319,15 @@
       "letter": "DRAFT prepared by GreenTrace, to be reviewed by our compliance team before sending.\n\n[date]\n\nDear Wawassi (F-031),\n\nAs part of our review of the cocoa we bought in 2025, our checks found the following points about the plots and volumes in our records for you:\n\n- The 9.55 t you delivered in 2025 are not linked to any plot in our registry.\n\nThese points come from public satellite data and from our own registry. They may have a simple explanation, and we would like to understand them with you.\n\nTo complete our file, could you send us:\n\n- Your plot registry.\n\nThank you for your help.\n\nKind regards,\n\n[name, compliance team]\n"
     }
   ],
+  "geofence": {
+    "threshold_share": 0.1,
+    "projection": "Lambert azimuthal equal-area on the WGS84 ellipsoid, centred on each plot",
+    "checked": 30,
+    "not_checked": 7,
+    "findings": [],
+    "sentence": "Every plot with an outline and a declared area matches it within 10% (30 checked).",
+    "decides_verdict": false
+  },
   "verdict_sha256": "e69f9c692a1e2c8e57f379e58a58dcaf42e3fa4a25ff1932d263640c5634687e",
   "fingerprints": {
     "input_sha256": "4bc5c760b9d954e966c2cc15d0f268531195ce77e54973b0a853f06e510d4072",
@@ -1327,5 +1336,5 @@
     "rules_sha256": "22aeb9b31545946485e497d3a71117a584fac1d5c5df5ce48dae1cbcde763b8a"
   },
   "log_file": "logs/example-03.jsonl",
-  "execution_time_seconds": 0.04
+  "execution_time_seconds": 0.1
 }

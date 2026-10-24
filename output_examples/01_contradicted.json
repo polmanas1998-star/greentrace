@@ -1469,6 +1469,15 @@
       "letter": "DRAFT prepared by GreenTrace, to be reviewed by our compliance team before sending.\n\n[date]\n\nDear Agnibi (F-007),\n\nAs part of our review of the cocoa we bought in 2025, our checks found the following points about the plots and volumes in our records for you:\n\n- Alert A-221 (2022-03-14, high) lies inside P-014, which delivered in 2022 or later.\n\nThese points come from public satellite data and from our own registry. They may have a simple explanation, and we would like to understand them with you.\n\nTo complete our file, could you send us:\n\n- A field report on P-014.\n\nThank you for your help.\n\nKind regards,\n\n[name, compliance team]\n"
     }
   ],
+  "geofence": {
+    "threshold_share": 0.1,
+    "projection": "Lambert azimuthal equal-area on the WGS84 ellipsoid, centred on each plot",
+    "checked": 33,
+    "not_checked": 7,
+    "findings": [],
+    "sentence": "Every plot with an outline and a declared area matches it within 10% (33 checked).",
+    "decides_verdict": false
+  },
   "verdict_sha256": "24035b459821721e168619c808d35a6a03819b9feb113dac3ffabca4cba56eb0",
   "fingerprints": {
     "input_sha256": "60b05db9477e1497bb5132906b7818bba23c2e10a49b65e2bd8571a07fccd638",
@@ -1477,5 +1486,5 @@
     "rules_sha256": "22aeb9b31545946485e497d3a71117a584fac1d5c5df5ce48dae1cbcde763b8a"
   },
   "log_file": "logs/example-01.jsonl",
-  "execution_time_seconds": 0.06
+  "execution_time_seconds": 0.11
 }

@@ -1391,6 +1391,15 @@
     "excluded": []
   },
   "supplier_letters": [],
+  "geofence": {
+    "threshold_share": 0.1,
+    "projection": "Lambert azimuthal equal-area on the WGS84 ellipsoid, centred on each plot",
+    "checked": 33,
+    "not_checked": 7,
+    "findings": [],
+    "sentence": "Every plot with an outline and a declared area matches it within 10% (33 checked).",
+    "decides_verdict": false
+  },
   "verdict_sha256": "509901c785c2d42e6f00c08a823104fdbf42500b58de2243017c62bf6f9bdafa",
   "fingerprints": {
     "input_sha256": "55f650e4fd3376cdd875daf7eca62eb35eb6155a1c1173fdd991868f421a9a89",
@@ -1399,5 +1408,5 @@
     "rules_sha256": "22aeb9b31545946485e497d3a71117a584fac1d5c5df5ce48dae1cbcde763b8a"
   },
   "log_file": "logs/example-02.jsonl",
-  "execution_time_seconds": 0.03
+  "execution_time_seconds": 0.07
 }
