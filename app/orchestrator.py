@@ -110,6 +110,8 @@ def investigate(request: dict, run_id: str, *, log, memory_engine=None, zetaris=
                  f"by the analyst for {declared['supplier_id']}", target="Planner", status="success")
 
     parsed, extracted = extractor.extract(ctx, claim)
+    if parsed["out_of_scope"]:
+        return _output(run_id, sample, request, ctx, started, out_of_scope=parsed["out_of_scope"])
     if not parsed["types"]:
         return _output(run_id, sample, request, ctx, started, too_vague=True)
 
@@ -284,16 +286,19 @@ def _read_request(request: dict) -> tuple[str, str, dict, Optional[dict]]:
     return claim.strip()[:1000], company_id, options, body.get("plot")
 
 
-def _output(run_id, sample, request, ctx, started, *, report=None, decision=None, too_vague=False) -> dict:
+def _output(run_id, sample, request, ctx, started, *, report=None, decision=None, too_vague=False,
+            out_of_scope=None) -> dict:
     answers = [{"query_id": a.query_id, "rows_sha256": a.rows_sha256} for a in ctx.gate.answers]
     out = {
         "run_id": run_id,
-        "status": "too_vague" if too_vague else "success",
+        "status": "out_of_scope" if out_of_scope else "too_vague" if too_vague else "success",
         "mode": "sample" if sample else "live",
         "degraded": ctx.degraded,
     }
-    if too_vague:
-        out["summary"] = "Too vague or not supported: the promise names nothing that data can check."
+    if out_of_scope:
+        out["summary"] = out_of_scope
+    elif too_vague:
+        out["summary"] = extractor.TOO_VAGUE
     else:
         out.update(report)
         out["verdict_sha256"] = verdict_seal(decision)

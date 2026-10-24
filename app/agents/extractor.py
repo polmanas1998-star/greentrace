@@ -68,11 +68,128 @@ def read_claim(claim: str) -> dict:
     """Split the promise into checkable parts; an empty list means too vague to check."""
     types = [name for name, pattern in CHECKABLE.items() if pattern.search(claim)]
     since = SINCE.search(claim)
-    return {"types": types, "since": int(since.group(1)) if since else None}
+    return {"types": types, "since": int(since.group(1)) if since else None,
+            "commodities": commodities_in(claim), "company": company_in(claim)}
+
+
+# ---- what the promise is about, before any query: the sample data is one cocoa company ---------------------
+
+DATA_COMMODITY = "cocoa"
+DATA_COMPANIES = ("ChocoDurable SA", "Choco Durable", "Kalou Chocolat")  # the synthetic company and its demo brand
+COMMODITIES = {  # the seven EUDR commodities, with their usual words
+    "cocoa": r"cocoa|cacao|chocolates?|cocoa beans?",
+    "coffee": r"coffees?|caf[eé]s?|espresso|arabica|robusta",
+    "palm oil": r"palm|palm[- ]oil|oil palms?|palm kernels?",
+    "soy": r"soy|soya|soybeans?|soja",
+    "cattle": r"cattle|beef|leather|cows?|livestock|bovine",
+    "rubber": r"rubber|latex",
+    "wood": r"wood|wooden|timber|lumber|paper|pulp|plywood|charcoal|furniture",
+}
+_COMMODITY = {name: re.compile(rf"\b(?:{words})\b", re.I) for name, words in COMMODITIES.items()}
+# Capitalised words that are not a company: places, labels, regulations, and the words a sentence starts with.
+NOT_A_NAME = {
+    "eu", "eudr", "europe", "european", "union", "regulation", "africa", "west", "côte", "cote", "ivory", "coast",
+    "ghana", "soubré", "soubre", "brazil", "indonesia", "malaysia", "colombia", "ecuador", "cameroon", "nigeria",
+    "rainforest", "alliance", "fairtrade", "utz", "rspo", "fsc", "pefc", "iso", "organic", "jrc", "gfw", "hansen",
+    "january", "february", "march", "april", "may", "june", "july", "august", "september", "october",
+    "november", "december", "i", "ok",
+    *(word for words in COMMODITIES.values() for word in re.findall(r"[a-zé]+", words)),
+}
+STARTERS = {
+    "we", "our", "ours", "us", "all", "every", "each", "everything", "the", "this", "these", "those", "since", "by",
+    "from", "in", "at", "on", "for", "as", "it", "its", "no", "none", "zero", "any", "most", "fully", "only", "a",
+    "an", "my", "today", "now", "there", "here", "what", "how", "both", "certified", "sustainably", "sustainable",
+    "responsibly", "deforestation-free", "nous", "notre", "nos", "tout", "tous", "toutes", "le", "la", "les",
+    "depuis", "100%",
+}
+NAME_VERBS = {"is", "are", "was", "has", "have", "guarantees", "guarantee", "sources", "source", "buys", "promises",
+              "commits", "says", "claims", "ensures", "uses", "sells", "makes", "will", "does", "only", "never"}
+PROGRAMME = {"programme", "program", "plan", "label", "scheme", "initiative", "standard", "certification", "project"}
+OUT_OF_SCOPE = ("GreenTrace has no data on {what} here. Upload your own plots (GeoJSON) to check them, "
+                "or try the example cocoa supply chain.")
+TOO_VAGUE = ("Too vague to check: the promise names nothing that data can check. Say what is promised, for "
+             "example \"100% of our cocoa is deforestation-free since 2021.\"")
+SCOPE_SYSTEM = (
+    "Read one promise about a supply chain. Report commodities: every EUDR commodity it is about (cocoa, coffee, "
+    "palm oil, soy, cattle, rubber, wood), including through products made from it (chocolate is cocoa, leather is "
+    "cattle, paper is wood); an empty list if it names none. company: the company or brand the promise is about, "
+    "copied exactly as written, or 'none' when it names none ('we' and 'our' name no company). Never guess."
+)
+SCOPE_SCHEMA = {
+    "type": "object", "required": ["commodities", "company"], "additionalProperties": False,
+    "properties": {"commodities": {"type": "array", "maxItems": 7,
+                                   "items": {"type": "string", "enum": sorted(COMMODITIES)}},
+                   "company": {"type": "string", "maxLength": 120}},
+}
+
+
+def commodities_in(claim: str) -> list[str]:
+    return [name for name, pattern in _COMMODITY.items() if pattern.search(claim)]
+
+
+def company_in(claim: str) -> str | None:
+    """The first company or brand the promise names, by rule: a run of capitalised words that is not a place,
+    a label or a programme; at the start of a sentence, only when a verb or a possessive shows it is a name."""
+    for sentence in re.split(r"(?<=[.!?])\s+", claim.strip()):
+        tokens = [t.strip(".,;:!?\"()[]“”«»") for t in sentence.split()]
+        i = 0
+        while i < len(tokens):
+            if not (tokens[i][:1].isupper() and tokens[i][:1].isalpha()):
+                i += 1
+                continue
+            j = i
+            while j < len(tokens) and tokens[j][:1].isupper():
+                j += 1
+            words = [re.sub(r"['’]s$", "", t) for t in tokens[i:j]]
+            following = tokens[j].lower() if j < len(tokens) else ""
+            if i == 0 and words[0].lower() in STARTERS:
+                words = words[1:]
+            elif i == 0 and len(words) == 1 and following not in NAME_VERBS and not re.search(r"['’]s$", tokens[i]):
+                words = []
+            names = [w for w in words if w.lower() not in NOT_A_NAME]
+            if names and following not in PROGRAMME and words[-1].lower() not in PROGRAMME:
+                return " ".join(words).strip()
+            i = j
+    return None
+
+
+def _key(text: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", text.lower())
+
+
+def _known_company(name: str) -> bool:
+    key = _key(name)
+    return any(key and (key.startswith(_key(known).removesuffix("sa")) or _key(known).startswith(key))
+               for known in DATA_COMPANIES + ("ChocoDurable", "Kalou"))
+
+
+def scope(ctx: RunContext, claim: str, parsed: dict) -> str | None:
+    """Out of scope before any query: another commodity, or another company, than the data's. Rules first; the
+    model, when there is one, can add a commodity or a company the rules missed (a company only if written)."""
+    commodities, company = list(parsed["commodities"]), parsed["company"]
+    if ctx.model is not None:
+        answer, info = ctx.model.complete_json("Extractor", SCOPE_SYSTEM, [("promise", claim)], SCOPE_SCHEMA)
+        if answer is not None:
+            commodities += [c for c in answer["commodities"] if c not in commodities]
+            named = answer["company"].strip()
+            if company is None and named.lower() != "none" and named.lower() in claim.lower():
+                company = named
+    others = [c for c in commodities if c != DATA_COMMODITY]
+    stranger = company is not None and not _known_company(company)
+    if not others and not stranger:
+        return None
+    what = " and ".join(others + (["this company"] if stranger else []))
+    ctx.step("Extractor", "check_scope", f"promise: {claim}",
+             f"out of scope: commodities {', '.join(commodities) or 'none'}; company {company or 'none'}; "
+             f"the data is {DATA_COMMODITY} from {DATA_COMPANIES[0]}", status="success")
+    return OUT_OF_SCOPE.format(what=what)
 
 
 def extract(ctx: RunContext, claim: str) -> tuple[dict, Extracted]:
     parsed = read_claim(claim)
+    parsed["out_of_scope"] = scope(ctx, claim, parsed)
+    if parsed["out_of_scope"]:
+        return parsed, Extracted()
     ctx.step("Extractor", "extract_claims", f"promise: {claim}",
              f"checkable parts: {', '.join(parsed['types']) or 'none'}; since {parsed['since']}",
              target="Planner" if parsed["types"] else None)
@@ -157,3 +274,82 @@ def _read_by_rules(rse: list[dict], ngo: list[dict]) -> Extracted:
 def _first_year(text: str) -> int | None:
     match = YEAR.search(text)
     return int(match.group(1)) if match else None
+
+
+# ---- the analyst's own documents (app/userdocs.py) ---------------------------------------------------------
+
+USER_SYSTEM = (
+    "You are the Extractor of an audit of a deforestation-free claim. The data blocks are paragraphs of documents "
+    "the analyst pasted, each labelled with its document id and paragraph number; the first block is the claim "
+    "itself (document 'promise'). The supplier's own documents are: {company}. Third-party documents are: {third}. "
+    "Report three things. scope: 'all' only if the claim covers every tonne the supplier sells with no qualifier at "
+    "all; any qualifier that narrows it (a programme, a label, a certification, a region, a product line) makes it "
+    "'subset'; quote the words that decide it. admissions: only in the supplier's own documents, every passage "
+    "where the supplier says forest was cleared, opened or converted after 2020, whatever the wording; a denial "
+    "such as 'not one hectare was cleared' is NOT an admission. mentions: only in third-party documents, every "
+    "passage that ties forest clearing or forest loss to a named supplier, cooperative or farm: supplier_name is "
+    "the name exactly as written, cooperative_group the group written next to it or null, year the year as a "
+    "number even when written in words. Use section 'main'. Quote word for word, copied exactly from one "
+    "paragraph. Never invent a paragraph, a name or a year. Empty lists are a valid answer."
+)
+NEGATION = re.compile(r"\b(no|not|never|zero|without|free|nor)\b", re.I)
+
+
+def read_documents(ctx: RunContext, paragraphs: list[dict], roles: dict[str, str],
+                   supplier_names: list[str]) -> Extracted:
+    """What the analyst's documents say: Nemotron with exact quotes (3 readings, 2 must agree), else rules."""
+    company = [d for d, r in roles.items() if r == "company"]
+    third = [d for d, r in roles.items() if r == "third_party"]
+    if ctx.model is not None:
+        system = USER_SYSTEM.format(company=", ".join(company) or "none", third=", ".join(third) or "none")
+        blocks = [(f"{p['doc_id']} {p['section']} {p['paragraph_no']}", p["paragraph_text"]) for p in paragraphs]
+        readings, info = [], {}
+        for _ in range(READINGS):
+            answer, info = ctx.model.complete_json("Extractor", system, blocks, SCHEMA)
+            if answer is None:
+                break
+            readings.append(evaluator.verify_quotes(ctx, answer, paragraphs, roles))
+        if len(readings) >= AGREEMENT:
+            kept = _agreed(readings)
+            extracted = Extracted(
+                scope=kept["scope"],
+                admissions=tuple({k: a.get(k) for k in ("doc", "section", "paragraph_no", "quote", "plots", "year")}
+                                 for a in kept["admissions"]),
+                mentions=tuple({k: m.get(k) for k in ("doc", "paragraph_no", "quote", "supplier_name",
+                                                      "cooperative_group", "year")} for m in kept["mentions"]))
+            ctx.step("Extractor", "extract_claims", f"{len(paragraphs)} paragraph(s) of the analyst's documents, "
+                     f"read {len(readings)} times by {info['model']}",
+                     f"agreed by {AGREEMENT} of {len(readings)}: scope {extracted.scope}; "
+                     f"{len(extracted.admissions)} admission(s); {len(extracted.mentions)} mention(s), all quoted",
+                     target="Planner", provider=info["provider"], model=info["model"])
+            return extracted
+    extracted = _read_documents_by_rules(paragraphs, roles, supplier_names)
+    ctx.step("Extractor", "fallback_rules", f"{len(paragraphs)} paragraph(s) of the analyst's documents",
+             f"scope {extracted.scope}; {len(extracted.admissions)} admission(s); "
+             f"{len(extracted.mentions)} mention(s) of a supplier of the file", target="Planner", status="degraded")
+    return extracted
+
+
+def _read_documents_by_rules(paragraphs: list[dict], roles: dict[str, str], supplier_names: list[str]) -> Extracted:
+    """The plain baseline, careful never to read a denial as an admission: clearing words, a year after 2020,
+    no negation in the paragraph; a third party naming a supplier of the file with a year after 2020."""
+    promise = next((p for p in paragraphs if p["doc_id"] == "promise"), None)
+    scope = "subset" if promise and re.search(r"\b(certified|labelled|labeled|programme|program)\b",
+                                              promise["paragraph_text"], re.I) else "all"
+    admissions = tuple(
+        {"doc": p["doc_id"], "section": p["section"], "paragraph_no": p["paragraph_no"], "plots": [],
+         "year": _first_year(p["paragraph_text"])}
+        for p in paragraphs
+        if roles.get(p["doc_id"]) == "company" and p["doc_id"] != "promise"
+        and ADMISSION_WORDS.search(p["paragraph_text"]) and not NEGATION.search(p["paragraph_text"])
+        and (_first_year(p["paragraph_text"]) or 0) > 2020
+    )
+    mentions = tuple(
+        {"doc": p["doc_id"], "paragraph_no": p["paragraph_no"], "supplier_name": name,
+         "year": _first_year(p["paragraph_text"])}
+        for p in paragraphs if roles.get(p["doc_id"]) == "third_party"
+        for name in supplier_names
+        if re.search(rf"\b{re.escape(name)}\b", p["paragraph_text"], re.I)
+        and (_first_year(p["paragraph_text"]) or 0) > 2020
+    )
+    return Extracted(scope=scope, admissions=admissions, mentions=mentions)

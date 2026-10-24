@@ -147,6 +147,127 @@ cells with its own query (refutation R9).
 No exact outline was recorded for either plot: both are squares of the declared area around the
 declared point. Every number is measured, and kept in `data/reference_cells.meta.json`.
 
+## API
+
+The analyst's own plot file, checked plot by plot. Routes in `app/web/features.py`, logic in
+`app/plotfile.py` (reading) and `app/plotcheck.py` (measuring, ranking, exports); every verdict comes
+from `app/rules.py`. In sample mode (`SAMPLE_MODE=true`) the cells are read from
+`data/reference_cells.csv.gz`, with no key and no network.
+
+### `POST /api/check-plots`
+
+Body: the EUDR geolocation file itself, a GeoJSON `FeatureCollection`, or the same file wrapped as
+`{"geojson": <FeatureCollection>}`.
+
+```json
+{"type": "FeatureCollection", "features": [
+  {"type": "Feature", "properties": {"plot_id": "P-042", "supplier_id": "S-7"},
+   "geometry": {"type": "Polygon", "coordinates": [[[-6.5239, 5.7281], [-6.5201, 5.7281],
+                                                   [-6.5201, 5.7319], [-6.5239, 5.7319], [-6.5239, 5.7281]]]}},
+  {"type": "Feature", "properties": {"plot_id": "PT-1", "area_ha": 3},
+   "geometry": {"type": "Point", "coordinates": [-6.6, 5.72]}}]}
+```
+
+- Coordinates are longitude, latitude (EPSG:4326). Geometries: `Polygon`, `MultiPolygon`, or `Point`.
+  A point is measured as a square of its declared area around it; without an area it cannot be
+  measured (UNVERIFIABLE, `area_missing`).
+- At most 500 features, 5,000 vertices per plot, plot area between 0.01 and 5,000 ha. An open ring is
+  closed, with a warning.
+- Properties read, first one found wins: plot id `plot_id`, `plotId`, `id`, `ProductionPlace`,
+  `production_place`, `name`, `Name` (else the feature's position); supplier `supplier`,
+  `supplier_id`, `supplierId`, `supplier_name`, `producer`, `ProducerName`, ... (else `"not given"`);
+  area `area_ha`, `Area`, `area`, `hectares`, `surface_ha`. All properties are echoed back untouched.
+
+Errors:
+
+| Status | When | Body |
+|---|---|---|
+| 200 | at least one plot could be read | the result below; unreadable features are listed in `errors` |
+| 422 | not a FeatureCollection, no features, more than 500, a `crs` other than EPSG:4326, or no feature readable | `{"detail": "the file must be a GeoJSON FeatureCollection (the EUDR geolocation format)"}` |
+| 503 | live mode without Zetaris settings | `{"detail": "live mode needs Zetaris (.env): ..."}` |
+
+One bad feature never refuses the file: it goes to `errors` as
+`{"index": 4, "id": "BAD", "error": "a LineString geometry: plots are Polygon, MultiPolygon or Point"}`
+(`index` counts features from 1).
+
+Response (200), from a real sample-mode run, `plots` cut to one:
+
+```json
+{
+  "batch_id": "plots-cb848a5cc4b44c98",
+  "producing_until": 2026,
+  "summary": {
+    "plots": {"CONTRADICTED": 1, "UNVERIFIABLE": 1, "NO_ISSUE": 1},
+    "refused": 1,
+    "sentence": "1 plot(s) contradict a deforestation-free claim; 1 cannot be verified; 1 show no issue; 1 feature(s) could not be read."
+  },
+  "plots": [{
+    "risk_rank": 1,
+    "plot_id": "P-042", "supplier": "S-7", "shape": "polygon", "area_ha": 9.997, "centre": [5.73, -6.522],
+    "verdict": "CONTRADICTED", "rule": 2, "code": "forest_loss_in_delivering_plot",
+    "sentence": "3.42 ha that the EU map counted as forest in 2020 were lost inside P-042 in 2021, 2022, 2023, 2024 (Hansen/UMD), while it kept delivering (threshold 0.50 ha: 0.5 ha or 10 % of the plot).",
+    "measure": {
+      "covered": true, "reason": null, "forest_map": true,
+      "forest_2020_ha": 4.623, "loss_after_2020_ha": 3.4235,
+      "loss_ha_by_year": {"2019": 0.0941, "2020": 3.0336, "2021": 3.5617, "2022": 1.1268, "2023": 0.59, "2024": 0.3613},
+      "forest_loss_ha_by_year": {"2020": 0.0765, "2021": 1.4985, "2022": 0.9737, "2023": 0.59, "2024": 0.3613},
+      "cells": 144
+    },
+    "evidence": {"query": "Q10", "answer": "...", "maps": "EU JRC Global Forest Cover 2020 v4 (forest in 2020) + Hansen/UMD/Google/USGS/NASA GFC v1.12 (loss year)"},
+    "note": null,
+    "properties": {"plot_id": "P-042", "supplier_id": "S-7"}
+  }],
+  "suppliers": [{"supplier": "S-7", "plots": 1, "CONTRADICTED": 1, "UNVERIFIABLE": 0, "NO_ISSUE": 0,
+                 "forest_lost_after_2020_ha": 3.4235, "rank": 1, "why": "Rank 1: ..."}],
+  "errors": [{"index": 4, "id": "BAD", "error": "a LineString geometry: plots are Polygon, MultiPolygon or Point"}],
+  "warnings": [],
+  "rules_version": "2026-10-23.1",
+  "exports": {
+    "plots_no_issue_found.geojson": "/api/check-plots/plots-cb848a5cc4b44c98/plots_no_issue_found.geojson",
+    "findings.csv": "/api/check-plots/plots-cb848a5cc4b44c98/findings.csv",
+    "receipt": "/api/check-plots/plots-cb848a5cc4b44c98/receipt",
+    "package": "/api/check-plots/plots-cb848a5cc4b44c98/package"
+  },
+  "seal": "ab3a7d10db7535ecc54d65276c09181b99656e8cca172471f779f8dded07bfb0",
+  "promise": null,
+  "log_file": "logs/plots-cb848a5cc4b44c98.jsonl"
+}
+```
+
+- `plots` is already sorted by risk: CONTRADICTED, then UNVERIFIABLE, then NO_ISSUE; inside each,
+  most 2020 forest lost first, then by plot id. `risk_rank` is that order, from 1. Show `sentence`
+  as is: it is the one line per plot, written by the rules, never by a model.
+- `verdict` is one of `CONTRADICTED`, `UNVERIFIABLE`, `NO_ISSUE`; `code` says why:
+  `forest_loss_in_delivering_plot`, `forest_loss_below_threshold`,
+  `tree_cover_loss_outside_2020_forest`, `tree_cover_loss_no_eu_forest_map`, `area_missing`,
+  `polygon_missing`, `no_reference_data`. `NO_ISSUE` has `code` null.
+- A plot outside the mapped area is never a zero: `verdict` UNVERIFIABLE, `rule` 1, `code`
+  `no_reference_data`, `sentence` `"FAR: no reference map for this area yet."`, `measure.covered`
+  false and every hectare null. In sample mode, `note` says that only the maps around Soubre,
+  Côte d'Ivoire, are shipped.
+- `measure.loss_ha_by_year` is all tree cover lost each year; `forest_loss_ha_by_year` only the loss
+  on land the EU map counted as forest in 2020, the loss the EUDR cut-off is about.
+  `forest_map` false means tree cover loss was read where no EU 2020 forest map exists.
+- `suppliers` rolls the plots up per supplier, worst first. `promise` is null unless the body
+  carries one (not used by the page yet).
+
+### Exports
+
+All `GET`, on a batch held by the running process (a restart forgets it: 404 `no plot check ... in
+this process`).
+
+| Route | Type | Content |
+|---|---|---|
+| `/api/check-plots/{batch_id}` | JSON | the response above, again |
+| `/api/check-plots/{batch_id}/plots_no_issue_found.geojson` | `application/geo+json`, attachment | a FeatureCollection of the NO_ISSUE plots only, geometry as sent, the original `properties` plus `greentrace_status: "no issue found by GreenTrace"`, `greentrace_checked` (the maps) and `greentrace_batch`; empty if there are none |
+| `/api/check-plots/{batch_id}/findings.csv` | `text/csv` (UTF-8 with BOM, opens in Excel), attachment | one row per plot, in risk order: `risk_rank, plot_id, supplier, verdict, rule, code, sentence, area_ha, forest_2020_ha, forest_lost_after_2020_ha, tree_cover_loss_by_year, cells, sources` |
+| `/api/check-plots/{batch_id}/receipt` | JSON | the verdict receipt (`kind: "plot_check"`): the plots, the rules and data hashes, every result, the seal. `python verify.py receipt.json` replays every plot offline: VALID (exit 0), TAMPERED (1), UNREADABLE (2) |
+| `/api/check-plots/{batch_id}/package` | `application/zip`, attachment | `results.json`, `findings.csv`, `plots_no_issue_found.geojson`, `receipt.json`, `trace.jsonl`, `manifest.json` |
+| `/api/check-plots/{batch_id}/plots/{plot_id}/timelapse` | JSON | the time machine on one plot: its outline, a frame around it, one scene and the loss cells per year |
+
+"No issue found" means no forest loss after 2020 on the reference maps inside the outline, nothing
+more. Decision support, not a legal opinion, not a public rating.
+
 ## Limits
 
 - The company, suppliers, deliveries, reports and alerts are synthetic (placed on real places). Only

@@ -16,7 +16,8 @@ Rules, in the kit's order:
   3  untraced volume, impossible yield, plot declared twice, unconfirmed alert,
      alert near a point-declared plot, sources in conflict, claim narrower than
      announced, no independent source at all, forest lost below that threshold,
-     tree cover lost on land the EU map did not count as forest           UNVERIFIABLE
+     tree cover lost on land the EU map did not count as forest, or where no
+     EU 2020 forest map exists                                            UNVERIFIABLE
   4  none of the above                                                   PROVEN
 A part is CONTRADICTED as soon as one rule-2 finding holds: a defect on one plot
 does not hide a contradiction proven on another. The promise is CONTRADICTED if one
@@ -27,7 +28,7 @@ from typing import Optional
 
 from app.checks import geometry, landcover, registry
 
-RULES_VERSION = "2026-10-22.2"
+RULES_VERSION = "2026-10-23.1"
 
 PROVEN, CONTRADICTED, UNVERIFIABLE = "PROVEN", "CONTRADICTED", "UNVERIFIABLE"
 CUTOFF = "2020-12-31"
@@ -37,6 +38,7 @@ PARTS = ("coverage", "no_deforestation", "plausibility", "scope")
 MAP_MIN_HA, MAP_MIN_SHARE = 0.5, 0.10  # kit v7: forest lost inside a plot that contradicts the claim
 TREE_COVER_NOT_FOREST = ("tree cover was lost, but the EU 2020 map did not count this land as forest: "
                          "confirm in the field")
+NO_EU_FOREST_MAP = "EU 2020 forest map not available here: loss shown is tree cover, not EU forest"
 
 
 @dataclass(frozen=True)
@@ -188,6 +190,13 @@ def map_check(plot: dict, cells: Optional[list[dict]], delivered_in: set[int]) -
     if not measured["covered"]:
         return Finding("no_deforestation", 1, UNVERIFIABLE, "no_reference_data", f"{plot_id}: {measured['reason']}",
                        refs)
+    if not measured["forest_map"]:  # tree cover loss only: it can never prove that forest was cleared
+        cover = {int(y): ha for y, ha in measured["loss_ha_by_year"].items() if int(y) > landcover.CUTOFF_YEAR}
+        if not cover:
+            return None
+        return Finding("no_deforestation", 3, UNVERIFIABLE, "tree_cover_loss_no_eu_forest_map",
+                       f"{plot_id}: {sum(cover.values()):.2f} ha of tree cover lost in {_years(cover)} "
+                       f"(Hansen/UMD); {NO_EU_FOREST_MAP}", refs)
     after = {int(y): ha for y, ha in measured["forest_loss_ha_by_year"].items() if int(y) > landcover.CUTOFF_YEAR}
     while_delivering = {y: ha for y, ha in after.items() if y <= max(delivered_in, default=0)}
     lost, threshold = sum(while_delivering.values()), min(MAP_MIN_HA, MAP_MIN_SHARE * plot["area_ha"])
@@ -206,6 +215,67 @@ def map_check(plot: dict, cells: Optional[list[dict]], delivered_in: set[int]) -
                        f"{plot_id}: {sum(cover.values()):.2f} ha of tree cover lost in {_years(cover)}; "
                        f"{TREE_COVER_NOT_FOREST}", refs)
     return None
+
+
+def check_plot(plot: dict, cells: Optional[list[dict]], delivered_in: set[int]) -> list[Finding]:
+    """One plot of an analyst's own file (no registry around it): rule 1 for what cannot be measured,
+    then the reference maps (rule 2 of kit v7, map_check). An empty list: no issue found."""
+    plot_id = plot["plot_id"]
+    if plot["area_ha"] is None and not plot["polygon_wkt"]:
+        return [Finding("no_deforestation", 1, UNVERIFIABLE, "area_missing",
+                        f"{plot_id} is a point with no area: its outline cannot be measured",
+                        (f"plot:{plot_id}",))]
+    if geometry.polygon_missing(plot):
+        return [Finding("no_deforestation", 1, UNVERIFIABLE, "polygon_missing",
+                        f"{plot_id} covers {plot['area_ha']} ha but is declared by a point (the EUDR asks for a "
+                        f"polygon above 4 ha)", (f"plot:{plot_id}",))]
+    finding = map_check(plot, cells, delivered_in)
+    return [finding] if finding else []
+
+
+def decide_promise(plots: list[dict], plot_findings: list[Finding], extracted: Extracted,
+                   claim_types: list[str]) -> dict:
+    """The analyst's promise, judged on THEIR plots and documents (no registry, no volumes).
+
+    no_deforestation: every plot's finding, the supplier's own admissions (rule 2), and a third
+    party naming a supplier of the file whose plots show nothing (sources in conflict, rule 3).
+    scope: a narrower promise than announced (rule 3). coverage, when the promise says "100%" or
+    "all": the file holds no volumes, so that every tonne comes from these plots is not checked
+    (rule 3). Same order and same verdict per part as decide()."""
+    found = list(plot_findings)
+    for admission in extracted.admissions:
+        found.append(Finding("no_deforestation", 2, CONTRADICTED, "company_admission",
+                             f"the supplier's own document admits clearing ({admission['doc']} paragraph "
+                             f"{admission['paragraph_no']})",
+                             (f"doc:{admission['doc']}:{admission['section']}:{admission['paragraph_no']}",)))
+    contradicted = {p["supplier_id"] for p in plots
+                    for f in plot_findings if f.verdict == CONTRADICTED and f"plot:{p['plot_id']}" in f.refs}
+    for mention in extracted.mentions:
+        if (mention.get("year") or 0) < FIRST_YEAR_AFTER_CUTOFF or not mention.get("supplier_name"):
+            continue
+        named = sorted({p["supplier_id"] for p in plots if _words(p["supplier_id"])
+                        and _words(p["supplier_id"]) == _words(mention["supplier_name"])})
+        if named and not set(named) & contradicted:
+            found.append(Finding("no_deforestation", 3, UNVERIFIABLE, "sources_in_conflict",
+                                 f"{mention['doc']} paragraph {mention['paragraph_no']} reports clearing by "
+                                 f"{mention['supplier_name']} in {mention['year']}; "
+                                 f"none of its plots shows it on the maps",
+                                 tuple(f"supplier:{s}" for s in named) + (f"doc:{mention['doc']}:main:"
+                                                                         f"{mention['paragraph_no']}",)))
+    if extracted.scope != "all":
+        found.append(Finding("scope", 3, UNVERIFIABLE, "narrower_scope",
+                             "the promise covers only part of the supplier's cocoa, not all of it", ("doc:promise",)))
+    if "coverage" in claim_types:
+        found.append(Finding("coverage", 3, UNVERIFIABLE, "volume_not_checked",
+                             "the plot file holds no volumes: that every tonne comes from these plots is not checked",
+                             ("doc:promise",)))
+    parts_checked = (["coverage"] if "coverage" in claim_types else []) + ["no_deforestation", "scope"]
+    findings = sorted(found, key=lambda f: (PARTS.index(f.part), f.rule, f.code, f.refs))
+    parts = [_part_verdict(part, [f for f in findings if f.part == part]) for part in parts_checked]
+    verdicts = {p["verdict"] for p in parts}
+    overall = CONTRADICTED if CONTRADICTED in verdicts else UNVERIFIABLE if UNVERIFIABLE in verdicts else PROVEN
+    return {"verdict": overall, "rules_version": RULES_VERSION, "parts": parts,
+            "findings": [f.__dict__ for f in findings]}
 
 
 def _years(hectares: dict[int, float]) -> str:

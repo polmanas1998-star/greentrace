@@ -8,9 +8,11 @@ covers, and a cell's area follows its latitude. The plot is its polygon, or the 
 its area around its point, as in app/checks/geometry.py.
 
 Measures only: the verdict stays in app/rules.py. A plot that is not entirely covered by
-the cells gives "no reference data for this area", never zero. Loss is given twice by
+the cells gives "no reference map for this area yet", never zero. Loss is given twice by
 year: on every cell, and on the cells the EU map counted as forest in 2020 (the only
-loss the EUDR's cut-off is about).
+loss the EUDR's cut-off is about). Cells read where no EU 2020 forest map exists (Global
+Forest Watch tiles, app/checks/gfw.py) carry forest_fraction_2020 None: the measure then
+gives tree cover loss only, and says so (forest_map False), never a forest figure.
 """
 import gzip
 import json
@@ -32,7 +34,7 @@ CELL_DEG = 0.00025  # the Hansen grid: 40 000 cells over a 10 degree tile
 GRID_ORIGIN = (10.0, -10.0)  # top-left corner (lat, lon) of Hansen tile 10N_010W
 FOREST_FROM = 0.5  # a cell is forest in 2020 when the EU map saw at least half of it as forest
 CUTOFF_YEAR = 2020
-NO_DATA = "no reference data for this area"
+NO_DATA = "no reference map for this area yet"
 DISK_SEGMENTS = 64  # a point-declared plot is a disk drawn with 4 x 64 segments
 DECIMALS = 6
 UNCOVERED = {"covered": False, "reason": NO_DATA, "forest_2020_ha": None, "loss_ha_by_year": None,
@@ -73,7 +75,7 @@ def measure(plot: dict, cells: Iterable[dict]) -> dict[str, Any]:
     top, left = cell_index(north, west)
     bottom, right = cell_index(south, east)
 
-    used, forest, after, by_year, on_forest = [], 0.0, 0.0, {}, {}
+    used, forest, after, by_year, on_forest, no_forest_map = [], 0.0, 0.0, {}, {}, False
     for row in range(top, bottom + 1):
         for col in range(left, right + 1):
             square = cell_box(row, col)
@@ -84,11 +86,13 @@ def measure(plot: dict, cells: Iterable[dict]) -> dict[str, Any]:
             if cell is None:  # part of the plot falls where the maps were not loaded
                 return dict(UNCOVERED)
             area = overlap * cell_area_ha(cell["lat"])
-            forest += area * cell["forest_fraction_2020"]
+            fraction = cell["forest_fraction_2020"]
+            no_forest_map = no_forest_map or fraction is None  # loss read elsewhere, no EU 2020 forest map there
+            forest += area * (fraction or 0.0)
             year = cell["loss_year"]
             if year:
                 by_year[year] = by_year.get(year, 0.0) + area
-                if cell["forest_fraction_2020"] >= FOREST_FROM:
+                if fraction is not None and fraction >= FOREST_FROM:
                     on_forest[year] = on_forest.get(year, 0.0) + area
                     if year > CUTOFF_YEAR:
                         after += area
@@ -99,10 +103,11 @@ def measure(plot: dict, cells: Iterable[dict]) -> dict[str, Any]:
     return {
         "covered": True,
         "reason": None,
-        "forest_2020_ha": round(forest, 4),
+        "forest_map": not no_forest_map,  # False: tree cover loss only, the EU 2020 forest is unknown here
+        "forest_2020_ha": None if no_forest_map else round(forest, 4),
         "loss_ha_by_year": _by_year(by_year),
-        "forest_loss_ha_by_year": _by_year(on_forest),
-        "loss_after_2020_ha": round(after, 4),
+        "forest_loss_ha_by_year": None if no_forest_map else _by_year(on_forest),
+        "loss_after_2020_ha": None if no_forest_map else round(after, 4),
         "cells": sorted(used, key=lambda c: (-c["lat"], c["lon"])),
     }
 

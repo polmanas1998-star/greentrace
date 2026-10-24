@@ -5,6 +5,7 @@
     python -m scripts.fetch_satellite --plot P-042
     python -m scripts.fetch_satellite --before        # also the 2020 scene, then the Satellite Lens image
     python -m scripts.fetch_satellite --lens          # only rebuild the Lens images from the two JPEGs (offline)
+    python -m scripts.fetch_satellite --timelapse     # one dry-season scene a year, 2019 to now (data/timelapse/)
 
 For each plot it asks the public STAC catalogue Earth Search for Sentinel-2 L2A scenes of
 2025-2026 over a 1.4 x 1.4 km box around the plot, with less than 20 % cloud over the scene,
@@ -35,6 +36,12 @@ resampling to 384 x 256 px, nothing else done to the pixels, before | after, und
 reads "A1 2020 | A1 2026". On the whole grid at 512 px per date, Nemotron answered "forest_kept"
 nine times out of nine (second real test, 22/10): a cell of 400 x 267 m is 40 x 27 Sentinel-2
 pixels, too small to judge at that size. --lens rebuilds all of these offline from the JPEGs.
+
+--timelapse fetches, for each year from 2019 to the current one, the least cloudy clean frame of
+that year's dry season (December of the year before to March), same frame, same pixel grid, into
+data/timelapse/<plot>_<year>.jpg and .json; a year with no usable scene gets a .json that says so.
+app/timelapse.py serves them (GET /api/timelapse), with the Hansen loss of each year in the frame,
+and fetches the missing ones on demand in live mode through fetch_scene() below.
 """
 import argparse
 import hashlib
@@ -58,6 +65,14 @@ MAX_SCENE_CLOUD = 20  # eo:cloud_cover, percent of the whole scene
 BEFORE = {"dates": "2019-12-01T00:00:00Z/2020-03-31T23:59:59Z", "max_cloud": 50, "suffix": "_2020",
           "label": "the 2019-2020 dry season"}
 AFTER = {"dates": DATES, "max_cloud": MAX_SCENE_CLOUD, "suffix": "", "label": "2025-2026"}
+TIMELAPSE_DIR = ROOT / "data" / "timelapse"
+TIMELAPSE_FIRST_YEAR = 2019
+
+
+def dry_season(year: int) -> dict[str, Any]:
+    """The dry season that ends in March of `year`: the clearest months over Soubre, as BEFORE is for 2020."""
+    return {"dates": f"{year - 1}-12-01T00:00:00Z/{year}-03-31T23:59:59Z", "max_cloud": BEFORE["max_cloud"],
+            "suffix": f"_{year}", "label": f"the {year - 1}-{year} dry season", "year": year}
 LENS_HALF_PX = (504, 336)  # each date in the Lens image: 3:2 like the frame
 LENS_GAP_PX = 16  # between the two dates: 504 + 16 + 504 = 1024, the width the model reads well
 INK = (14, 26, 20)  # #0E1A14, the visual system's ink: the gap and the label boxes
@@ -246,12 +261,15 @@ def credit(item: dict) -> str:
 
 
 def description(plot_id: str, item: dict, box: dict, asset: str, hrefs: list[str], fraction: Optional[float],
-                data: bytes, quality: int, season: Optional[dict] = None) -> dict[str, Any]:
+                data: bytes, quality: int, season: Optional[dict] = None,
+                centre: Optional[tuple[float, float]] = None) -> dict[str, Any]:
     properties = item["properties"]
     season = season or AFTER
+    centre = centre or PLOTS[plot_id]
     return {
         "plot_id": plot_id,
-        "role": "before" if season is BEFORE else "after",
+        "role": "before" if season is BEFORE else "timelapse" if "year" in season else "after",
+        "season": season["label"],
         "scene_id": item["id"],
         "datetime": properties["datetime"],
         "date": properties["datetime"][:10],
@@ -264,7 +282,7 @@ def description(plot_id: str, item: dict, box: dict, asset: str, hrefs: list[str
         "asset": asset,
         "sources": hrefs,
         "catalogue": {"stac_api": STAC_API, "collection": COLLECTION,
-                      "search": search_body(*PLOTS[plot_id], season=season)},
+                      "search": search_body(*centre, season=season)},
         "licence": credit(item),
         "licence_terms": "Copernicus Sentinel data: free, full and open access (Copernicus data policy, "
                          "Commission Delegated Regulation (EU) No 1159/2013)",
@@ -278,10 +296,17 @@ def description(plot_id: str, item: dict, box: dict, asset: str, hrefs: list[str
 
 def fetch(plot_id: str, out_dir: Path = MAPS_DIR, season: Optional[dict] = None) -> dict[str, Any]:
     season = season or AFTER
-    lat, lon = PLOTS[plot_id]
-    box = frame(lat, lon)
+    return fetch_scene(plot_id, *PLOTS[plot_id], season, out_dir, f"{plot_id}{season['suffix']}")
+
+
+def fetch_scene(key: str, lat: float, lon: float, season: dict, out_dir: Path, name: str,
+                quiet: bool = False, box: Optional[dict] = None) -> dict[str, Any]:
+    """The best scene of a season on a frame (the map's around (lat, lon) by default), as <out_dir>/<name>.jpg."""
+    plot_id = key
+    box = box or frame(lat, lon)
     items = search(lat, lon, season=season)
-    print(f"{plot_id}: {len(items)} scene(s) of {season['label']} under {season['max_cloud']} % cloud")
+    if not quiet:
+        print(f"{plot_id}: {len(items)} scene(s) of {season['label']} under {season['max_cloud']} % cloud")
     item, fraction = pick(items, lambda href: read_on_frame(href, box, nearest=True)[0], season)
     asset, hrefs = rgb_hrefs(item)
     if asset == "visual":
@@ -291,14 +316,14 @@ def fetch(plot_id: str, out_dir: Path = MAPS_DIR, season: Optional[dict] = None)
 
         rgb = stretch(np.concatenate([read_on_frame(href, box, bands=[1]) for href in hrefs]))
     data, quality = jpeg(rgb)
-    info = description(plot_id, item, box, asset, hrefs, fraction, data, quality, season)
+    info = description(plot_id, item, box, asset, hrefs, fraction, data, quality, season, (lat, lon))
     out_dir.mkdir(parents=True, exist_ok=True)
-    name = f"{plot_id}{season['suffix']}"
     (out_dir / f"{name}.jpg").write_bytes(data)
     (out_dir / f"{name}.json").write_text(json.dumps(info, indent=2) + "\n", encoding="utf-8", newline="\n")
-    print(f"{plot_id}: {item['id']} of {info['date']}, scene cloud {info['cloud_cover_scene_percent']} %, "
-          f"frame {'not checked (no SCL)' if fraction is None else f'{fraction:.1%} bad pixels'}, "
-          f"{len(data) / 1000:.0f} KB, {info['licence']}")
+    if not quiet:
+        print(f"{plot_id}: {item['id']} of {info['date']}, scene cloud {info['cloud_cover_scene_percent']} %, "
+              f"frame {'not checked (no SCL)' if fraction is None else f'{fraction:.1%} bad pixels'}, "
+              f"{len(data) / 1000:.0f} KB, {info['licence']}")
     return info
 
 
@@ -509,13 +534,36 @@ def lens_cells(plot_id: str, out_dir: Path = MAPS_DIR) -> dict[str, Any]:
     return info
 
 
+def timelapse(plot_id: str, out_dir: Path = TIMELAPSE_DIR, last_year: Optional[int] = None) -> list[dict]:
+    """One scene a year; a year with no usable scene is written down as such, never skipped in silence."""
+    done = []
+    for year in range(TIMELAPSE_FIRST_YEAR, (last_year or datetime.now(timezone.utc).year) + 1):
+        name = f"{plot_id}_{year}"
+        try:
+            done.append(fetch(plot_id, out_dir, dry_season(year)))
+        except SatelliteError as error:
+            out_dir.mkdir(parents=True, exist_ok=True)
+            (out_dir / f"{name}.jpg").unlink(missing_ok=True)
+            note = {"plot_id": plot_id, "year": year, "season": dry_season(year)["label"], "image": None,
+                    "status": f"no usable scene: {error}", "made_by": "scripts/fetch_satellite.py",
+                    "made_on": datetime.now(timezone.utc).date().isoformat()}
+            (out_dir / f"{name}.json").write_text(json.dumps(note, indent=2) + "\n", encoding="utf-8", newline="\n")
+            print(f"{plot_id} {year}: {note['status']}", file=sys.stderr)
+            done.append(note)
+    return done
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--plot", choices=sorted(PLOTS), action="append", help="one plot (default: both)")
     parser.add_argument("--before", action="store_true", help="also fetch the 2020 scene, then build the Lens image")
     parser.add_argument("--lens", action="store_true", help="only build the Lens images from the two JPEGs")
+    parser.add_argument("--timelapse", action="store_true", help="one dry-season scene a year, 2019 to now")
     args = parser.parse_args(argv)
     for plot_id in args.plot or list(PLOTS):
+        if args.timelapse:
+            timelapse(plot_id)
+            continue
         try:
             if args.before:
                 fetch(plot_id, season=BEFORE)  # the recent scene is already there: --before adds 2020 only

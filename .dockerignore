@@ -17,3 +17,5 @@ logs
 data/raw
 output_examples
 docs
+data/memory
+data/cache

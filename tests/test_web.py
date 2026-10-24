@@ -241,7 +241,7 @@ def test_plot_measure_gives_the_numbers_the_run_will_use(client):
 
 def test_plot_measure_outside_the_maps_says_no_reference_data(client):
     far = client.post("/api/plot-measure", json={"plot": square(6.70, -6.45, 5.0)}).json()["measure"]
-    assert far["covered"] is False and far["reason"] == "no reference data for this area"
+    assert far["covered"] is False and far["reason"] == "no reference map for this area yet"
     assert far["forest_2020_ha"] is None  # not measured is not zero
 
 

@@ -7,6 +7,7 @@ POST /runs/{run_id}/what_if  change one value, re-run only what depends on it
 GET  /runs/{run_id}/receipt  the verdict receipt: python verify.py receipt.json re-derives it offline
 GET  /runs/{run_id}/package  the audit package: one zip, receipt included
 GET  /runs/{run_id}/timeline per plot a finding is about: loss by year inside it, cut-off, deliveries
+GET  /runs/{run_id}/suppliers, POST /citizen, GET /api/timelapse: app/web/features.py
 """
 from typing import Any
 
@@ -81,4 +82,6 @@ def what_if(run_id: str, change: WhatIf) -> dict[str, Any]:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
 from app.web import mount  # noqa: E402 - the interface (app/web), on top of the routes above
+from app.web import features  # noqa: E402 - suppliers to check first, citizen mode, satellite time machine
 mount(app)
+app.include_router(features.router)
