@@ -12,6 +12,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+COVER_URL = "https://d2ol7oe51mr4n9.cloudfront.net/user_3L8gjUj2lTtb47gRJIU0QEolkkO/a31c2dac-d4b6-4fe9-9319-d7356faeeccc.jpg"
 
 
 def main(app: Path) -> None:
@@ -57,6 +58,9 @@ def main(app: Path) -> None:
         "og_title": "GreenTrace",
         "og_description": "Proof, plot by plot: EUDR checks against the EU forest map, with every step shown.",
         "favicon_url": "/favicon.svg",
+        # a real capture of the home page (the free plan generates no cover), uploaded to Higgsfield
+        "og_image_url": COVER_URL,
+        "marketplace_cover_url": COVER_URL,
     })
     meta.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
 
