@@ -42,7 +42,7 @@ from app.tracing import now_utc, trace
 # The Extractor reads the messy reports, where the verdict is won or lost: deep lane. On the
 # 21-case bench (22/10) the fast lane missed hedged admissions and witness reports run to run.
 LANES = {"Extractor": "deep", "Writer": "fast", "Planner": "deep", "Investigator": "deep", "Evaluator": "deep",
-         "Plaintiff": "fast"}
+         "Plaintiff": "fast", "Baseline": "deep"}
 CHAINS = {"meterless": ("meterless", "nvidia"), "nvidia": ("nvidia",), "rules": ()}
 DEFAULT_MODELS = {
     "meterless": {"fast": "meterless/fast", "deep": "meterless/deep"},  # Runtime routing modes
