@@ -75,22 +75,22 @@ export function WatchCta() {
 
 const STEPS: Array<{ who: string; what: string; detail: string; tag: string }> = [
   {
-    who: "Planner",
-    what: "Reads the promise and plans the checks.",
-    detail: "Which plots, which years, which sources can test it. A promise that names nothing testable is said to be too vague.",
-    tag: "Nemotron",
+    who: "Extractor",
+    what: "Reads the promise and the documents.",
+    detail: "Claims, plots and dates, each with the exact sentence it came from. A quote that is not in the text is thrown out by the code, and a promise that names nothing testable is said to be too vague.",
+    tag: "Nemotron, quotes checked by code",
   },
   {
-    who: "Extractor",
-    what: "Pulls claims, plots and dates out of the documents.",
-    detail: "Every extracted fact keeps the exact sentence it came from. A quote that is not in the text is thrown out by the code.",
-    tag: "Nemotron, quotes checked by code",
+    who: "Planner",
+    what: "Plans the checks.",
+    detail: "For each part of the promise, the hypotheses that must hold and the queries that test them. When the Evaluator lands a refutation, the plan is revised.",
+    tag: "Hypotheses H1 to H6",
   },
   {
     who: "Investigator",
     what: "Asks the data, one query at a time.",
-    detail: "Supplier registry, deliveries, plot outlines, alerts and the EU forest cells, through Zetaris. Each query and its rows go into the trace.",
-    tag: "Zetaris SQL",
+    detail: "Supplier registry, deliveries, plot outlines, alerts and the EU forest cells, through Zetaris. Each query and its rows go into the trace, and each fact into the Meterless World Model with its source.",
+    tag: "Zetaris SQL, Meterless World Model",
   },
   {
     who: "Evaluator",
@@ -107,8 +107,8 @@ const STEPS: Array<{ who: string; what: string; detail: string; tag: string }> =
   {
     who: "Writer",
     what: "Explains it in plain words.",
-    detail: "Every sentence points to the rows that support it. The Meterless World Model holds each fact with its source, so a changed fact invalidates what depended on it.",
-    tag: "Meterless World Model",
+    detail: "Every sentence points to the rows that support it. A sentence without a source, or a verdict the rules did not give, is refused by the code.",
+    tag: "Sources checked by code",
   },
 ];
 

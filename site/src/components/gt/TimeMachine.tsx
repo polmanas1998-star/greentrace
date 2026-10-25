@@ -243,10 +243,13 @@ export function TimeMachine({ map, frames }: { map: PlotMap; frames: Frame[] }) 
               <div className="gt-mono text-[11px] uppercase tracking-[0.14em] text-gt-signal">EU forest in 2020</div>
               <div className="gt-num text-2xl text-gt-text">{map.measure.forest_2020_ha?.toFixed(2)} ha</div>
             </div>
-            <div className="gt-mono text-[11px] uppercase tracking-[0.14em] text-gt-loss">Lost after the cut-off</div>
+            <div className="gt-mono text-[11px] uppercase tracking-[0.14em] text-gt-loss">Lost after the cut-off, so far</div>
             <div className="gt-num text-5xl font-medium tracking-tight text-gt-text md:text-7xl">
               <span ref={lostRef}>0.00</span>
               <span className="ml-2 text-2xl text-gt-muted md:text-3xl">ha</span>
+              <span className="sr-only">
+                {" "}by this scene; {steps[steps.length - 1]?.lost.toFixed(2)} ha by the last scene
+              </span>
             </div>
           </div>
         </div>
