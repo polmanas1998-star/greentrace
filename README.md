@@ -176,6 +176,7 @@ through the real agents.
 |---|---|
 | Rules alone, sample mode (`python -m scripts.bench`, checked by `tests/test_pipeline.py`) | **18/21** |
 | With Nemotron 3.5 (`python -m scripts.bench --model`, NVIDIA direct), measured on 22 October 2026 | **21/21** |
+| Through Meterless Nightshift (Nemotron 3 Ultra 550B), `--model --save-receipts`, 25 October 2026: 89 model calls, 0 rule fallbacks, **89/89 signed receipts verify** (`data/bench_nightshift.json`) | **21/21** |
 
 Rules alone miss cases 12, 17 and 18: an NGO naming a supplier and a plot in free text, a "100%"
 that covers only the labelled programme, and an admission hidden in an annex need a model to read
@@ -385,16 +386,17 @@ more. Decision support, not a legal opinion, not a public rating.
 - The chat on the website speaks AG-UI to the site's own agent (`site/src/routes/api/agui.ts`), which
   has no model and forwards each question to `POST /runs/{run_id}/ask`. CopilotKit was tried and
   left out: its runtime was too heavy for the Cloudflare Worker the site runs on.
-- The model runs on NVIDIA's API directly: Nightshift, which serves the Meterless Runtime, needs a
-  dedicated GPU we do not have. The Meterless provider is written to its contract and tested against a
-  fake Runtime only (`tests/test_llm.py`).
+- Model calls go through Meterless Nightshift 1.2.3 on a Windows laptop with no NVIDIA GPU: the
+  models run in NVIDIA's cloud, Nightshift routes, signs a receipt per answer and keeps the cache.
+  Nightshift currently excludes Nemotron 3.5 Super VL (repeated empty answers), so the deep lane is
+  pinned to Nemotron 3 Ultra 550B through it. The public demo still runs in sample mode, with no key.
 - A satellite alert or a map cell is not legal proof; 30 m maps can misread a few cells.
 - Every verdict needs a human review before any decision. The plot file says "no issue found by
   GreenTrace", never more; supplier letters are drafts that ask, never accuse.
 
 ## Sponsor technology
 
-Proof of a live run: `output_examples/live/` keeps one run of the demo case with Zetaris answering all 16 queries, the Meterless World Model server holding the facts and 7 NVIDIA Nemotron calls. Its verdict and seal are the same as the offline sample run (`24035b45...`): the model reads, the rules decide.
+Proof of live runs: `output_examples/live/` keeps the demo case run with every sponsor at once on 25 October 2026: Zetaris answering all 16 queries, the Meterless World Model server holding the facts, and 5 Nemotron calls through Meterless Nightshift, each with a signed receipt that verifies (`02_contradicted_live_nightshift.*`; check them with `python -m scripts.verify_nightshift_receipts output_examples/live/02_contradicted_live_nightshift.receipts.jsonl`). Its verdict and seal are the same as the offline sample run (`24035b45...`): the model reads, the rules decide.
 
 - **Zetaris** (data): the Unified Semantic Layer `eudr` (`data/usl_eudr.sql`) over a Postgres
   datasource, built by `scripts/load_zetaris.py`; native data-quality rules (`REGISTER DQ`, read by Q0
@@ -404,17 +406,21 @@ Proof of a live run: `output_examples/live/` keeps one run of the demo case with
 - **Meterless** (build): the official World Model reference implementation, copied unmodified
   (`meterless/reference`, upstream commit `1742dec`, `meterless/UPSTREAM.sha256`), passes its
   conformance suite 8/8 (`tests/test_world_model.py`) and is the agents' shared memory
-  (`app/memory/world_model.py`, `meterless/server.ts`); a Meterless Runtime provider coded to its
-  contract in `app/adapters/llm.py` (see Limits). Second Meterless engine: **H-MEM**, the unmodified
+  (`app/memory/world_model.py`, `meterless/server.ts`). **Nightshift** serves the Meterless Runtime
+  every model call goes through (`app/adapters/llm.py`, `MODEL_PROVIDER=meterless`): each answer's
+  compute receipt, signed by meterlessd with Ed25519, is verified at call time
+  (`app/adapters/meterless_receipt.py`), named in the trace line, and kept; on the 21 trap cases 89/89
+  receipts verify. Second Meterless engine: **H-MEM**, the unmodified
   reference (`meterless/hmem`, same upstream commit, conformance 13/13, `tests/test_hmem.py`), used for
   one thing only: one note per supplier a finding concerns, read first by the next investigation and
   shown as "Seen before". It never decides, never enters the receipt, lives in `data/memory/` (local,
   erasable: `python -m app.memory.hmem --forget <company_id>`) and is on when `HMEM_URL` is set (Docker).
 - **Cursor** (build): how it was used, honestly, in `docs/CURSOR_LOG.md` (free plan only; the sponsor
   credit was never distributed during the build window).
-- **NVIDIA Nemotron** (power): Nemotron 3.5 on two pinned lanes, `nemotron-3.5-lightning-30b-a3b`
-  (fast: the Writer) and `nemotron-3.5-super-vl-120b-a12b` (deep: Extractor, Planner, Investigator,
-  Evaluator). Nemotron proposes; the code decides.
+- **NVIDIA Nemotron** (power): two pinned lanes, `nemotron-3.5-lightning-30b-a3b` (fast: the Writer)
+  and, through Nightshift, `nemotron-3-ultra-550b-a55b` (deep: Extractor, Planner, Investigator,
+  Evaluator); NVIDIA direct uses `nemotron-3.5-super-vl-120b-a12b` for the deep lane. Nemotron
+  proposes; the code decides.
 
 ## AI usage
 
