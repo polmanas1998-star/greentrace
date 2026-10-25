@@ -27,13 +27,13 @@ For an analyst, the real work is a file of plots. Drop it in. Every plot is chec
 And it refuses to convict on a hunch. This plot lost trees, but the EU map never counted that land as forest. GreenTrace says unverifiable, and asks for a field check.
 
 8
-00:01:37,960 --> 00:01:50,080
-This is a live run. Sixteen queries answered by Zetaris. The facts held by the Meterless World Model. Seven calls to NVIDIA Nemotron. Same verdict, and the same seal, as the offline run.
+00:01:37,960 --> 00:01:54,710
+This is a live run, with every sponsor at once. Sixteen queries answered by Zetaris. The facts held by the Meterless World Model. Five Nemotron calls through Meterless Nightshift, each with a signed receipt that GreenTrace checks. Same verdict, and the same seal, as the offline run.
 
 9
-00:01:50,680 --> 00:01:58,770
+00:01:55,310 --> 00:02:03,400
 Don't trust us. Check it. One command re-derives the verdict offline, with no model and no network. Change one row, and it says tampered.
 
 10
-00:01:59,370 --> 00:02:02,480
+00:02:04,000 --> 00:02:07,110
 GreenTrace. Every verdict, its evidence, and its limits.
