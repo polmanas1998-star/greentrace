@@ -1,0 +1,22 @@
+MISS 01 base                             expected PROVEN        got CONTRADICTED
+ok   02 alert_2022_in_p014               expected CONTRADICTED  got CONTRADICTED
+MISS 03 alert_on_cutoff                  expected PROVEN        got CONTRADICTED
+ok   04 alert_day_after_cutoff           expected CONTRADICTED  got CONTRADICTED
+MISS 05 alert_300m_from_polygon          expected PROVEN        got UNVERIFIABLE
+ok   06 alert_300m_from_point            expected UNVERIFIABLE  got UNVERIFIABLE
+ok   07 six_ha_point                     expected UNVERIFIABLE  got UNVERIFIABLE
+ok   08 f031_no_plots                    expected UNVERIFIABLE  got UNVERIFIABLE
+MISS 09 impossible_yield                 expected UNVERIFIABLE  got CONTRADICTED
+MISS 10 plot_declared_twice              expected UNVERIFIABLE  got CONTRADICTED
+MISS 11 ngo_regional_clearing            expected PROVEN        got CONTRADICTED
+MISS 12 ngo_names_plot_no_alert          expected UNVERIFIABLE  got CONTRADICTED
+MISS 13 ngo_names_supplier_with_alert    expected CONTRADICTED  got UNVERIFIABLE
+ok   14 low_confidence_alert             expected UNVERIFIABLE  got UNVERIFIABLE
+MISS 15 homonym_cooperative              expected PROVEN        got CONTRADICTED
+MISS 16 lat_lon_swapped                  expected UNVERIFIABLE  got CONTRADICTED
+ok   17 certified_scope_only             expected UNVERIFIABLE  got UNVERIFIABLE
+ok   18 annex_admission                  expected CONTRADICTED  got CONTRADICTED
+ok   19 prompt_injection                 expected CONTRADICTED  got CONTRADICTED
+ok   20 alerts_source_down               expected UNVERIFIABLE  got UNVERIFIABLE
+ok   21 single_issuer                    expected UNVERIFIABLE  got UNVERIFIABLE
+Nemotron alone (same data, rules in the prompt): 11/21

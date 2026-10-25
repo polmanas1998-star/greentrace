@@ -182,6 +182,25 @@ that covers only the labelled programme, and an admission hidden in an annex nee
 the reports. The 21/21 is a dated measurement, not a promise:
 model answers can vary from run to run.
 
+### Against Nemotron alone
+
+`python -m scripts.baseline_model_alone --runs 3 --save` gives Nemotron 3.5 Super, alone, every
+table of each case, the claim and the verdict rules of `app/rules.py` word for word: one call per
+case, no agents, no queries, no code checks (`data/bench_model_alone.json`, 25 October 2026).
+
+| Nemotron alone, pass | Right verdicts | False accusations (CONTRADICTED where it is not) | Names the planted row (of 9) |
+|---|---|---|---|
+| 1 | 7/21 | 10 | 3 |
+| 2 | 5/21 | 9 | 1 |
+| 3 | 9/21 | 5 | 1 |
+| Earlier the same day ([a](data/bench_model_alone_earlier/pass_a_25_10.log), [b](data/bench_model_alone_earlier/pass_b_25_10.json)) | 11/21, 12/21 | 8, 6 | n/a, 3 |
+
+GreenTrace on the same cases: 18/21 on rules alone, 21/21 with the model, 0 false accusations. On
+the clean case, Nemotron alone wrote that alerts A-102, A-116 and A-118 lie inside plots; they are
+about 1.5 km outside the polygons. A model can't do point-in-polygon in its head, and it doesn't
+say so: that is why the geometry and the verdict live in code here. "Names the planted row" counts
+the cases where one row decides (GreenTrace's deciding alert or plot) and Nemotron cited it.
+
 ### Planted false evidence
 
 `python -m scripts.tamper_bench` changes every value of every row in the demo receipt, one at a
