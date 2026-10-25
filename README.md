@@ -1,5 +1,10 @@
 # GreenTrace
 
+[![Plot P-042 near Soubré, year by year on real Sentinel-2 scenes: the EU 2020 forest map, then the loss after the cut-off](docs/demo/time-machine.gif)](docs/demo/OAH2026-GreenTrace-ExplainWhy-Demo.mp4)
+
+**Demo video (2 min, narrated):** [`docs/demo/OAH2026-GreenTrace-ExplainWhy-Demo.mp4`](docs/demo/OAH2026-GreenTrace-ExplainWhy-Demo.mp4)
+· captions in [`.srt`](docs/demo/OAH2026-GreenTrace-ExplainWhy-Demo.srt)
+
 GreenTrace checks a company's "deforestation-free" promise against the evidence, says whether it is
 PROVEN, CONTRADICTED or UNVERIFIABLE, and shows why, down to the database row. Every verdict ships
 with a receipt that one command re-derives offline.

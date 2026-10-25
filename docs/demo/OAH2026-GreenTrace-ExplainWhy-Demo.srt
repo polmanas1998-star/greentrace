@@ -1,0 +1,39 @@
+1
+00:00:00,000 --> 00:00:24,300
+Our entry is for The Agent That Can Explain Why. From the thirtieth of December, cocoa sold in Europe must come from land not deforested after 2020. This is a real plot near Soubré, in Côte d'Ivoire. In January 2020, the EU's own forest map counts four point six two hectares of forest inside it. Watch it go, year after year. By 2024, three point four two hectares are gone.
+
+2
+00:00:24,900 --> 00:00:41,600
+GreenTrace investigates the supplier's promise. Five agents, and they do not trust each other. The Investigator asks the data through Zetaris. The Evaluator tries to break every piece of evidence with its own queries. And the verdict is decided by fixed rules, never by the model.
+
+3
+00:00:42,200 --> 00:00:56,340
+Contradicted. Now, what would change its mind? GreenTrace computes it: proven, if this plot had delivered nothing after 2020. Apply it, and the engine checks again. The Meterless World Model shows exactly which facts fell with it.
+
+4
+00:00:56,940 --> 00:01:09,590
+It even argues with itself. A plaintiff makes the supplier's best case, citing the documents line by line. The Evaluator answers with queries. The rules judge each round. Rhetoric never moves the verdict.
+
+5
+00:01:10,190 --> 00:01:16,570
+Ask it about the case. It answers only from the investigation's own lines, and says when no model was used.
+
+6
+00:01:17,170 --> 00:01:26,410
+For an analyst, the real work is a file of plots. Drop it in. Every plot is checked against the EU map, ranked by risk, with an audit package ready to file.
+
+7
+00:01:27,010 --> 00:01:37,360
+And it refuses to convict on a hunch. This plot lost trees, but the EU map never counted that land as forest. GreenTrace says unverifiable, and asks for a field check.
+
+8
+00:01:37,960 --> 00:01:50,080
+This is a live run. Sixteen queries answered by Zetaris. The facts held by the Meterless World Model. Seven calls to NVIDIA Nemotron. Same verdict, and the same seal, as the offline run.
+
+9
+00:01:50,680 --> 00:01:58,770
+Don't trust us. Check it. One command re-derives the verdict offline, with no model and no network. Change one row, and it says tampered.
+
+10
+00:01:59,370 --> 00:02:02,480
+GreenTrace. Every verdict, its evidence, and its limits.
