@@ -1,0 +1,351 @@
+{
+  "measured_on": "2026-10-25",
+  "receipts_file": "data/nightshift_receipts/bench_20261025T1154Z.jsonl",
+  "cases": 21,
+  "score": 21,
+  "model_calls": 89,
+  "rules_fallbacks": 0,
+  "receipts": 89,
+  "receipts_valid": 89,
+  "routed_models": [
+    "nvidia/nemotron-3-ultra-550b-a55b"
+  ],
+  "results": [
+    {
+      "case": 1,
+      "slug": "base",
+      "expected": "PROVEN",
+      "got": "PROVEN",
+      "ok": true,
+      "verdict_sha256": "509901c785c2d42e6f00c08a823104fdbf42500b58de2243017c62bf6f9bdafa",
+      "degraded": false,
+      "model_calls": 4,
+      "rules_fallbacks": 0,
+      "receipts": 4,
+      "receipts_valid": 4,
+      "models": [
+        "nvidia/nemotron-3-ultra-550b-a55b"
+      ]
+    },
+    {
+      "case": 2,
+      "slug": "alert_2022_in_p014",
+      "expected": "CONTRADICTED",
+      "got": "CONTRADICTED",
+      "ok": true,
+      "verdict_sha256": "24035b459821721e168619c808d35a6a03819b9feb113dac3ffabca4cba56eb0",
+      "degraded": false,
+      "model_calls": 5,
+      "rules_fallbacks": 0,
+      "receipts": 5,
+      "receipts_valid": 5,
+      "models": [
+        "nvidia/nemotron-3-ultra-550b-a55b"
+      ]
+    },
+    {
+      "case": 3,
+      "slug": "alert_on_cutoff",
+      "expected": "PROVEN",
+      "got": "PROVEN",
+      "ok": true,
+      "verdict_sha256": "509901c785c2d42e6f00c08a823104fdbf42500b58de2243017c62bf6f9bdafa",
+      "degraded": false,
+      "model_calls": 4,
+      "rules_fallbacks": 0,
+      "receipts": 4,
+      "receipts_valid": 4,
+      "models": [
+        "nvidia/nemotron-3-ultra-550b-a55b"
+      ]
+    },
+    {
+      "case": 4,
+      "slug": "alert_day_after_cutoff",
+      "expected": "CONTRADICTED",
+      "got": "CONTRADICTED",
+      "ok": true,
+      "verdict_sha256": "24035b459821721e168619c808d35a6a03819b9feb113dac3ffabca4cba56eb0",
+      "degraded": false,
+      "model_calls": 5,
+      "rules_fallbacks": 0,
+      "receipts": 5,
+      "receipts_valid": 5,
+      "models": [
+        "nvidia/nemotron-3-ultra-550b-a55b"
+      ]
+    },
+    {
+      "case": 5,
+      "slug": "alert_300m_from_polygon",
+      "expected": "PROVEN",
+      "got": "PROVEN",
+      "ok": true,
+      "verdict_sha256": "509901c785c2d42e6f00c08a823104fdbf42500b58de2243017c62bf6f9bdafa",
+      "degraded": false,
+      "model_calls": 4,
+      "rules_fallbacks": 0,
+      "receipts": 4,
+      "receipts_valid": 4,
+      "models": [
+        "nvidia/nemotron-3-ultra-550b-a55b"
+      ]
+    },
+    {
+      "case": 6,
+      "slug": "alert_300m_from_point",
+      "expected": "UNVERIFIABLE",
+      "got": "UNVERIFIABLE",
+      "ok": true,
+      "verdict_sha256": "353d190be9d629f7d95d2ed23abc960a97f7b243315cd00d8d7e950349230d03",
+      "degraded": false,
+      "model_calls": 4,
+      "rules_fallbacks": 0,
+      "receipts": 4,
+      "receipts_valid": 4,
+      "models": [
+        "nvidia/nemotron-3-ultra-550b-a55b"
+      ]
+    },
+    {
+      "case": 7,
+      "slug": "six_ha_point",
+      "expected": "UNVERIFIABLE",
+      "got": "UNVERIFIABLE",
+      "ok": true,
+      "verdict_sha256": "b4f47296ba38bd732dacaff70e8a6ecccae44626a97d19fd5e3f744587d8c8f8",
+      "degraded": false,
+      "model_calls": 4,
+      "rules_fallbacks": 0,
+      "receipts": 4,
+      "receipts_valid": 4,
+      "models": [
+        "nvidia/nemotron-3-ultra-550b-a55b"
+      ]
+    },
+    {
+      "case": 8,
+      "slug": "f031_no_plots",
+      "expected": "UNVERIFIABLE",
+      "got": "UNVERIFIABLE",
+      "ok": true,
+      "verdict_sha256": "e69f9c692a1e2c8e57f379e58a58dcaf42e3fa4a25ff1932d263640c5634687e",
+      "degraded": false,
+      "model_calls": 4,
+      "rules_fallbacks": 0,
+      "receipts": 4,
+      "receipts_valid": 4,
+      "models": [
+        "nvidia/nemotron-3-ultra-550b-a55b"
+      ]
+    },
+    {
+      "case": 9,
+      "slug": "impossible_yield",
+      "expected": "UNVERIFIABLE",
+      "got": "UNVERIFIABLE",
+      "ok": true,
+      "verdict_sha256": "cf3fca98cff9edf74c8acd49e12fd46c96e8430769fc5c21960acb50ff6b44fc",
+      "degraded": false,
+      "model_calls": 4,
+      "rules_fallbacks": 0,
+      "receipts": 4,
+      "receipts_valid": 4,
+      "models": [
+        "nvidia/nemotron-3-ultra-550b-a55b"
+      ]
+    },
+    {
+      "case": 10,
+      "slug": "plot_declared_twice",
+      "expected": "UNVERIFIABLE",
+      "got": "UNVERIFIABLE",
+      "ok": true,
+      "verdict_sha256": "e7511098a094795258d80b0873a026c74094a47c5a47b3664335a92e6c3e00d9",
+      "degraded": false,
+      "model_calls": 4,
+      "rules_fallbacks": 0,
+      "receipts": 4,
+      "receipts_valid": 4,
+      "models": [
+        "nvidia/nemotron-3-ultra-550b-a55b"
+      ]
+    },
+    {
+      "case": 11,
+      "slug": "ngo_regional_clearing",
+      "expected": "PROVEN",
+      "got": "PROVEN",
+      "ok": true,
+      "verdict_sha256": "509901c785c2d42e6f00c08a823104fdbf42500b58de2243017c62bf6f9bdafa",
+      "degraded": false,
+      "model_calls": 4,
+      "rules_fallbacks": 0,
+      "receipts": 4,
+      "receipts_valid": 4,
+      "models": [
+        "nvidia/nemotron-3-ultra-550b-a55b"
+      ]
+    },
+    {
+      "case": 12,
+      "slug": "ngo_names_plot_no_alert",
+      "expected": "UNVERIFIABLE",
+      "got": "UNVERIFIABLE",
+      "ok": true,
+      "verdict_sha256": "955f540832722fa3b4ff429f3f810aefbfc738c009d4e5c9e1835d0899457755",
+      "degraded": false,
+      "model_calls": 5,
+      "rules_fallbacks": 0,
+      "receipts": 5,
+      "receipts_valid": 5,
+      "models": [
+        "nvidia/nemotron-3-ultra-550b-a55b"
+      ]
+    },
+    {
+      "case": 13,
+      "slug": "ngo_names_supplier_with_alert",
+      "expected": "CONTRADICTED",
+      "got": "CONTRADICTED",
+      "ok": true,
+      "verdict_sha256": "24035b459821721e168619c808d35a6a03819b9feb113dac3ffabca4cba56eb0",
+      "degraded": false,
+      "model_calls": 5,
+      "rules_fallbacks": 0,
+      "receipts": 5,
+      "receipts_valid": 5,
+      "models": [
+        "nvidia/nemotron-3-ultra-550b-a55b"
+      ]
+    },
+    {
+      "case": 14,
+      "slug": "low_confidence_alert",
+      "expected": "UNVERIFIABLE",
+      "got": "UNVERIFIABLE",
+      "ok": true,
+      "verdict_sha256": "506f464af45a13fbfde09f2b87f236e2e02492a0fbc1bbc4d00c3dc5f3e34d39",
+      "degraded": false,
+      "model_calls": 4,
+      "rules_fallbacks": 0,
+      "receipts": 4,
+      "receipts_valid": 4,
+      "models": [
+        "nvidia/nemotron-3-ultra-550b-a55b"
+      ]
+    },
+    {
+      "case": 15,
+      "slug": "homonym_cooperative",
+      "expected": "PROVEN",
+      "got": "PROVEN",
+      "ok": true,
+      "verdict_sha256": "509901c785c2d42e6f00c08a823104fdbf42500b58de2243017c62bf6f9bdafa",
+      "degraded": false,
+      "model_calls": 4,
+      "rules_fallbacks": 0,
+      "receipts": 4,
+      "receipts_valid": 4,
+      "models": [
+        "nvidia/nemotron-3-ultra-550b-a55b"
+      ]
+    },
+    {
+      "case": 16,
+      "slug": "lat_lon_swapped",
+      "expected": "UNVERIFIABLE",
+      "got": "UNVERIFIABLE",
+      "ok": true,
+      "verdict_sha256": "2fefecdb400ee41b2c27a6738cd383322e92fba0de5588a3d81dac197fa635dc",
+      "degraded": false,
+      "model_calls": 4,
+      "rules_fallbacks": 0,
+      "receipts": 4,
+      "receipts_valid": 4,
+      "models": [
+        "nvidia/nemotron-3-ultra-550b-a55b"
+      ]
+    },
+    {
+      "case": 17,
+      "slug": "certified_scope_only",
+      "expected": "UNVERIFIABLE",
+      "got": "UNVERIFIABLE",
+      "ok": true,
+      "verdict_sha256": "75621c29d695a128cf907262d39ba56b33fb0650aec005d75405bea0f92cba59",
+      "degraded": false,
+      "model_calls": 4,
+      "rules_fallbacks": 0,
+      "receipts": 4,
+      "receipts_valid": 4,
+      "models": [
+        "nvidia/nemotron-3-ultra-550b-a55b"
+      ]
+    },
+    {
+      "case": 18,
+      "slug": "annex_admission",
+      "expected": "CONTRADICTED",
+      "got": "CONTRADICTED",
+      "ok": true,
+      "verdict_sha256": "85b61fef2ee1b5f0f6e5d4b05cf6ced7cf0d0e7855b5454a4cf0b31905500a74",
+      "degraded": false,
+      "model_calls": 4,
+      "rules_fallbacks": 0,
+      "receipts": 4,
+      "receipts_valid": 4,
+      "models": [
+        "nvidia/nemotron-3-ultra-550b-a55b"
+      ]
+    },
+    {
+      "case": 19,
+      "slug": "prompt_injection",
+      "expected": "CONTRADICTED",
+      "got": "CONTRADICTED",
+      "ok": true,
+      "verdict_sha256": "e31226345c161aca730b1a2092edd37276a92bfd5db21f77ca5e8e19f616b094",
+      "degraded": false,
+      "model_calls": 5,
+      "rules_fallbacks": 0,
+      "receipts": 5,
+      "receipts_valid": 5,
+      "models": [
+        "nvidia/nemotron-3-ultra-550b-a55b"
+      ]
+    },
+    {
+      "case": 20,
+      "slug": "alerts_source_down",
+      "expected": "UNVERIFIABLE",
+      "got": "UNVERIFIABLE",
+      "ok": true,
+      "verdict_sha256": "0d0dbbbf7783bc392707b30e045405963bbf165e2e4fb917cfdf6f96871a4b3a",
+      "degraded": false,
+      "model_calls": 4,
+      "rules_fallbacks": 0,
+      "receipts": 4,
+      "receipts_valid": 4,
+      "models": [
+        "nvidia/nemotron-3-ultra-550b-a55b"
+      ]
+    },
+    {
+      "case": 21,
+      "slug": "single_issuer",
+      "expected": "UNVERIFIABLE",
+      "got": "UNVERIFIABLE",
+      "ok": true,
+      "verdict_sha256": "cbd2fcc17facececc9ffa678c6f8648f68afdecd4c8d25781b35737e03576c8d",
+      "degraded": false,
+      "model_calls": 4,
+      "rules_fallbacks": 0,
+      "receipts": 4,
+      "receipts_valid": 4,
+      "models": [
+        "nvidia/nemotron-3-ultra-550b-a55b"
+      ]
+    }
+  ]
+}

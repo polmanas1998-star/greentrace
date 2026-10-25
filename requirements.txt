@@ -10,3 +10,4 @@ icalendar==7.3.0
 mcp==2.3.0
 opentelemetry-sdk==1.45.1
 opentelemetry-exporter-otlp-proto-http==1.45.1
+cryptography>=42

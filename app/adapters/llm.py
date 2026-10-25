@@ -6,9 +6,13 @@ Agents ask through ModelGate.complete_json(). MODEL_PROVIDER picks where the cha
              Meterless Runtime 0.90.0, meterless.ai/engines.html and docs/agent-ready in the
              Meterless repository): OpenAI-compatible, base URL normalised to <host>/v1, a real
              bearer token, meterless-app on every request, meterless-scope: user on chat, and
-             GET /models decides whether the Runtime is online. Honest note: Nightshift, which
-             serves this Runtime, is not installed on our build machine (it needs a dedicated
-             GPU). This provider is tested against a fake Runtime in tests/test_llm.py only.
+             GET /models decides whether the Runtime is online. Served by Meterless Nightshift
+             1.2.3 on Windows, with NVIDIA's cloud models as its provider (no local GPU needed).
+             Every answer carries a compute receipt signed by meterlessd: app/adapters/
+             meterless_receipt.py checks its Ed25519 signature at call time and the trace line
+             says whether it holds. A lane is a pinned model id (nvidia/...) or a Runtime mode
+             (meterless/fast, meterless/deep), never meterless/auto. METERLESS_RUNTIME_TOKEN_FILE
+             can point at Nightshift's own proxy-token file, so the token is never copied.
   nvidia     NVIDIA's hosted API directly (build.nvidia.com), the route smoke_test.py checks.
   rules      no model at all: complete_json returns None and the agent uses its rule fallback.
 
@@ -36,6 +40,7 @@ from typing import Any, Callable, Mapping, Optional, Sequence
 
 import openai
 
+from app.adapters import meterless_receipt
 from app.canonical import sha256_of
 from app.tracing import now_utc, trace
 
@@ -108,6 +113,7 @@ class Outcome:
     attempts: int = 0
     problem: Optional[str] = None
     invalid: bool = False  # it answered, but not with JSON that fits the schema
+    receipt: Optional[dict] = None  # Meterless only: the signed compute receipt of the answer
 
 
 # ---- configuration ---------------------------------------------------------------------
@@ -132,16 +138,24 @@ def configure(name: str, env: Mapping[str, str]) -> tuple[Optional[Provider], Op
         url, token = env.get("METERLESS_BASE_URL", "").strip(), env.get("METERLESS_RUNTIME_TOKEN", "").strip()
         if not url:
             return None, "METERLESS_BASE_URL is empty"
+        if not token and env.get("METERLESS_RUNTIME_TOKEN_FILE", "").strip():
+            try:  # Nightshift writes its token to <stateDir>/proxy-token: read it there, never copy it
+                with open(env["METERLESS_RUNTIME_TOKEN_FILE"].strip(), encoding="utf-8") as handle:
+                    token = handle.read().strip()
+            except OSError as error:
+                return None, f"METERLESS_RUNTIME_TOKEN_FILE cannot be read ({type(error).__name__})"
         if not token:
             return None, "METERLESS_RUNTIME_TOKEN is empty"
         if token == "rt-local":
             return None, "the placeholder token rt-local is refused by the Runtime"
         models = _lanes(env, "METERLESS_MODEL", DEFAULT_MODELS["meterless"])
         for model in models.values():
-            if not model.startswith("meterless/") or model == "meterless/auto":
-                raise ValueError(f"Meterless lanes must be pinned meterless/* routing modes, never meterless/auto: {model!r}")
+            if model == "meterless/auto" or "/" not in model:
+                raise ValueError(f"Meterless lanes must be pinned, a model id (nvidia/...) or a meterless/* mode, "
+                                 f"never meterless/auto: {model!r}")
         return Provider("meterless", normalise_runtime_url(url), token, models, TIMEOUT_S["meterless"],
-                        {"meterless-app": APP_ID}, {"meterless-scope": "user"}, local=True), None
+                        {"meterless-app": APP_ID}, {"meterless-scope": "user"}, local=True,
+                        chat_body=NO_THINKING), None
     if name == "nvidia":
         key = env.get("MODEL_API_KEY", "").strip()
         if not key:
@@ -286,6 +300,7 @@ class ModelGate:
         env = os.environ if env is None else env
         self.run_id, self.log, self._sleep = run_id, log or trace, sleep
         self.calls: list[dict[str, Any]] = []  # who asked, who answered, a hash of the answer: for the receipt
+        self.receipts: list[dict[str, Any]] = []  # Meterless only: every signed compute receipt, envelope included
         self.sample_mode = _truthy(env.get("SAMPLE_MODE"))
         first = (env.get("MODEL_PROVIDER") or "meterless").strip().lower()
         if first not in CHAINS:
@@ -346,6 +361,10 @@ class ModelGate:
             info["requested_model"] = provider.models[lane]
             if outcome.ok:
                 info.update(provider=provider.name, model=outcome.model, output_sha256=sha256_of(outcome.value))
+                if outcome.receipt is not None:
+                    info["meterless_receipt"] = {k: outcome.receipt[k] for k in
+                                                 ("receipt_id", "routed_model", "route", "signer", "signature_valid")}
+                    self.receipts.append(outcome.receipt)
                 self._record(info)
                 return outcome.value, info
             if outcome.invalid:
@@ -422,10 +441,14 @@ class ModelGate:
                     errors = [str(error)]
                 if not errors:
                     usage = getattr(getattr(response, "usage", None), "total_tokens", None)
+                    receipt = (meterless_receipt.read((getattr(response, "model_extra", None) or {}).get("meterless"))
+                               if provider.name == "meterless" else None)
                     self._line(agent, "model_call", provider.name, answered, f"{asked}, asked {model}",
                                f"valid JSON in {round((time.monotonic() - started) * 1000)} ms"
-                               + (f", {usage} tokens" if usage is not None else ""), "success", attempt)
-                    return Outcome(value, True, answered, attempt + 1)
+                               + (f", {usage} tokens" if usage is not None else "")
+                               + (f"; {meterless_receipt.summary(receipt)}" if provider.name == "meterless" else ""),
+                               "success", attempt)
+                    return Outcome(value, True, answered, attempt + 1, receipt=receipt)
                 problem, invalid = f"answer does not fit the schema: {errors[0]}", True
             self._line(agent, "model_call", provider.name, model, f"{asked}, asked {model}", problem,
                        "failed" if last else "retrying", attempt)
@@ -438,7 +461,10 @@ class ModelGate:
         return None, info
 
     def _record(self, info: dict[str, Any]) -> None:
-        self.calls.append({key: info[key] for key in ("agent", "lane", "provider", "model", "output_sha256")})
+        call = {key: info[key] for key in ("agent", "lane", "provider", "model", "output_sha256")}
+        if "meterless_receipt" in info:
+            call["meterless_receipt"] = info["meterless_receipt"]
+        self.calls.append(call)
 
     def _redact(self, text: str) -> str:
         for secret in self._secrets:
