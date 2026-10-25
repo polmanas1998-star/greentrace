@@ -228,5 +228,8 @@
     "engine": "talks to the engine demo through its own relay /api/gt/*",
     "doc": "site/README.md",
     "analysis_scene": "while the engine works, both tools fly from the world to the area the engine queries, then to the plot, with the real trace lines"
+  },
+  "community": {
+    "reddit": "two posts, about 20,000 and 780 views, about 30 upvotes and 30 comments between them, counted by the author on 25 October 2026; the practitioners' advice is in the build (docs/SUBMISSION.md, 'What practitioners told us')"
   }
 }

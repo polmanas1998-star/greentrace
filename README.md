@@ -18,6 +18,12 @@ with a receipt that one command re-derives offline.
 
 **Our entry is for The Agent That Can Explain Why** (Open Agent Hackathon 2026). Solo team: Amir Ogan.
 
+**Tested in public.** Two posts about GreenTrace on Reddit reached about 20,000 and 780 views, with about
+30 upvotes and 30 comments between them (counted by the author on 25 October 2026). The comments back the
+approach and give advice from people who work on EUDR compliance; that advice is in the build (see
+"What practitioners told us" in [`docs/SUBMISSION.md`](docs/SUBMISSION.md)): for one, every verdict now
+says what the EUDR asks next, because an unverifiable risk keeps the cocoa off the market until it is mitigated.
+
 Both links run in sample mode: no model key is set, so the rule fallbacks take Nemotron's place
 (the "rules alone" baseline of the bench below), and the verdict comes from `app/rules.py` as in
 every mode. The company, its suppliers and its deliveries are fictional; plots P-041 and P-042 are
