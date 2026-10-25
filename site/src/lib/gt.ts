@@ -89,6 +89,7 @@ export type RunOutput = {
   limitations?: string[];
   recommended_actions?: unknown[];
   human_review?: string;
+  eudr_next?: string;
   verdict_sha256?: string;
   fingerprints?: Record<string, string>;
   execution_time_seconds?: number;

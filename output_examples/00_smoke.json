@@ -1,5 +1,5 @@
 {
-  "run_id": "57dc576addde4c05",
+  "run_id": "e44e95714d924d3a",
   "status": "success",
   "mode": "sample",
   "degraded": true,
@@ -99,6 +99,7 @@
     "The verdict is computed by fixed rules from the rows listed; a human must review it before any decision."
   ],
   "human_review": "Required before any decision.",
+  "eudr_next": "Under the EUDR this cocoa may not be placed on the EU market or exported: the evidence shows deforestation after 31 December 2020. Hold the deliveries from the plots named, and keep the record of this check for at least five years.",
   "flip": "The claim would be PROVEN if alert A-221 were dated 2020-12-31.",
   "flip_tried": [
     {
@@ -1485,6 +1486,6 @@
     "rules_version": "2026-10-23.1",
     "rules_sha256": "22aeb9b31545946485e497d3a71117a584fac1d5c5df5ce48dae1cbcde763b8a"
   },
-  "log_file": "logs/57dc576addde4c05.jsonl",
-  "execution_time_seconds": 1.96
+  "log_file": "logs/e44e95714d924d3a.jsonl",
+  "execution_time_seconds": 0.19
 }

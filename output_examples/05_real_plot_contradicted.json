@@ -86,6 +86,7 @@
     "Reference maps: forest in 2020 from the EU JRC GFC2020 v4, tree cover loss by year from Hansen/UMD/Google/USGS/NASA (GFC v1.12), on 30 m cells around Soubre."
   ],
   "human_review": "Required before any decision.",
+  "eudr_next": "Under the EUDR this cocoa may not be placed on the EU market or exported: the evidence shows deforestation after 31 December 2020. Hold the deliveries from the plots named, and keep the record of this check for at least five years.",
   "flip": "The claim would be PROVEN if plot P-042 had delivered nothing after 2020.",
   "flip_tried": [
     {
@@ -1476,5 +1477,5 @@
     "rules_sha256": "22aeb9b31545946485e497d3a71117a584fac1d5c5df5ce48dae1cbcde763b8a"
   },
   "log_file": "logs/example-05.jsonl",
-  "execution_time_seconds": 0.14
+  "execution_time_seconds": 0.22
 }

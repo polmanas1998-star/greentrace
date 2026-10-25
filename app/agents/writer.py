@@ -42,6 +42,20 @@ LIMITATIONS = [
     "Synthetic company and alerts, placed on real places. A satellite alert is not legal proof.",
     "The verdict is computed by fixed rules from the rows listed; a human must review it before any decision.",
 ]
+# What the EUDR asks of the operator after each verdict (Regulation (EU) 2023/1115: risk assessment and
+# mitigation, Articles 10 and 11; due-diligence records kept for at least five years). Fixed words: they
+# follow the verdict and never decide it, so they are not part of the seal.
+EUDR_NEXT = {
+    "CONTRADICTED": "Under the EUDR this cocoa may not be placed on the EU market or exported: the evidence shows "
+                    "deforestation after 31 December 2020. Hold the deliveries from the plots named, and keep the "
+                    "record of this check for at least five years.",
+    "UNVERIFIABLE": "Under the EUDR, unverifiable is not a resting state: until the risk is shown to be negligible, "
+                    "this cocoa may not be placed on the EU market (Articles 10 and 11). Mitigate first (ask for the "
+                    "polygon, a field visit or an audit), check again, and keep what was done and its outcome for at "
+                    "least five years.",
+    "PROVEN": "No issue found on what was checked. It is one input to the operator's EUDR risk assessment, not the "
+              "decision: a human reviews it, and the record is kept for at least five years.",
+}
 DRAWN_LIMITATIONS = [
     "Plot {plot} was drawn by the analyst and declared for {supplier}: it is not a row of the registry.",
     "Reference maps: forest in 2020 from the EU JRC GFC2020 v4, tree cover loss by year from "
@@ -62,6 +76,7 @@ def write(ctx: RunContext, decision: dict, cards: list[dict], reviews: dict[str,
         "recommended_actions": _filled(ACTIONS, cards),
         "limitations": LIMITATIONS + _drawn_limitations(ctx),
         "human_review": "Required before any decision.",
+        "eudr_next": EUDR_NEXT[decision["verdict"]],
     }
     _review(report)
     ctx.step("Writer", "write_report", f"{len(cards)} card(s), verdict {decision['verdict']} from the rules",

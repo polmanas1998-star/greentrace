@@ -39,6 +39,7 @@
     "The verdict is computed by fixed rules from the rows listed; a human must review it before any decision."
   ],
   "human_review": "Required before any decision.",
+  "eudr_next": "No issue found on what was checked. It is one input to the operator's EUDR risk assessment, not the decision: a human reviews it, and the record is kept for at least five years.",
   "flip": "No finding stands against the claim, so there is no single change to try.",
   "flip_tried": [],
   "blocked_cards": [],
@@ -1408,5 +1409,5 @@
     "rules_sha256": "22aeb9b31545946485e497d3a71117a584fac1d5c5df5ce48dae1cbcde763b8a"
   },
   "log_file": "logs/example-02.jsonl",
-  "execution_time_seconds": 0.07
+  "execution_time_seconds": 0.1
 }

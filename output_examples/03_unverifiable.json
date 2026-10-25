@@ -62,6 +62,7 @@
     "The verdict is computed by fixed rules from the rows listed; a human must review it before any decision."
   ],
   "human_review": "Required before any decision.",
+  "eudr_next": "Under the EUDR, unverifiable is not a resting state: until the risk is shown to be negligible, this cocoa may not be placed on the EU market (Articles 10 and 11). Mitigate first (ask for the polygon, a field visit or an audit), check again, and keep what was done and its outcome for at least five years.",
   "flip": "The claim would be PROVEN if the 9.55 t from supplier F-031 that no plot traces were left out of the declared volume.",
   "flip_tried": [
     {
@@ -1336,5 +1337,5 @@
     "rules_sha256": "22aeb9b31545946485e497d3a71117a584fac1d5c5df5ce48dae1cbcde763b8a"
   },
   "log_file": "logs/example-03.jsonl",
-  "execution_time_seconds": 0.1
+  "execution_time_seconds": 0.14
 }

@@ -155,6 +155,7 @@ function Result({ output, lines }: { output: RunOutput; lines: TraceLine[] }) {
             </>
           )}
           {output.human_review && <p className="mt-4 text-[14px] text-gt-text/70">Human review: {output.human_review.charAt(0).toLowerCase() + output.human_review.slice(1)}</p>}
+          {output.eudr_next && <p className="mt-3 text-[14px] leading-relaxed text-gt-text/80"><span className="font-semibold text-gt-text">What the EUDR asks next:</span> {output.eudr_next}</p>}
           <div className="mt-6 flex flex-wrap gap-4 text-[14px]">
             <a href={`${API}/runs/${runId}/package`} className="text-gt-signal underline-offset-4 hover:underline">
               Audit package (zip)
