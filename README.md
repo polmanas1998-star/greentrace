@@ -424,6 +424,21 @@ Proof of live runs: `output_examples/live/` keeps the demo case run with every s
   one thing only: one note per supplier a finding concerns, read first by the next investigation and
   shown as "Seen before". It never decides, never enters the receipt, lives in `data/memory/` (local,
   erasable: `python -m app.memory.hmem --forget <company_id>`) and is on when `HMEM_URL` is set (Docker).
+- **Meterless Scout Intent**, the third engine, implemented by us from its spec (Meterless publishes
+  the spec and an eval harness, no code): `meterless/scout/index.ts`, served by `meterless/server.ts`
+  (`POST /scout`). It clears every gate of the official harness, copied unmodified in
+  `meterless/scout-evals/` (`UPSTREAM.sha256`): intent top-1 1.00, injection precision and recall 1.00,
+  tool precision 1.00, clarification rate 0.06 (`SCOUT_IMPL=../scout/index.ts npx tsx evals/runner/index.ts all`).
+  That corpus is a 32-example smoke set whose prompts are also the registry's examples, by the spec's
+  design, so on our own texts (`python -m scripts.scout_bench`, `data/bench_scout.json`): of the 27
+  distinct report paragraphs of the 21 trap cases it blocks exactly one, the injection of case 19; on a
+  held-out set frozen before the first run and never used to tune it (`data/scout_heldout.json`) it
+  blocks 4 of 5 unseen attacks and none of 4 clean texts written to look like attacks. The miss stays
+  in the file. Two working features: every report paragraph is guarded before the Extractor's model
+  reads it (a blocked one is quarantined from the model and named in the trace; the rules still read
+  every row), and every Ask question becomes a signed execution contract (HMAC, 5-minute TTL) that
+  Ask verifies before it answers; a blocked question reads no line and calls no model. Without the
+  server, both say so and go on as before: Scout adds a guard, the rules decide either way.
 - **Cursor** (build): how it was used, honestly, in `docs/CURSOR_LOG.md` (free plan only; the sponsor
   credit was never distributed during the build window).
 - **NVIDIA Nemotron** (power): two pinned lanes, `nemotron-3.5-lightning-30b-a3b` (fast: the Writer)

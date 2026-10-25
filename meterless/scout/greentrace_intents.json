@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "note": "GreenTrace's Scout registry: what a question about one finished investigation may ask for. Ask answers only an intent listed here; anything else falls to GENERAL, which answers from no line.",
+  "intents": [
+    {
+      "id": "GENERAL", "category": "general", "version": 1, "riskClass": "low",
+      "description": "Anything that is not a question about this investigation.",
+      "capabilities": [], "surfaces": ["ask", "api"], "roles": ["*"],
+      "examples": ["hello there", "what can you help me with?", "What's the weather tomorrow?", "What is the capital of France?"]
+    },
+    {
+      "id": "ask.why", "category": "ask", "version": 1, "riskClass": "low",
+      "description": "Why the verdict is what it is: the deciding finding, its rule and what failed to break it.",
+      "capabilities": ["run.lines", "run.diagram"], "surfaces": ["ask", "api"], "roles": ["*"],
+      "examples": ["Why is this the verdict?", "why?", "Why is the claim contradicted?", "Explain the reason for this verdict",
+                   "pourquoi ce verdict ?", "What decided the verdict?", "Why does the promise not hold?"]
+    },
+    {
+      "id": "ask.change", "category": "ask", "version": 1, "riskClass": "low",
+      "description": "What single change would flip the verdict.",
+      "capabilities": ["run.lines", "run.diagram"], "surfaces": ["ask", "api"], "roles": ["*"],
+      "examples": ["What would change the verdict?", "What would make the claim proven?", "What would flip it?",
+                   "Qu'est-ce qui changerait le verdict ?", "What change would make it hold?"]
+    },
+    {
+      "id": "ask.refutations", "category": "ask", "version": 1, "riskClass": "low",
+      "description": "Which refutations the Evaluator tried and what each found.",
+      "capabilities": ["run.lines", "run.diagram"], "surfaces": ["ask", "api"], "roles": ["*"],
+      "examples": ["Which refutations were tried?", "Did the Evaluator check when P-014 delivered?", "What did the Evaluator try to break?",
+                   "Which checks did not hold?", "Did anyone challenge the alert?"]
+    },
+    {
+      "id": "ask.evidence", "category": "ask", "version": 1, "riskClass": "low",
+      "description": "Which records support a finding: alerts, plots, deliveries, suppliers.",
+      "capabilities": ["run.lines", "run.diagram"], "surfaces": ["ask", "api"], "roles": ["*"],
+      "examples": ["Which rows support this finding?", "Show the evidence for P-014", "Where does alert A-221 come from?",
+                   "Did P-014 stop delivering?", "Which plots are involved?", "When was the alert dated?"]
+    },
+    {
+      "id": "ask.limits", "category": "ask", "version": 1, "riskClass": "low",
+      "description": "What the investigation did not test, its limits and what a human must review.",
+      "capabilities": ["run.lines"], "surfaces": ["ask", "api"], "roles": ["*"],
+      "examples": ["What are the limits of this verdict?", "What was not tested?", "Can I trust this verdict?",
+                   "What should a human review?", "What is still uncertain?"]
+    },
+    {
+      "id": "report.read", "category": "report", "version": 1, "riskClass": "low",
+      "description": "A paragraph of a company or NGO report, read as data before a model sees it.",
+      "capabilities": ["model.read"], "surfaces": ["report"], "roles": ["*"],
+      "examples": ["ChocoDurable buys cocoa from twelve farmer cooperatives", "100% of our cocoa comes from deforestation-free farms since 2021",
+                   "Field visit to cooperative F-014 in 2024"]
+    }
+  ]
+}

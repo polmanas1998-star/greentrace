@@ -25,6 +25,7 @@ type Ask = {
   model: string | null;
   status: string;
   diagram?: unknown;
+  scout?: { status: string; intent?: string; confidence?: number; verified?: boolean; reason?: string };
 };
 type Answer = { text: string; diagram?: unknown };
 
@@ -50,10 +51,21 @@ function runIdOf(input: RunAgentInput): string | null {
   return null;
 }
 
+function routedBy(scout: Ask["scout"]): string {
+  if (!scout) return "";
+  if (scout.status === "routed") {
+    const verified = scout.verified ? ", signed contract verified" : "";
+    return `Routed by Meterless Scout Intent: ${scout.intent} (confidence ${scout.confidence?.toFixed(2)})${verified}.`;
+  }
+  if (scout.status === "blocked") return "Blocked by Meterless Scout Intent before any line was read.";
+  return "Meterless Scout Intent did not answer: routed by the words of the question.";
+}
+
 function render(ask: Ask): string {
   const by = ask.status === "model" ? `Answered by ${ask.model ?? ask.provider}` : "Answered by the rules, no model";
   const lines = ask.lines.map((l) => `- (${l.section}) ${l.text}`).join("\n");
-  return `${ask.answer}${lines ? `\n\n${lines}` : ""}\n\n${by}, from this investigation's own lines.`;
+  const route = routedBy(ask.scout);
+  return `${ask.answer}${lines ? `\n\n${lines}` : ""}\n\n${by}, from this investigation's own lines.${route ? `\n${route}` : ""}`;
 }
 
 async function answerFor(input: RunAgentInput): Promise<Answer> {

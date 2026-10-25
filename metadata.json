@@ -45,7 +45,7 @@
       ]
     },
     "meterless": {
-      "used_for": "World Model reference implementation (unmodified, conformance 8/8) as the agents' shared memory; H-MEM reference (unmodified, conformance 13/13) for one note per supplier, shown as 'Seen before', never deciding; Nightshift 1.2.3 serves the Meterless Runtime every model call goes through, and each answer's Ed25519-signed compute receipt is verified at call time and kept",
+      "used_for": "World Model reference implementation (unmodified, conformance 8/8) as the agents' shared memory; H-MEM reference (unmodified, conformance 13/13) for one note per supplier, shown as 'Seen before', never deciding; Nightshift 1.2.3 serves the Meterless Runtime every model call goes through, and each answer's Ed25519-signed compute receipt is verified at call time and kept; Scout Intent, implemented from its spec and passing its unmodified eval harness, guards every report paragraph before a model reads it and signs an execution contract for every Ask question",
       "code": [
         "meterless/reference/",
         "meterless/server.ts",
@@ -54,9 +54,13 @@
         "meterless/hmem/",
         "app/memory/hmem.py",
         "app/adapters/meterless_receipt.py",
-        "scripts/verify_nightshift_receipts.py"
+        "scripts/verify_nightshift_receipts.py",
+        "meterless/scout/index.ts",
+        "meterless/scout-evals/",
+        "app/memory/scout.py",
+        "scripts/scout_bench.py"
       ],
-      "measured": "21 trap cases through Nightshift: 21/21, 89 model calls, 0 rule fallbacks, 89/89 receipts verify (data/bench_nightshift.json); live run with every sponsor: output_examples/live/02_contradicted_live_nightshift.*"
+      "measured": "21 trap cases through Nightshift: 21/21, 89 model calls, 0 rule fallbacks, 89/89 receipts verify (data/bench_nightshift.json); live run with every sponsor: output_examples/live/02_contradicted_live_nightshift.*; Scout: official harness all gates passed (32-example smoke set), 1/27 case paragraphs blocked (the case-19 injection), held-out 4/5 attacks and 0/4 clean look-alikes blocked (data/bench_scout.json)"
     },
     "nvidia": {
       "used_for": "Nemotron 3.5 on two pinned lanes (fast, deep): reading reports, planning, proposing refutations; the rules decide",

@@ -20,3 +20,4 @@ data/memory/
 
 # Satellite time machine: scenes fetched on demand in live mode (app/timelapse.py)
 data/cache/
+meterless/scout-evals/node_modules/

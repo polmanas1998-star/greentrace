@@ -11,6 +11,7 @@ import re
 
 from app.agents import evaluator
 from app.agents.context import RunContext
+from app.memory import scout
 from app.rules import Extracted
 from app.world.texts import NGO_DOC, RSE_DOC
 
@@ -198,13 +199,34 @@ def extract(ctx: RunContext, claim: str) -> tuple[dict, Extracted]:
 
     rse = ctx.gate.ask("Extractor", "Q1", doc_id=RSE_DOC).rows
     ngo = ctx.gate.ask("Extractor", "Q1", doc_id=NGO_DOC).rows
-    extracted = _read_by_model(ctx, rse + ngo)
+    extracted = _read_by_model(ctx, _guarded(ctx, rse + ngo))
     if extracted is None:
         extracted = _read_by_rules(rse, ngo)
         ctx.step("Extractor", "fallback_rules", f"{len(rse)} report and {len(ngo)} NGO paragraph(s)",
                  f"scope {extracted.scope}; {len(extracted.admissions)} admission(s); "
                  f"{len(extracted.mentions)} supplier mention(s)", target="Planner", status="degraded")
     return parsed, extracted
+
+
+def _guarded(ctx: RunContext, paragraphs: list[dict]) -> list[dict]:
+    """The paragraphs a model may read: Meterless Scout Intent quarantines any that carries an injection.
+    The rules still read every row; Scout only decides what reaches the model."""
+    try:
+        results = scout.guard([p["paragraph_text"] for p in paragraphs])
+    except scout.ScoutUnavailable as error:
+        ctx.step("Extractor", "scout_guard", f"{len(paragraphs)} paragraph(s)",
+                 f"Scout not reachable ({error}): the paragraphs reach the model inside <data> tags, as before",
+                 status="degraded", provider="meterless", model=scout.ENGINE)
+        return paragraphs
+    blocked = [(p, r) for p, r in zip(paragraphs, results) if r["level"] == "block"]
+    for p, r in blocked:
+        ctx.step("Extractor", "scout_quarantine", f"{p['doc_id']} {p['section']} {p['paragraph_no']}",
+                 f"blocked before any model reads it: {r['reason']}", status="refused",
+                 provider="meterless", model=scout.ENGINE)
+    ctx.step("Extractor", "scout_guard", f"{len(paragraphs)} paragraph(s)",
+             f"{len(paragraphs) - len(blocked)} pass to the model, {len(blocked)} quarantined", target="Extractor",
+             provider="meterless", model=scout.ENGINE)
+    return [p for p, r in zip(paragraphs, results) if r["level"] != "block"]
 
 
 def _read_by_model(ctx: RunContext, paragraphs: list[dict]) -> Extracted | None:

@@ -1,5 +1,5 @@
-# GreenTrace: the API (Python 3.11) and, beside it, the Meterless World Model reference
-# server (Node 24, meterless/server.ts). Sample mode by default: no key, no network.
+# GreenTrace: the API (Python 3.11) and, beside it, the Meterless server (Node 24,
+# meterless/server.ts: World Model and H-MEM references, Scout Intent). Sample mode by default: no key, no network.
 #
 #   docker build -t greentrace .
 #   docker run --rm -p 8000:8000 greentrace          # then http://localhost:8000
@@ -18,6 +18,7 @@ COPY meterless/reference/package.json meterless/reference/tsconfig.json ./refere
 COPY meterless/hmem/reference/src ./hmem/reference/src
 COPY meterless/hmem/reference/package.json meterless/hmem/reference/tsconfig.json ./hmem/reference/
 COPY meterless/hmem/LICENSE meterless/hmem/UPSTREAM.sha256 ./hmem/
+COPY meterless/scout/index.ts meterless/scout/greentrace_intents.json ./scout/
 
 # ---- 2. the Python dependencies in a virtual environment, and the reference cells indexed --------
 FROM python:3.11-slim AS python-build

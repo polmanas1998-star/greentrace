@@ -1,7 +1,7 @@
 """Ask GreenTrace: one question about a finished run, answered from that run's own record only.
 
 POST /runs/{run_id}/ask  {"question": "..."}
--> {"run_id", "question", "answer", "lines": [{"n", "text", "section"}], "diagram", "provider", "model", "status"}
+-> {"run_id", "question", "answer", "lines": [{"n", "text", "section"}], "diagram", "scout", "provider", "model", "status"}
 
 The lines are what the run already wrote: the report sentence by sentence (the Deep Trace) and each
 refutation the Evaluator tried. With a model, the Writer's lane words an answer that must cite line
@@ -9,6 +9,11 @@ numbers that exist, and every number in it must appear in a cited line or in the
 else sends the question back to the rules. Without a model (sample mode, no key), the rules answer
 with the lines that share the most words with the question, and say that no model was used.
 The verdict is never re-decided here.
+
+Meterless Scout Intent reads the question first (app/memory/scout.py): it blocks an injection before any
+line is read, and returns a signed execution contract that names the intent; Ask verifies the contract
+before it answers, and the intent decides which kind of line comes first. When Scout does not answer,
+the regex intents below stand in and the answer says so.
 
 The diagram is the why-chain of the run, drawn from its output and never from the model: the
 evidence rows, the refutations the Evaluator tried on them, the finding, the rule that decided, the
@@ -18,6 +23,7 @@ import re
 from typing import Any, Optional
 
 from app.explain import deep_trace
+from app.memory import scout
 
 MAX_QUESTION = 500
 MAX_LINES = 3
@@ -81,7 +87,37 @@ def _words(text: str) -> set[str]:
     return {_stem(w.lower().strip(".-")) for w in _WORD.findall(text) if (len(w) > 2 or any(ch.isdigit() for ch in w)) and w.lower() not in STOP}
 
 
-def by_rules(question: str, numbered: list[dict[str, Any]]) -> dict[str, Any]:
+# Scout's intents (meterless/scout/greentrace_intents.json) and the kinds of line each asks for first
+SECTIONS_OF_INTENT = {"ask.why": ("verdict", "finding", "refutation"), "ask.change": ("flip",),
+                      "ask.refutations": ("refutation",), "ask.limits": ("limitation", "human_review", "untested"),
+                      "ask.evidence": (), "GENERAL": ()}
+
+
+def routed(question: str) -> dict[str, Any]:
+    """Scout's decision on the question: blocked, or an intent under a contract Ask has verified."""
+    try:
+        decision = scout.decide(question)
+    except scout.ScoutUnavailable as error:
+        return {"engine": scout.ENGINE, "status": "unavailable", "reason": str(error)[:160]}
+    if decision["risk"]["level"] == "block":
+        return {"engine": scout.ENGINE, "status": "blocked", "reason": decision["risk"].get("reason")}
+    contract = decision.get("executionContract")
+    if contract is None:  # Scout asked for clarification: Ask goes on with the words of the question
+        options = (decision.get("clarification") or {}).get("options") or []
+        return {"engine": scout.ENGINE, "status": "clarify", "options": options}
+    try:
+        verified = scout.verify(contract, "run.lines")
+    except scout.ScoutUnavailable as error:
+        return {"engine": scout.ENGINE, "status": "unavailable", "reason": str(error)[:160]}
+    intent = contract["intent"]["primary"]["id"]
+    if intent != "GENERAL" and not verified.get("ok"):
+        return {"engine": scout.ENGINE, "status": "refused", "reason": verified.get("reason")}
+    return {"engine": scout.ENGINE, "status": "routed", "intent": intent,
+            "confidence": contract["intent"]["confidence"], "contract_id": contract["contractId"],
+            "verified": bool(verified.get("ok")) or intent == "GENERAL"}
+
+
+def by_rules(question: str, numbered: list[dict[str, Any]], intent: Optional[str] = None) -> dict[str, Any]:
     wanted = _words(question)
     # an id (R3, P-014, A-221) names one thing: it weighs twice a plain word
     overlap = {line["n"]: sum(2 if any(ch.isdigit() for ch in w) else 1 for w in wanted & _words(line["text"]))
@@ -90,11 +126,12 @@ def by_rules(question: str, numbered: list[dict[str, Any]]) -> dict[str, Any]:
         for line in numbered:
             if line["section"] in ("verdict", "finding", "refutation"):
                 overlap[line["n"]] = max(overlap[line["n"]], 1)
-    for section, intent in INTENTS.items():
-        if intent.search(question):
-            for line in numbered:
-                if line["section"] == section:
-                    overlap[line["n"]] = max(overlap[line["n"]], 3)
+    wanted_sections = SECTIONS_OF_INTENT.get(intent) if intent else None
+    if wanted_sections is None:  # Scout did not route the question: the regex intents stand in
+        wanted_sections = tuple(section for section, pattern in INTENTS.items() if pattern.search(question))
+    for line in numbered:
+        if line["section"] in wanted_sections:
+            overlap[line["n"]] = max(overlap[line["n"]], 3)
     # Among lines that share words with the question, the verdict and its findings come before the caveats.
     scored = sorted(((overlap[line["n"]] + SECTION_WEIGHT.get(line["section"], 0.0), line["n"]) for line in numbered
                      if overlap[line["n"]] > 0), key=lambda s: (-s[0], s[1]))
@@ -181,6 +218,17 @@ def ask(run: Any, question: Any, model: Any = None) -> dict[str, Any]:
     if len(question) > MAX_QUESTION:
         raise ValueError(f"question is {len(question)} characters; {MAX_QUESTION} at most")
     numbered = lines(run)
+    route = routed(question)
+    head = {"run_id": run.output.get("run_id"), "question": question, "verdict": run.output.get("verdict"), "scout": route}
+    if route["status"] == "blocked":  # nothing is read, no model is asked
+        return {**head, "answer": f"Meterless Scout Intent blocked this question before any line was read "
+                                  f"({route['reason']}). Ask about this investigation: its verdict, a plot, an alert or a refutation.",
+                "lines": [], "diagram": diagram(run, []), "status": "blocked", "provider": "rules", "model": None}
+    if route.get("intent") == "GENERAL":  # Scout says the question is not about this investigation
+        sections = ", ".join(sorted({line["section"] for line in numbered}))
+        return {**head, "answer": f"That is not a question about this investigation, so no line answers it. "
+                                  f"It holds: {sections}. No model was used for this answer.",
+                "lines": [], "diagram": diagram(run, []), "status": "rules", "provider": "rules", "model": None}
     result, info = None, {"provider": "rules", "model": None}
     if model is not None:
         data = "\n".join(f"{line['n']}. {line['text']}" for line in numbered)
@@ -189,11 +237,8 @@ def ask(run: Any, question: Any, model: Any = None) -> dict[str, Any]:
         if result is None:
             info = {**info, "provider": "rules", "model": None}
     if result is None:
-        result = by_rules(question, numbered)
+        result = by_rules(question, numbered, route.get("intent"))
     known = {line["n"]: line for line in numbered}
     cited = [known[n] for n in result["cited"]]
-    return {
-        "run_id": run.output.get("run_id"), "question": question, "answer": result["answer"],
-        "lines": cited, "diagram": diagram(run, cited), "verdict": run.output.get("verdict"),
-        "status": result["status"], "provider": info.get("provider"), "model": info.get("model"),
-    }
+    return {**head, "answer": result["answer"], "lines": cited, "diagram": diagram(run, cited),
+            "status": result["status"], "provider": info.get("provider"), "model": info.get("model")}

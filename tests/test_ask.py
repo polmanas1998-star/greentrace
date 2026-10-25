@@ -82,6 +82,8 @@ def test_the_same_question_gives_the_same_answer(run):
     client, _ = run
     a = client.post("/runs/ask-case-2/ask", json={"question": "Why is it contradicted?"}).json()
     b = client.post("/runs/ask-case-2/ask", json={"question": "Why is it contradicted?"}).json()
+    for out in (a, b):  # each Scout contract has its own id, by design; everything else must be equal
+        (out.get("scout") or {}).pop("contract_id", None)
     assert a == b
 
 

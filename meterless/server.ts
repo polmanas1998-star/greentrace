@@ -16,12 +16,21 @@
 // The second engine: the unmodified H-MEM reference (./hmem/reference), memory
 // across investigations, kept on disk in HMEM_DIR (state.json + ledger.jsonl,
 // default ../data/memory). HMEM_CLOCK_MS pins its clock, for tests only.
+//
+// POST /scout  -> {"op": "guard", "text": ...} | {"op": "guard_all", "texts": [...]}
+//                 | {"op": "decide", "prompt": ..., "surface": "ask"}
+//                 | {"op": "verify", "contract": {...}, "capability": "run.lines"}
+//
+// The third engine: Meterless Scout Intent, implemented from its spec (./scout, verified with the
+// unmodified eval harness in ./scout-evals). It guards every report paragraph before a model reads
+// it, and turns each Ask question into a signed execution contract that Ask verifies before it acts.
 
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { WorldModel } from "./reference/src/index.ts";
 import { HMEM } from "./hmem/reference/src/index.ts";
+import { Scout } from "./scout/index.ts";
 
 const HOST = "127.0.0.1"; // this machine only: the server has no authentication
 const PORT = Number(process.env.WORLD_MODEL_PORT ?? 8787);
@@ -139,16 +148,48 @@ function send(res: http.ServerResponse, status: number, body: unknown): void {
   res.end(JSON.stringify(body));
 }
 
+const scout = new Scout({
+  intentRegistry: path.join(path.dirname(fileURLToPath(import.meta.url)), "scout", "greentrace_intents.json"),
+  policyPack: "greentrace",
+});
+
+async function scoutCall(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+  try {
+    const body = JSON.parse(await readBody(req)) ?? {};
+    if (body.op === "guard" && typeof body.text === "string") {
+      return send(res, 200, { ok: true, result: scout.guard(body.text, undefined, {}, "report") });
+    }
+    if (body.op === "guard_all" && Array.isArray(body.texts) && body.texts.length <= 500) {
+      return send(res, 200, { ok: true, result: body.texts.map((t: unknown) => scout.guard(String(t), undefined, {}, "report")) });
+    }
+    if (body.op === "decide" && typeof body.prompt === "string") {
+      const decision = await scout.decide({ prompt: body.prompt.slice(0, 2000), user: { id: "ask", role: "analyst" },
+                                            surface: typeof body.surface === "string" ? body.surface : "ask" });
+      return send(res, 200, { ok: true, result: decision });
+    }
+    if (body.op === "verify") {
+      return send(res, 200, { ok: true, result: scout.verify(body.contract, body.capability) });
+    }
+    throw new BadRequest('op must be "guard" (text), "guard_all" (texts), "decide" (prompt) or "verify" (contract)');
+  } catch (err) {
+    send(res, err instanceof BadRequest || err instanceof SyntaxError ? 400 : 422, { ok: false, error: (err as Error).message });
+  }
+}
+
 const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && req.url === "/health") {
     return send(res, 200, { ok: true, engine: "meterless/world-model reference", conflictPolicy: POLICY, sourcePriority: SOURCE_PRIORITY,
-                            memoryEngine: "meterless/hmem reference" });
+                            memoryEngine: "meterless/hmem reference", intentEngine: "meterless/scout-intent (spec implementation)",
+                            scoutSelfTestMs: Number(scout.selfTestMs.toFixed(2)) });
   }
   if (req.method === "POST" && req.url === "/hmem") {
     return hmemCall(req, res);
   }
+  if (req.method === "POST" && req.url === "/scout") {
+    return scoutCall(req, res);
+  }
   if (req.method !== "POST" || req.url !== "/call") {
-    return send(res, 404, { ok: false, error: "not found: use GET /health, POST /call or POST /hmem" });
+    return send(res, 404, { ok: false, error: "not found: use GET /health, POST /call, POST /hmem or POST /scout" });
   }
 
   let namespace: unknown, op: unknown, args: unknown;
