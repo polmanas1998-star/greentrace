@@ -1,33 +1,50 @@
+<div align="center">
+
 # GreenTrace
+
+**An explainable investigator for the EU Deforestation Regulation.**
+It checks a cocoa supplier's "deforestation-free" promise against the evidence, answers
+PROVEN, CONTRADICTED or UNVERIFIABLE, shows why down to the database row,
+and ships every verdict with a receipt that one command re-derives offline.
+
+[![Track](https://img.shields.io/badge/Open%20Agent%20Hackathon%202026-The%20Agent%20That%20Can%20Explain%20Why-2f6f4a)](docs/SUBMISSION.md)
+[![Tests](https://img.shields.io/badge/tests-754%20passing-2f6f4a)](tests/)
+[![Nightshift](https://img.shields.io/badge/Nightshift%20receipts-89%2F89%20verified-2f6f4a)](data/bench_nightshift.json)
+[![Meterless](https://img.shields.io/badge/Meterless%20engines-World%20Model%20%C2%B7%20H--MEM%20%C2%B7%20Scout-5b3fa8)](meterless/)
+[![Zetaris](https://img.shields.io/badge/data-Zetaris-2b4c7e)](app/adapters/zetaris.py)
+[![License](https://img.shields.io/badge/license-Apache--2.0-555)](LICENSE)
+
+**[Website](https://greentrace-eudr.higgsfield.app)** · **[Demo video, 2 min](docs/demo/OAH2026-GreenTrace-ExplainWhy-Demo.mp4)** · **[Engine and API](https://greentrace-0qd7.onrender.com)** · **[Architecture (FR)](docs/ARCHITECTURE.md)** · **[Submission](docs/SUBMISSION.md)**
 
 [![Plot P-042 near Soubré, year by year on real Sentinel-2 scenes: the EU 2020 forest map, then the loss after the cut-off](docs/demo/time-machine.gif)](docs/demo/OAH2026-GreenTrace-ExplainWhy-Demo.mp4)
 
-**Architecture, in French, with a diagram:** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+<sub>Real plot P-042 near Soubré, Côte d'Ivoire: EU 2020 forest cells in green, lost after the cut-off in orange (Sentinel-2, EU JRC, Hansen/UMD).</sub>
 
-**Demo video (2 min, narrated):** [`docs/demo/OAH2026-GreenTrace-ExplainWhy-Demo.mp4`](docs/demo/OAH2026-GreenTrace-ExplainWhy-Demo.mp4)
-· captions in [`.srt`](docs/demo/OAH2026-GreenTrace-ExplainWhy-Demo.srt)
+</div>
 
-GreenTrace checks a company's "deforestation-free" promise against the evidence, says whether it is
-PROVEN, CONTRADICTED or UNVERIFIABLE, and shows why, down to the database row. Every verdict ships
-with a receipt that one command re-derives offline.
+## At a glance
 
-- **Website:** https://greentrace-eudr.higgsfield.app (the public face: real Sentinel-2 scenes of one
-  plot, a plot file check, a live investigation; code in `site/`)
-- **Engine demo:** https://greentrace-0qd7.onrender.com (the engine's own interface and its API; the
-  first visit after a quiet spell takes about 50 s to wake the free instance)
+| | |
+| --- | --- |
+| **The problem** | From 30 December 2026, cocoa sold in the EU must come from land not deforested after 31 December 2020; the importer carries the proof, plot by plot |
+| **The rule that matters** | The model reads, fixed rules in code decide: same data, same verdict, same seal, live or offline |
+| **Against one model given everything** | Nemotron alone, with every table and our rules in its prompt: 5 to 12 of 21 right, 5 to 10 false accusations per pass. GreenTrace: 21/21, none |
+| **Every model call, signed** | Through Meterless Nightshift: 21/21 on the trap cases, 89/89 Ed25519 receipts verified |
+| **Forged evidence** | 3,020 of 3,020 forged receipt values caught by `verify.py`, offline; 177 of 177 that would move the verdict, even with every hash rewritten |
+| **Tested in public** | Two Reddit posts, about 20,000 and 780 views, 30 upvotes and 30 comments (counted by the author on 25 October 2026); the practitioners' advice is in the build |
 
-**Our entry is for The Agent That Can Explain Why** (Open Agent Hackathon 2026). Solo team: Amir Ogan.
+## How it works
 
-**Tested in public.** Two posts about GreenTrace on Reddit reached about 20,000 and 780 views, with about
-30 upvotes and 30 comments between them (counted by the author on 25 October 2026). The comments back the
-approach and give advice from people who work on EUDR compliance; that advice is in the build (see
-"What practitioners told us" in [`docs/SUBMISSION.md`](docs/SUBMISSION.md)): for one, every verdict now
-says what the EUDR asks next, because an unverifiable risk keeps the cocoa off the market until it is mitigated.
+![Architecture: Scout guards the input, five agents gather and attack the evidence with Zetaris, the Meterless World Model and H-MEM, and Nightshift for Nemotron; fixed rules decide; verify.py re-derives offline](docs/architecture.png)
 
 Both links run in sample mode: no model key is set, so the rule fallbacks take Nemotron's place
 (the "rules alone" baseline of the bench below), and the verdict comes from `app/rules.py` as in
 every mode. The company, its suppliers and its deliveries are fictional; plots P-041 and P-042 are
-real places near Soubré, Côte d'Ivoire, read on real forest maps.
+real places near Soubré, Côte d'Ivoire, read on real forest maps. The engine's first visit after a
+quiet spell takes about 50 s to wake the free instance.
+
+**Our entry is for The Agent That Can Explain Why** (Open Agent Hackathon 2026). Solo team: Amir Ogan.
+What practitioners told us on Reddit, and where it is in the build: [`docs/SUBMISSION.md`](docs/SUBMISSION.md).
 
 ## What you can try in 2 minutes
 
@@ -411,6 +428,20 @@ more. Decision support, not a legal opinion, not a public rating.
 - Every verdict needs a human review before any decision. The plot file says "no issue found by
   GreenTrace", never more; supplier letters are drafts that ask, never accuse.
 
+## Next: field mode on a phone (mockups, not built)
+
+When a verdict is UNVERIFIABLE because a plot was declared as one point, someone has to walk its
+boundary: the EUDR keeps the cocoa off the market until the risk is mitigated. These five screens,
+drawn before the build and not implemented, show how a field officer would collect that proof
+offline: the task list, why this proof decides, the walk with a live progress monitor (area so far,
+distance, GPS points, accuracy), the check before sending (photos, the farmer's consent), and the
+verdict re-run on the walked boundary. The numbers on them are illustrative.
+
+![Field mode mockups: proofs to collect, why this proof, walking the boundary with a live progress monitor, check before sending, verdict updated](design/mobile/field_mode.png)
+
+Screens one by one in [`design/mobile/`](design/mobile/). The engine side already exists: a walked
+boundary is a GeoJSON polygon, which `app/plotfile.py` checks and the same rules judge.
+
 ## Sponsor technology
 
 Proof of live runs: `output_examples/live/` keeps the demo case run with every sponsor at once on 25 October 2026: Zetaris answering all 16 queries, the Meterless World Model server holding the facts, and 5 Nemotron calls through Meterless Nightshift, each with a signed receipt that verifies (`02_contradicted_live_nightshift.*`; check them with `python -m scripts.verify_nightshift_receipts output_examples/live/02_contradicted_live_nightshift.receipts.jsonl`). Its verdict and seal are the same as the offline sample run (`24035b45...`): the model reads, the rules decide.
@@ -463,8 +494,11 @@ proposes; `app/rules.py` decides, and `verify.py` re-derives every verdict witho
 ## Pre-existing work, declared
 
 - The build kit (plan, specifications, 21 trap cases) and the interface mockups in `design/`
-  (commit `5b33f41`), written before 22 October 2026.
-- The pitch deck and the presentation video.
+  (commit `5b33f41`), written before 22 October 2026, and the five mobile field-mode mockups in
+  `design/mobile/` (drawn on 15 October 2026, added to the repo on 25 October; one stray character
+  fixed in screen 2; not implemented).
+- The first pitch deck (15 October 2026) and a concept video of 21 October 2026; the demo video in
+  `docs/demo/` was made on 25 October 2026 from the working build.
 - The technical probes of 21 October 2026 (documented in `docs/specs/satellite_lens.md`).
 - The official `smoke_test.py` of the Participant Setup Guide, and commit `5e37dee` (17 October 2026:
   smoke test, environment template, `.gitignore`). All project code was written from 22 October 2026.

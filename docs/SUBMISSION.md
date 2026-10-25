@@ -83,6 +83,7 @@ GreenTrace checks a "deforestation-free" claim for the EU Deforestation Regulati
 
 - The build kit and the project file (plan, specifications, 21 trap cases), written from 13 to 21 October 2026.
 - The interface mockups in `design/`, drawn from 14 to 21 October 2026 (commit `5b33f41`).
+- The five mobile field-mode mockups in `design/mobile/` (walking a plot boundary with GPS, offline), drawn on 15 October 2026: shown as what comes next, not implemented.
 - The first pitch deck (15 October 2026) and a concept video of 21 October 2026. The demo video in `docs/demo/` was made on 25 October 2026 from the working build.
 - The Satellite Lens probes of 21 October 2026 (`docs/specs/satellite_lens.md`).
 - The official `smoke_test.py` of the Participant Setup Guide, and commit `5e37dee` of 17 October 2026 (smoke test, environment template, `.gitignore`).
