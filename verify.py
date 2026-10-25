@@ -37,7 +37,14 @@ def check(receipt: dict[str, Any]) -> dict[str, Any]:
     problems = _integrity(receipt) + _quotes(receipt)
     if receipt["rules_sha256"] != rules_sha256():
         problems.append("rules: this checkout's app/rules.py is not the one the receipt was made with")
+    try:
+        return _rederive(receipt, problems)
+    except Exception as error:  # a forged row the rules cannot even read (a broken polygon, a date that is not one)
+        problems.append(f"rows: the rules cannot re-derive a verdict from them ({type(error).__name__}: {error})")
+        return {"status": "TAMPERED", "problems": problems, "verdict": None, "seal": None, "changes_replayed": 0}
 
+
+def _rederive(receipt: dict[str, Any], problems: list[str]) -> dict[str, Any]:
     declared = receipt.get("declared_plot")
     plot = plot_from_geojson(declared["input"]) if declared else None
     if declared and plot != declared["row"]:

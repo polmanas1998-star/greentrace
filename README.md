@@ -177,6 +177,22 @@ that covers only the labelled programme, and an admission hidden in an annex nee
 the reports. The 21/21 is a dated measurement, not a promise:
 model answers can vary from run to run.
 
+### Planted false evidence
+
+`python -m scripts.tamper_bench` changes every value of every row in the demo receipt, one at a
+time (3,020 forgeries), and runs `verify.py` on each, offline (`data/bench_tamper.json`):
+
+| Forger | Forgeries | Flagged TAMPERED |
+|---|---|---|
+| Changes a value, leaves the hashes | 3,020 | **3,020** |
+| Changes a value and rewrites every hash, so integrity passes | 177 that move the verdict or the flip | **177** |
+
+The other 2,843 careful forgeries leave the verdict and the flip as they were, and the receipt
+stays VALID: a receipt proves the verdict follows from the rows it carries, not that the rows are
+true. Catching the 177 is what re-deriving the verdict, instead of trusting it, buys. The bench
+also found a bug: a forged polygon the rules could not parse crashed `verify.py` instead of
+answering TAMPERED (fixed, `tests/test_receipt.py`).
+
 ## The verdict receipt
 
 ```bash

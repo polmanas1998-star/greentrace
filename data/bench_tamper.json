@@ -1,0 +1,14 @@
+{
+  "receipt": "01_contradicted_receipt.json",
+  "naive": {
+    "planted": 3020,
+    "caught": 3020
+  },
+  "careful": {
+    "planted": 3020,
+    "verdict_or_flip_changed": 177,
+    "caught_of_those": 177,
+    "harmless_valid": 2843,
+    "harmless_caught": 0
+  }
+}

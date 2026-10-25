@@ -58,6 +58,17 @@ def test_redating_a221_in_the_q4_rows_is_tampered_and_recomputes_proven():
     assert result["verdict"] == "PROVEN"  # exactly the flip the receipt announced
 
 
+def test_a_forged_row_the_rules_cannot_read_is_tampered_not_a_crash():
+    from scripts.tamper_bench import rehash
+    receipt = receipt_of(run_id="rc-broken")
+    row = next(r for s in receipt["sources"] for r in s["rows"] if isinstance(r.get("polygon_wkt"), str))
+    row["polygon_wkt"] += " (amended)"
+    for forged in (receipt, rehash(json.loads(json.dumps(receipt)))):  # with and without the hashes rewritten
+        result = verify.check(forged)
+        assert result["status"] == "TAMPERED"
+        assert result["problems"][-1].startswith("rows: the rules cannot re-derive a verdict")
+
+
 def test_two_runs_give_the_same_seal():
     first, second = receipt_of(run_id="rc-one"), receipt_of(run_id="rc-two")
     assert first["verdict_sha256"] == second["verdict_sha256"]
