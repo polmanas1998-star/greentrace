@@ -6,7 +6,7 @@ import { backendOrigin } from "../../lib/backend.server";
 // POST a RunAgentInput, read back a Server-Sent Events stream of AG-UI events. Any AG-UI client
 // (a CopilotKit HttpAgent, this site's own chat) can talk to it. The agent has no model of its own:
 // it forwards the last user question to the engine's POST /runs/{id}/ask, which answers from that
-// run's lines only, and streams the answer back word by word.
+// run's lines only, and streams the answer back word by word, then the why-chain as a CUSTOM event.
 
 const RUN_CONTEXT = "GreenTrace run id";
 const RUN_ID = /^[A-Za-z0-9_-]{1,64}$/;
@@ -24,7 +24,9 @@ type Ask = {
   provider: string | null;
   model: string | null;
   status: string;
+  diagram?: unknown;
 };
+type Answer = { text: string; diagram?: unknown };
 
 function textOf(content: unknown): string {
   if (typeof content === "string") return content;
@@ -54,11 +56,11 @@ function render(ask: Ask): string {
   return `${ask.answer}${lines ? `\n\n${lines}` : ""}\n\n${by}, from this investigation's own lines.`;
 }
 
-async function answerFor(input: RunAgentInput): Promise<string> {
+async function answerFor(input: RunAgentInput): Promise<Answer> {
   const question = textOf([...(input.messages ?? [])].reverse().find((m) => m.role === "user")?.content).trim();
   const runId = runIdOf(input);
-  if (!runId) return "Run an investigation first: I answer questions about one investigation, from its own record.";
-  if (!question) return "Ask me about this verdict, a plot, an alert or a refutation.";
+  if (!runId) return { text: "Run an investigation first: I answer questions about one investigation, from its own record." };
+  if (!question) return { text: "Ask me about this verdict, a plot, an alert or a refutation." };
   try {
     const response = await fetch(`${backendOrigin()}/runs/${runId}/ask`, {
       method: "POST",
@@ -66,10 +68,10 @@ async function answerFor(input: RunAgentInput): Promise<string> {
       body: JSON.stringify({ question: question.slice(0, 500) }),
     });
     const body = (await response.json()) as Ask & { detail?: string };
-    if (!response.ok) return `The engine could not answer: ${body.detail ?? response.status}`;
-    return render(body);
+    if (!response.ok) return { text: `The engine could not answer: ${body.detail ?? response.status}` };
+    return { text: render(body), diagram: body.diagram };
   } catch {
-    return "The GreenTrace engine did not answer. It may be waking up: ask again in a minute.";
+    return { text: "The GreenTrace engine did not answer. It may be waking up: ask again in a minute." };
   }
 }
 
@@ -89,10 +91,12 @@ async function run({ request }: { request: Request }) {
     async start(controller) {
       const send = (event: Record<string, unknown>) => controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
       send({ type: "RUN_STARTED", threadId, runId });
-      const text = await answerFor(input);
+      const { text, diagram } = await answerFor(input);
       send({ type: "TEXT_MESSAGE_START", messageId, role: "assistant" });
       for (const chunk of text.match(/\S+\s*/g) ?? [text]) send({ type: "TEXT_MESSAGE_CONTENT", messageId, delta: chunk });
       send({ type: "TEXT_MESSAGE_END", messageId });
+      // the why-chain travels as an AG-UI custom event: a client that does not know it skips it
+      if (diagram) send({ type: "CUSTOM", name: "greentrace.why_chain", value: diagram });
       send({ type: "RUN_FINISHED", threadId, runId });
       controller.close();
     },

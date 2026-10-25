@@ -1,7 +1,7 @@
 """Ask GreenTrace: one question about a finished run, answered from that run's own record only.
 
 POST /runs/{run_id}/ask  {"question": "..."}
--> {"run_id", "question", "answer", "lines": [{"n", "text", "section"}], "provider", "model", "status"}
+-> {"run_id", "question", "answer", "lines": [{"n", "text", "section"}], "diagram", "provider", "model", "status"}
 
 The lines are what the run already wrote: the report sentence by sentence (the Deep Trace) and each
 refutation the Evaluator tried. With a model, the Writer's lane words an answer that must cite line
@@ -9,6 +9,10 @@ numbers that exist, and every number in it must appear in a cited line or in the
 else sends the question back to the rules. Without a model (sample mode, no key), the rules answer
 with the lines that share the most words with the question, and say that no model was used.
 The verdict is never re-decided here.
+
+The diagram is the why-chain of the run, drawn from its output and never from the model: the
+evidence rows, the refutations the Evaluator tried on them, the finding, the rule that decided, the
+verdict, and the one change that would flip it. The nodes the cited lines name are marked "focus".
 """
 import re
 from typing import Any, Optional
@@ -39,7 +43,20 @@ le la les un une des du de et est sont que qui quoi pourquoi comment dans sur po
 """.split())
 _WORD = re.compile(r"[a-z0-9][a-z0-9.-]*", re.I)
 WHY = re.compile(r"\b(why|verdict|reason|pourquoi|raison)\b", re.I)
+# a question that names a kind of line asks for those lines, even when it shares no word with them
+INTENTS = {
+    "refutation": re.compile(r"\b(refut\w*|tried|attack\w*|challeng\w*|break\w*|réfut\w*|attaqu\w*)", re.I),
+    "flip": re.compile(r"\b(chang\w*|flip\w*|would|otherwise|instead|bascul\w*)", re.I),
+    "limitation": re.compile(r"\b(limit\w*|caveat\w*|uncertain\w*|unsure|doubt\w*|doute\w*)", re.I),
+}
 _NUMBER = re.compile(r"\d+(?:[.,]\d+)?")
+_ID = re.compile(r"\b(?:[ADFP]-\d+|R\d+)\b")
+MAX_FINDINGS, MAX_CHECKS = 2, 4
+# what each rule of app/rules.py stands for, in a few words
+RULE_LABELS = {1: "a source is down or a datum is invalid", 2: "direct evidence that held",
+               3: "a doubt the evidence cannot settle", 4: "nothing against the claim"}
+PART_LABELS = {"coverage": "every tonne traced to a plot", "no_deforestation": "no forest lost after 2020",
+               "plausibility": "volumes a plot can grow", "scope": "the claim covers what it says"}
 
 
 def lines(run: Any) -> list[dict[str, Any]]:
@@ -69,14 +86,19 @@ def by_rules(question: str, numbered: list[dict[str, Any]]) -> dict[str, Any]:
     # an id (R3, P-014, A-221) names one thing: it weighs twice a plain word
     overlap = {line["n"]: sum(2 if any(ch.isdigit() for ch in w) else 1 for w in wanted & _words(line["text"]))
                for line in numbered}
-    if WHY.search(question):  # "why this verdict?": the verdict and its findings are the answer
+    if WHY.search(question):  # "why this verdict?": the verdict, its findings and what failed to break them
         for line in numbered:
-            if line["section"] in ("verdict", "finding"):
+            if line["section"] in ("verdict", "finding", "refutation"):
                 overlap[line["n"]] = max(overlap[line["n"]], 1)
+    for section, intent in INTENTS.items():
+        if intent.search(question):
+            for line in numbered:
+                if line["section"] == section:
+                    overlap[line["n"]] = max(overlap[line["n"]], 3)
     # Among lines that share words with the question, the verdict and its findings come before the caveats.
     scored = sorted(((overlap[line["n"]] + SECTION_WEIGHT.get(line["section"], 0.0), line["n"]) for line in numbered
                      if overlap[line["n"]] > 0), key=lambda s: (-s[0], s[1]))
-    picked = [n for _, n in scored][:MAX_LINES]
+    picked = _distinct([n for _, n in scored], numbered)[:MAX_LINES]
     if not picked:
         sections = sorted({line["section"] for line in numbered})
         answer = ("No line of this investigation answers that. It holds: " + ", ".join(sections) + ". "
@@ -84,6 +106,58 @@ def by_rules(question: str, numbered: list[dict[str, Any]]) -> dict[str, Any]:
     else:
         answer = "No model was used: here are the lines of this investigation closest to your question."
     return {"answer": answer, "cited": picked, "status": "rules"}  # most relevant first
+
+
+def _distinct(ranked: list[int], numbered: list[dict[str, Any]]) -> list[int]:
+    """Drop a line whose words another line already says (the verdict restates its finding)."""
+    text = {line["n"]: _words(line["text"]) for line in numbered}
+    kept: list[int] = []
+    for n in ranked:
+        if not any(text[n] <= text[k] or text[k] <= text[n] for k in kept):
+            kept.append(n)
+    return kept
+
+
+def diagram(run: Any, cited_lines: list[dict[str, Any]]) -> dict[str, Any]:
+    """The why-chain as nodes and edges: evidence -> checks -> finding -> rule -> verdict, and the flip."""
+    out = run.output
+    focus = {m for line in cited_lines for m in _ID.findall(line["text"])} | {"R0"}  # R0 names the flip
+    nodes: list[dict[str, Any]] = []
+    edges: list[list[str]] = []
+
+    def node(node_id: str, kind: str, label: str, detail: str = "", status: str = "", names: str = "") -> str:
+        """names: the text whose ids put the node in focus (its label and detail unless given)."""
+        if all(n["id"] != node_id for n in nodes):
+            nodes.append({"id": node_id, "kind": kind, "label": label, "detail": detail, "status": status,
+                          "focus": bool(focus & set(_ID.findall(names or label + " " + detail)))})
+        return node_id
+
+    verdict = node("verdict", "verdict", str(out.get("verdict") or "no verdict"), out.get("summary") or "",
+                   str(out.get("verdict") or ""))
+    findings = [f for f in out.get("findings") or [] if f.get("verdict") == out.get("verdict")][:MAX_FINDINGS]
+    for i, finding in enumerate(findings):
+        rule = node(f"rule-{finding.get('rule')}", "rule", f"Rule {finding.get('rule')}",
+                    RULE_LABELS.get(finding.get("rule"), ""))
+        found = node(f"finding-{i}", "finding", finding.get("finding") or finding.get("code") or "finding",
+                     PART_LABELS.get(finding.get("claim_part"), ""), finding.get("verdict") or "")
+        for item in finding.get("evidence") or []:
+            edges.append([node(f"{item['source']}:{item['id']}", "evidence", f"{item['source']} {item['id']}"), found])
+        for tried in (finding.get("refutations_tried") or [])[:MAX_CHECKS]:
+            held = tried.get("result") != "rejected"
+            check = node(f"check-{i}-{tried['id']}", "check", f"{tried['id']} {'held' if held else 'did not hold'}",
+                         tried.get("detail") or "", "held" if held else "rejected", names=tried["id"])
+            edges.append([check, found])
+        edges += [[found, rule], [rule, verdict]]
+    if not findings:  # nothing decided against the claim: every part passed rule 4 (or another rule decided it)
+        for part in out.get("parts") or []:
+            part_node = node(f"part-{part['claim_part']}", "finding", PART_LABELS.get(part["claim_part"], part["claim_part"]),
+                             f"rule {part.get('rule')}: {RULE_LABELS.get(part.get('rule'), '')}", part.get("verdict") or "")
+            edges.append([part_node, verdict])
+    if out.get("flip"):
+        flip_cited = any(line["section"] == "flip" for line in cited_lines)
+        edges.append([verdict, node("flip", "flip", "What would change it", out["flip"],
+                                    names="R0" if flip_cited else "-")])
+    return {"nodes": nodes, "edges": edges}
 
 
 def _checked(answer: Any, question: str, numbered: list[dict[str, Any]]) -> Optional[dict[str, Any]]:
@@ -117,8 +191,9 @@ def ask(run: Any, question: Any, model: Any = None) -> dict[str, Any]:
     if result is None:
         result = by_rules(question, numbered)
     known = {line["n"]: line for line in numbered}
+    cited = [known[n] for n in result["cited"]]
     return {
         "run_id": run.output.get("run_id"), "question": question, "answer": result["answer"],
-        "lines": [known[n] for n in result["cited"]], "verdict": run.output.get("verdict"),
+        "lines": cited, "diagram": diagram(run, cited), "verdict": run.output.get("verdict"),
         "status": result["status"], "provider": info.get("provider"), "model": info.get("model"),
     }

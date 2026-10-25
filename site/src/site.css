@@ -144,7 +144,13 @@ html.gt :focus-visible {
   to { transform: translateX(300%); }
 }
 
+/* The why-chain under an Ask answer: stage by stage, left to right. */
+.gt-chain-in {
+  animation: gt-rise 0.55s cubic-bezier(0.2, 0.7, 0.1, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .gt-chain-in,
   .gt-rise > *,
   .gt-outline-draw,
   .gt-line-in,

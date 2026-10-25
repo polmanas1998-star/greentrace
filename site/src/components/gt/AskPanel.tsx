@@ -1,10 +1,12 @@
 import { useRef, useState, type FormEvent } from "react";
 
+import WhyChain, { type Chain } from "./WhyChain";
+
 // "Ask GreenTrace": a chat about one finished investigation. It speaks AG-UI to this site's agent
 // (/api/agui): it posts a RunAgentInput with the run id in its context and reads the event stream.
 // Answers come from the run's own lines (the engine's POST /runs/{id}/ask), never from elsewhere.
 
-type Turn = { role: "user" | "assistant"; text: string };
+type Turn = { role: "user" | "assistant"; text: string; chain?: Chain };
 
 const SUGGESTIONS = ["Why is this the verdict?", "Which refutations were tried?", "What would change the verdict?"];
 
@@ -48,9 +50,12 @@ export default function AskPanel({ runId }: { runId: string }) {
         for (const raw of events) {
           const data = raw.replace(/^data: /, "");
           try {
-            const event = JSON.parse(data) as { type: string; delta?: string };
+            const event = JSON.parse(data) as { type: string; delta?: string; name?: string; value?: Chain };
             if (event.type === "TEXT_MESSAGE_CONTENT" && event.delta) {
               setTurns((all) => all.map((t, i) => (i === all.length - 1 ? { ...t, text: t.text + event.delta } : t)));
+            } else if (event.type === "CUSTOM" && event.name === "greentrace.why_chain" && Array.isArray(event.value?.nodes)) {
+              const chain = event.value;
+              setTurns((all) => all.map((t, i) => (i === all.length - 1 ? { ...t, chain } : t)));
             }
           } catch {
             /* a partial or unknown event: skipped */
@@ -72,7 +77,7 @@ export default function AskPanel({ runId }: { runId: string }) {
   }
 
   return (
-    <div className="flex h-[560px] flex-col overflow-hidden rounded-[14px] border border-gt-line bg-gt-raised">
+    <div className="flex h-[680px] flex-col overflow-hidden rounded-[14px] border border-gt-line bg-gt-raised">
       <div className="flex-1 space-y-5 overflow-y-auto p-6" aria-live="polite">
         {turns.length === 0 && (
           <div>
@@ -92,10 +97,11 @@ export default function AskPanel({ runId }: { runId: string }) {
               className={
                 t.role === "user"
                   ? "max-w-[80%] rounded-[14px] bg-gt-raised-2 px-4 py-3 text-[15px]"
-                  : "max-w-[92%] whitespace-pre-wrap text-[15px] leading-relaxed text-gt-text/90"
+                  : "w-full max-w-full whitespace-pre-wrap text-[15px] leading-relaxed text-gt-text/90"
               }
             >
               {t.text || <span className="gt-mono text-[13px] text-gt-muted">reading the investigation…</span>}
+              {t.chain && <WhyChain chain={t.chain} />}
             </div>
           </div>
         ))}

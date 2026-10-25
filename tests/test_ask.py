@@ -83,3 +83,33 @@ def test_the_same_question_gives_the_same_answer(run):
     a = client.post("/runs/ask-case-2/ask", json={"question": "Why is it contradicted?"}).json()
     b = client.post("/runs/ask-case-2/ask", json={"question": "Why is it contradicted?"}).json()
     assert a == b
+
+
+def test_a_why_answer_does_not_repeat_itself_and_brings_what_failed_to_break_it(run):
+    client, _ = run
+    out = client.post("/runs/ask-case-2/ask", json={"question": "why ?"}).json()
+    sections = [line["section"] for line in out["lines"]]
+    assert sections[0] == "verdict" and "finding" not in sections  # the finding is the verdict line, said once
+    assert sections[1:] and set(sections[1:]) == {"refutation"}
+
+
+@pytest.mark.parametrize("question, section", [("What would change the verdict?", "flip"),
+                                               ("Which refutations were tried?", "refutation")])
+def test_a_question_that_names_a_kind_of_line_gets_those_lines(run, question, section):
+    client, _ = run
+    out = client.post("/runs/ask-case-2/ask", json={"question": question}).json()
+    assert out["lines"][0]["section"] == section
+
+
+def test_the_diagram_is_the_why_chain_from_evidence_to_verdict(run):
+    client, _ = run
+    diagram = client.post("/runs/ask-case-2/ask", json={"question": "why ?"}).json()["diagram"]
+    nodes = {n["id"]: n for n in diagram["nodes"]}
+    edges = {tuple(e) for e in diagram["edges"]}
+    assert {("alert:A-221", "finding-0"), ("plot:P-014", "finding-0"), ("finding-0", "rule-2"),
+            ("rule-2", "verdict"), ("verdict", "flip")} <= edges
+    assert nodes["verdict"]["label"] == "CONTRADICTED" and nodes["rule-2"]["detail"] == "direct evidence that held"
+    assert all(n in nodes for edge in edges for n in edge)
+    # in focus: what the cited lines name, and only that
+    assert nodes["alert:A-221"]["focus"] and nodes["check-0-R3"]["focus"] and not nodes["flip"]["focus"]
+    assert not nodes["check-0-R5"]["focus"]
