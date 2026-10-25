@@ -217,6 +217,41 @@ that covers only the labelled programme, and an admission hidden in an annex nee
 the reports. The 21/21 is a dated measurement, not a promise:
 model answers can vary from run to run.
 
+### A blind set, written by another model
+
+We wrote the 21 cases ourselves. So on 25 October 2026 another model (ChatGPT, in a temporary chat
+with no memory) wrote 10 new cases from [`data/blind_set/author_brief.md`](data/blind_set/author_brief.md)
+alone: the base world, the three verdicts in plain words and a small language of changes. It never
+saw the code, the rules or the 21 cases. Its answer is kept byte for byte
+([`data/blind_set/cases.json`](data/blind_set/cases.json), sha256 `4b9995b9...`, committed before
+the first run), and `python -m scripts.blind_set run` refuses to start if the file has changed.
+
+| Run (`data/bench_blind.json`) | Right verdicts | False accusations | False clears |
+|---|---|---|---|
+| Rules alone, sample mode | **7/10** | **0** | 2 |
+| With Nemotron 3.5 Super, NVIDIA direct (16 model calls, 13 rule fallbacks after failed calls) | **6/10** | **0** | 3 |
+
+The misses, as they came:
+
+- **B-03**, a 1.2 ha alert whose centre is 15 m outside a polygon. GreenTrace reads an alert as its
+  centre point, so it says PROVEN; drawn as its area, the alert overlaps the plot by about 47 m.
+  The author expected UNVERIFIABLE and is right. Not fixed yet.
+- **B-07**, a low-confidence alert inside a delivering plot. The author expected PROVEN (below the
+  company's own threshold for a confirmed alert); GreenTrace says UNVERIFIABLE and asks for a field
+  visit. The cautious side, still a miss.
+- **B-08**, a delivering plot moved 5 km. The author expected UNVERIFIABLE; nothing in the data keeps
+  the old location, so GreenTrace sees an ordinary plot and says PROVEN. We doubt the case can be
+  decided from the data it gives, but it counts as a miss.
+- **B-09**, with the model only. The NGO note named the supplier by its registry id (F-031); the
+  model's reading put the id where a name goes, no supplier matched, and the mention was dropped:
+  PROVEN, a false clear the rules alone did not make. Fixed after the run: the id is now read by
+  code from the checked quote (`tests/test_blind_set.py`). The scores above are from before the fix;
+  measuring it needs a fresh set.
+
+No case was accused wrongly. A first model pass the same evening also scored 7/10, with B-09 read by
+the rules after its model calls failed; only the second pass's details are kept. The author gave one
+CONTRADICTED case where the brief asked for two; the set is kept as written.
+
 ### Against Nemotron alone
 
 `python -m scripts.baseline_model_alone --runs 3 --save` gives Nemotron 3.5 Super, alone, every

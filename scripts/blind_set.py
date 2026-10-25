@@ -278,6 +278,8 @@ def run(use_model: bool) -> int:
         results.append({"id": case["id"], "title": case["title"], "expected": case["expected"], "got": got,
                         "ok": got == case["expected"], "verdict_sha256": out.get("verdict_sha256"),
                         "model_calls": sum(c["provider"] != "rules" for c in calls),
+                        "rules_fallbacks": sum(c["provider"] == "rules" for c in calls),
+                        "models": sorted({c["model"] for c in calls if c.get("model")}),
                         "receipts_valid": sum(r["signature_valid"] for r in signed), "receipts": len(signed)})
         print(f"{'ok  ' if got == case['expected'] else 'MISS'} {case['id']} {case['title'][:44]:<44} "
               f"expected {case['expected']:<13} got {got}")
@@ -285,6 +287,8 @@ def run(use_model: bool) -> int:
     false_accusations = sum(r["got"] == "CONTRADICTED" and r["expected"] != "CONTRADICTED" for r in results)
     false_clears = sum(r["got"] == "PROVEN" and r["expected"] != "PROVEN" for r in results)
     print(f"{score}/{len(results)}, false accusations {false_accusations}, false clears {false_clears}")
+    if use_model:
+        print(f"model calls {sum(r['model_calls'] for r in results)}, rule fallbacks {sum(r['rules_fallbacks'] for r in results)}")
     report = json.loads(OUT.read_text(encoding="utf-8")) if OUT.exists() else {}
     report.update({"cases_sha256": frozen, "author": report.get("author", "")})
     report["model" if use_model else "rules_alone"] = {

@@ -248,8 +248,9 @@ def _read_by_model(ctx: RunContext, paragraphs: list[dict]) -> Extracted | None:
         scope=kept["scope"],
         admissions=tuple({k: a.get(k) for k in ("doc", "section", "paragraph_no", "quote", "plots", "year")}
                          for a in kept["admissions"]),
-        mentions=tuple({k: m.get(k) for k in ("doc", "paragraph_no", "quote", "supplier_name",
-                                              "cooperative_group", "year")} for m in kept["mentions"]),
+        mentions=tuple(_with_supplier_id({k: m.get(k) for k in ("doc", "paragraph_no", "quote", "supplier_name",
+                                                                "cooperative_group", "year")})
+                       for m in kept["mentions"]),
     )
     ctx.step("Extractor", "extract_claims",
              f"{len(paragraphs)} paragraph(s) read {len(readings)} times by {info['model']}",
@@ -257,6 +258,13 @@ def _read_by_model(ctx: RunContext, paragraphs: list[dict]) -> Extracted | None:
              f"{len(extracted.admissions)} admission(s); {len(extracted.mentions)} supplier mention(s), all quoted",
              target="Planner", provider=info["provider"], model=info["model"])
     return extracted
+
+
+def _with_supplier_id(mention: dict) -> dict:
+    """A note may name the supplier by its registry id ("F-031") rather than by its name: the id is read by
+    code from the checked quote, as the rule reader does, so the mention still finds its supplier."""
+    ids = SUPPLIER_ID.findall(mention.get("quote") or "") or SUPPLIER_ID.findall(mention.get("supplier_name") or "")
+    return {**mention, "supplier_id": ids[0]} if ids else mention
 
 
 def _agreed(readings: list[dict]) -> dict:
@@ -337,8 +345,10 @@ def read_documents(ctx: RunContext, paragraphs: list[dict], roles: dict[str, str
                 scope=kept["scope"],
                 admissions=tuple({k: a.get(k) for k in ("doc", "section", "paragraph_no", "quote", "plots", "year")}
                                  for a in kept["admissions"]),
-                mentions=tuple({k: m.get(k) for k in ("doc", "paragraph_no", "quote", "supplier_name",
-                                                      "cooperative_group", "year")} for m in kept["mentions"]))
+                mentions=tuple(_with_supplier_id({k: m.get(k) for k in ("doc", "paragraph_no", "quote",
+                                                                        "supplier_name", "cooperative_group",
+                                                                        "year")})
+                               for m in kept["mentions"]))
             ctx.step("Extractor", "extract_claims", f"{len(paragraphs)} paragraph(s) of the analyst's documents, "
                      f"read {len(readings)} times by {info['model']}",
                      f"agreed by {AGREEMENT} of {len(readings)}: scope {extracted.scope}; "
