@@ -2,6 +2,8 @@
 
 [![Plot P-042 near Soubré, year by year on real Sentinel-2 scenes: the EU 2020 forest map, then the loss after the cut-off](docs/demo/time-machine.gif)](docs/demo/OAH2026-GreenTrace-ExplainWhy-Demo.mp4)
 
+**Architecture, in French, with a diagram:** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+
 **Demo video (2 min, narrated):** [`docs/demo/OAH2026-GreenTrace-ExplainWhy-Demo.mp4`](docs/demo/OAH2026-GreenTrace-ExplainWhy-Demo.mp4)
 · captions in [`.srt`](docs/demo/OAH2026-GreenTrace-ExplainWhy-Demo.srt)
 
