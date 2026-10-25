@@ -45,22 +45,25 @@
       ]
     },
     "meterless": {
-      "used_for": "World Model reference implementation (unmodified, conformance 8/8) as the agents' shared memory; H-MEM reference (unmodified, conformance 13/13) for one note per supplier, shown as 'Seen before', never deciding; Meterless Runtime provider coded to its contract",
+      "used_for": "World Model reference implementation (unmodified, conformance 8/8) as the agents' shared memory; H-MEM reference (unmodified, conformance 13/13) for one note per supplier, shown as 'Seen before', never deciding; Nightshift 1.2.3 serves the Meterless Runtime every model call goes through, and each answer's Ed25519-signed compute receipt is verified at call time and kept",
       "code": [
         "meterless/reference/",
         "meterless/server.ts",
         "app/memory/world_model.py",
         "app/adapters/llm.py",
         "meterless/hmem/",
-        "app/memory/hmem.py"
+        "app/memory/hmem.py",
+        "app/adapters/meterless_receipt.py",
+        "scripts/verify_nightshift_receipts.py"
       ],
-      "not_done": "Nightshift, which serves the Meterless Runtime, needs a dedicated GPU we do not have: it is not installed, the Runtime provider is tested against a fake Runtime only (tests/test_llm.py), and model calls go to NVIDIA directly"
+      "measured": "21 trap cases through Nightshift: 21/21, 89 model calls, 0 rule fallbacks, 89/89 receipts verify (data/bench_nightshift.json); live run with every sponsor: output_examples/live/02_contradicted_live_nightshift.*"
     },
     "nvidia": {
       "used_for": "Nemotron 3.5 on two pinned lanes (fast, deep): reading reports, planning, proposing refutations; the rules decide",
       "models": [
         "nvidia/nemotron-3.5-lightning-30b-a3b",
-        "nvidia/nemotron-3.5-super-vl-120b-a12b"
+        "nvidia/nemotron-3-ultra-550b-a55b (deep lane through Nightshift)",
+        "nvidia/nemotron-3.5-super-vl-120b-a12b (deep lane on NVIDIA directly)"
       ],
       "code": [
         "app/adapters/llm.py",

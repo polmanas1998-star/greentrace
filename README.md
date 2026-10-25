@@ -149,6 +149,15 @@ real-plot examples), then
 `host.docker.internal` instead of `localhost` in `ZETARIS_REST_URL`; on Linux also add
 `--add-host=host.docker.internal:host-gateway`.
 
+**Through Meterless Nightshift** (how the receipts in `data/nightshift_receipts/` were made): install
+Nightshift (meterless.ai, Windows 1.2.3 here), add your NVIDIA key in Setup → Providers, then set
+`MODEL_PROVIDER=meterless`, `METERLESS_BASE_URL=http://127.0.0.1:8088`,
+`METERLESS_RUNTIME_TOKEN_FILE=<Nightshift state dir>/proxy-token` (on Windows
+`%LOCALAPPDATA%\ai.meterless.runtime\proxy-token`), `METERLESS_MODEL_FAST=nvidia/nemotron-3.5-lightning-30b-a3b`
+and `METERLESS_MODEL_DEEP=nvidia/nemotron-3-ultra-550b-a55b`. Then `python -m scripts.bench --model
+--save-receipts`, or `python run.py --input examples/01_contradicted.json --receipts receipts.jsonl`;
+`python -m scripts.verify_nightshift_receipts receipts.jsonl` checks every signature offline.
+
 ## Examples
 
 Inputs in `examples/`, the real outputs of `python run.py --input` in `output_examples/` (written by

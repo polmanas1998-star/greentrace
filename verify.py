@@ -190,7 +190,7 @@ def main(argv: list[str]) -> int:
               f"flip replayed ({result['changes_replayed']} change(s)).")
         print(f"seal {result['seal']}")
         return 0
-    print("TAMPERED: " + "; ".join(result["problems"]))
+    print("TAMPERED: " + "; ".join(dict.fromkeys(result["problems"])))  # a row read by several queries: said once
     print(f"verdict recomputed on the data as found: {result['verdict']}")
     print(f"seal recomputed {result['seal']}, receipt says {receipt.get('verdict_sha256') or receipt.get('seal')}")
     return 1

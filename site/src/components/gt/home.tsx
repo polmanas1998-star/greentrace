@@ -265,9 +265,9 @@ export function Proof() {
         <div className="flex flex-col justify-between rounded-[14px] border border-gt-line bg-[linear-gradient(160deg,#14402B_0%,#0f2a1d_100%)] p-8 md:col-span-2">
           <div className="text-xl font-semibold tracking-tight">Same verdict, live or offline.</div>
           <p className="mt-3 leading-relaxed text-gt-text/80">
-            Live run of 25 October 2026: 16 queries answered by Zetaris, 7 calls to NVIDIA Nemotron, facts held by the Meterless
-            World Model server. Verdict Contradicted, seal 24035b45, the same seal as the offline sample run. The model reads, the
-            rules decide.
+            Live run of 25 October 2026, every sponsor at once: 16 queries answered by Zetaris, facts held by the Meterless World
+            Model, 5 Nemotron calls through Meterless Nightshift, each with a signed receipt that verifies. Verdict Contradicted,
+            seal 24035b45, the same seal as the offline sample run. The model reads, the rules decide.
           </p>
         </div>
         <div className="rounded-[14px] border border-gt-line bg-gt-raised p-8 md:col-span-2">
@@ -284,7 +284,7 @@ export function Proof() {
             <dt className="text-gt-text">Zetaris</dt>
             <dd className="text-gt-text/75">answers every query, and its data-quality rules catch broken records first.</dd>
             <dt className="text-gt-text">Meterless</dt>
-            <dd className="text-gt-text/75">World Model and H-MEM: facts with their sources, invalidated when a fact changes.</dd>
+            <dd className="text-gt-text/75">World Model and H-MEM: facts with their sources, invalidated when a fact changes. Nightshift routes every model call and signs its receipt.</dd>
             <dt className="text-gt-text">NVIDIA</dt>
             <dd className="text-gt-text/75">Nemotron reads the documents and writes the explanation.</dd>
           </dl>

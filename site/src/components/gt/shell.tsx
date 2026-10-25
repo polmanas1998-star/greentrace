@@ -94,7 +94,7 @@ export function Footer() {
           <div className="mb-2 text-gt-text">Built with</div>
           <p>
             In live mode: Zetaris answers every query, Meterless World Model and H-MEM hold the memory, NVIDIA Nemotron
-            reads and writes. The public demo runs in sample mode: the same queries on a local copy, rules in place of the model.
+            reads and writes through Meterless Nightshift, one signed receipt per call. The public demo runs in sample mode: the same queries on a local copy, rules in place of the model.
           </p>
           <p className="mt-2">Companies and deliveries in the demo are fictional. Plots P-041 and P-042 are real places.</p>
         </div>
