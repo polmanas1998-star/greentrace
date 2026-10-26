@@ -217,6 +217,15 @@ that covers only the labelled programme, and an admission hidden in an annex nee
 the reports. The 21/21 is a dated measurement, not a promise:
 model answers can vary from run to run.
 
+One thing we found in our own receipts on 26 October, after the run: Nightshift's built-in memory
+was on. Each of the 89 receipts records `hmem.injected` = 1 or 2 (records Nightshift added to our
+prompt itself), and the receipts keep their ids, not their text. So the cases of the Nightshift run
+were not isolated from each other at the model level, and we cannot rule out that an earlier case's
+answer reached a later one. What bounds the effect: the verdict comes from the rules on the case's own
+rows, and a quote counts only if it is found word for word in the case's own documents. The rules-alone
+18/21, the NVIDIA-direct 21/21 and the blind set do not go through Nightshift. Next run: Nightshift's
+memory off, and the bench repeated.
+
 ### A blind set, written by another model
 
 We wrote the 21 cases ourselves. So on 25 October 2026 another model (ChatGPT, in a temporary chat
@@ -459,6 +468,8 @@ more. Decision support, not a legal opinion, not a public rating.
   models run in NVIDIA's cloud, Nightshift routes, signs a receipt per answer and keeps the cache.
   Nightshift currently excludes Nemotron 3.5 Super VL (repeated empty answers), so the deep lane is
   pinned to Nemotron 3 Ultra 550B through it. The public demo still runs in sample mode, with no key.
+  Nightshift's own memory was on during our recorded Nightshift runs (the bench and the live run in
+  `output_examples/live/`): see the note under the bench.
 - A satellite alert or a map cell is not legal proof; 30 m maps can misread a few cells.
 - Every verdict needs a human review before any decision. The plot file says "no issue found by
   GreenTrace", never more; supplier letters are drafts that ask, never accuse.
@@ -486,6 +497,20 @@ Proof of live runs: `output_examples/live/` keeps the demo case run with every s
   through `SHOW DQ INVALID RECORD`, `data/dq_rules.json`); the agents' only access to data is the 11
   queries Q0-Q10 of `app/queries.py`, run over the Zetaris REST API (`app/adapters/zetaris.py`). Every
   answer keeps its SQL, rows and hash for the receipt.
+
+  *Our reflection on the USL.* What it saved: one semantic layer (7 tables, primary and foreign keys
+  declared once in `data/usl_eudr.sql`) gave the agents a single vocabulary, so the 11 named queries
+  are written once and the sample mode runs the same queries on SQLite, row for row. The data-quality
+  layer did real work before any agent ran: the key generated from the DDL flags case 10 (one plot
+  declared by two suppliers), and the `in_cocoa_belt` rule flags case 16 (latitude and longitude
+  swapped); Q0 reads them with `SHOW DQ INVALID RECORD`, so a bad row is evidence, not a crash. How it
+  helps the work: a compliance analyst gets one governed, read-only door to suppliers, deliveries,
+  alerts and maps that would otherwise live in four systems, and every number in a verdict can name
+  the query that produced it. What we would improve: `text` is a reserved column name (we renamed it
+  `paragraph_text`); a fresh instance needs `lightning.metastore` created before a sub-namespace,
+  which the error does not say; two of our tables needed a key built with `CONCAT`, so composite
+  primary keys in the USL DDL would help; and the REST API takes one statement per request, so
+  `scripts/load_zetaris.py` sends them one by one.
 - **Meterless** (build): the official World Model reference implementation, copied unmodified
   (`meterless/reference`, upstream commit `1742dec`, `meterless/UPSTREAM.sha256`), passes its
   conformance suite 8/8 (`tests/test_world_model.py`) and is the agents' shared memory
@@ -533,7 +558,8 @@ proposes; `app/rules.py` decides, and `verify.py` re-derives every verdict witho
   `design/mobile/` (drawn on 15 October 2026, added to the repo on 25 October; one stray character
   fixed in screen 2; not implemented).
 - The first pitch deck (15 October 2026) and a concept video of 21 October 2026; the demo video in
-  `docs/demo/` was made on 25 October 2026 from the working build.
+  `docs/demo/` was made on 25 October 2026 from the working build; on 26 October its music was
+  replaced by an original bed synthesised by script (same picture and voice).
 - The technical probes of 21 October 2026 (documented in `docs/specs/satellite_lens.md`).
 - The official `smoke_test.py` of the Participant Setup Guide, and commit `5e37dee` (17 October 2026:
   smoke test, environment template, `.gitignore`). All project code was written from 22 October 2026.
