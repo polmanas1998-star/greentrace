@@ -8,6 +8,7 @@ __pycache__/
 *.pyc
 # run outputs
 logs/*.jsonl
+logs/judge/
 
 # rebuilt by python -m scripts.build_data
 data/build/

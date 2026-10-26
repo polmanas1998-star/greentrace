@@ -293,7 +293,7 @@ def run_and_spans(client):
 def test_one_span_per_trace_line_with_the_13_fields_and_the_calling_agent_as_parent(sample_world):
     client = TestClient(app)
     run_id, out = run_and_spans(client)
-    lines = [json.loads(line) for line in (sample_world / f"{run_id}.jsonl").read_text().splitlines()]
+    lines = [json.loads(line) for line in (sample_world / f"{run_id}.jsonl").read_text(encoding="utf-8").splitlines()]
     spans = out["spans"]
     assert out["run_id"] == run_id and out["trace_id"] == otel.trace_id(run_id) and len(out["trace_id"]) == 32
     assert len(spans) == len(lines) and all(set(s) == set(otel.SPAN_KEYS) for s in spans)
@@ -322,7 +322,7 @@ def test_a_what_if_lands_in_the_same_trace(sample_world):
     after = client.get(f"/runs/{run_id}/otel").json()
     assert after["trace_id"] == before["trace_id"] and after["spans"][:len(before["spans"])] == before["spans"]
     assert any(s["name"] == "Pipeline.what_if" and s["parent_span_id"] is None for s in after["spans"])
-    stored = [json.loads(line) for line in (sample_world / f"{run_id}.otel.jsonl").read_text().splitlines()]
+    stored = [json.loads(line) for line in (sample_world / f"{run_id}.otel.jsonl").read_text(encoding="utf-8").splitlines()]
     assert {s["trace_id"] for s in stored} == {before["trace_id"]}
 
 
@@ -336,7 +336,7 @@ def test_the_official_trace_lines_do_not_change_and_otel_can_be_turned_off(sampl
     assert off.status_code == 404 and "GREENTRACE_OTEL=0" in off.json()["detail"]
 
     def official(run_id):
-        lines = [json.loads(line) for line in (sample_world / f"{run_id}.jsonl").read_text().splitlines()]
+        lines = [json.loads(line) for line in (sample_world / f"{run_id}.jsonl").read_text(encoding="utf-8").splitlines()]
         return [{k: v for k, v in line.items() if k not in ("timestamp", "run_id")} for line in lines]
 
     assert official(run_on) == official(run_off)  # the same lines, with or without OpenTelemetry
