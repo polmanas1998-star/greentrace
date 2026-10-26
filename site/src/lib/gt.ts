@@ -20,6 +20,15 @@ function detailOf(body: unknown, fallback: string): string {
   return fallback;
 }
 
+let woken = false;
+
+/** Ping the engine once per page load, without waiting for it and without surfacing an error. */
+export function wakeEngine(): void {
+  if (woken || typeof window === "undefined") return;
+  woken = true;
+  fetch(`${API}/health`, { cache: "no-store" }).catch(() => undefined);
+}
+
 export async function engine<T>(path: string, init?: { method?: string; json?: unknown; signal?: AbortSignal }): Promise<T> {
   const response = await fetch(`${API}${path}`, {
     method: init?.method ?? (init?.json === undefined ? "GET" : "POST"),

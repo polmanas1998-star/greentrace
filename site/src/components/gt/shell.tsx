@@ -1,5 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
+
+import { wakeEngine } from "../../lib/gt";
 
 export function Mark({ size = 28 }: { size?: number }) {
   return (
@@ -104,6 +106,9 @@ export function Footer() {
 }
 
 export function Page({ children }: { children: ReactNode }) {
+  // The free engine sleeps after a quiet spell and takes about 50 s to wake: wake it while the
+  // visitor reads, so the first run they start does not wait for it.
+  useEffect(wakeEngine, []);
   return (
     <div className="min-h-dvh bg-gt-ground text-gt-text">
       <Nav />

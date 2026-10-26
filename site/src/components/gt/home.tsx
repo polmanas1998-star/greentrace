@@ -253,13 +253,16 @@ export function Proof() {
           <div className="text-xl font-semibold tracking-tight">A receipt you can re-derive offline.</div>
           <p className="mt-3 max-w-[56ch] leading-relaxed text-gt-text/70">
             Each verdict ships with its inputs, the rows read and a seal. One command recomputes it without the model, without
-            Zetaris and without network.
+            Zetaris and without network. Another re-checks seven of our claims on your machine in about 90 seconds.
           </p>
           <pre className="gt-mono mt-8 overflow-x-auto rounded-[10px] border border-gt-line bg-gt-ground p-5 text-[13px] leading-6 text-gt-text/90">
             <span className="text-gt-muted">$</span> python verify.py output_examples/01_contradicted_receipt.json{"\n"}
             <span className="text-gt-proven">VALID</span>: CONTRADICTED re-derived offline from 522 rows of 17 answers; 0 quote(s)
             found word for word; flip replayed (4 change(s)).{"\n"}
-            <span className="text-gt-muted">seal 24035b459821721e168619c808d35a6a03819b9feb113dac3ffabca4cba56eb0</span>
+            <span className="text-gt-muted">seal 24035b459821721e168619c808d35a6a03819b9feb113dac3ffabca4cba56eb0</span>{"\n\n"}
+            <span className="text-gt-muted">$</span> python judge.py{"\n"}
+            <span className="text-gt-proven">7/7</span> checks pass in 90 s: same seal twice, a forged receipt caught, the flip, the
+            real plots, 94 Nightshift receipts, the 21 trap cases, the blind set.
           </pre>
         </div>
         <div className="flex flex-col justify-between rounded-[14px] border border-gt-line bg-[linear-gradient(160deg,#14402B_0%,#0f2a1d_100%)] p-8 md:col-span-2">
