@@ -266,5 +266,162 @@
         "receipts": 0
       }
     ]
+  },
+  "model_rerun_after_fix": {
+    "score": 7,
+    "of": 10,
+    "false_accusations": 0,
+    "false_clears": 2,
+    "results": [
+      {
+        "id": "B-01",
+        "title": "Confirmed clearing inside a delivered plot",
+        "expected": "CONTRADICTED",
+        "got": "CONTRADICTED",
+        "ok": true,
+        "verdict_sha256": "59b30ab57559cae2f980946d3c2c5d1aa1d3137a47e9a0a7c061aa16c33204b9",
+        "model_calls": 0,
+        "rules_fallbacks": 3,
+        "models": [],
+        "receipts_valid": 0,
+        "receipts": 0
+      },
+      {
+        "id": "B-02",
+        "title": "High-confidence alert before the cutoff",
+        "expected": "PROVEN",
+        "got": "PROVEN",
+        "ok": true,
+        "verdict_sha256": "509901c785c2d42e6f00c08a823104fdbf42500b58de2243017c62bf6f9bdafa",
+        "model_calls": 4,
+        "rules_fallbacks": 0,
+        "models": [
+          "private/nvidia/nemotron-3.5-super-120b-a12b"
+        ],
+        "receipts_valid": 0,
+        "receipts": 0
+      },
+      {
+        "id": "B-03",
+        "title": "Strong alert just outside the plot",
+        "expected": "UNVERIFIABLE",
+        "got": "PROVEN",
+        "ok": false,
+        "verdict_sha256": "509901c785c2d42e6f00c08a823104fdbf42500b58de2243017c62bf6f9bdafa",
+        "model_calls": 4,
+        "rules_fallbacks": 0,
+        "models": [
+          "private/nvidia/nemotron-3.5-super-120b-a12b"
+        ],
+        "receipts_valid": 0,
+        "receipts": 0
+      },
+      {
+        "id": "B-04",
+        "title": "Missing alert source",
+        "expected": "UNVERIFIABLE",
+        "got": "UNVERIFIABLE",
+        "ok": true,
+        "verdict_sha256": "0d0dbbbf7783bc392707b30e045405963bbf165e2e4fb917cfdf6f96871a4b3a",
+        "model_calls": 4,
+        "rules_fallbacks": 0,
+        "models": [
+          "private/nvidia/nemotron-3.5-super-120b-a12b"
+        ],
+        "receipts_valid": 0,
+        "receipts": 0
+      },
+      {
+        "id": "B-05",
+        "title": "Supplier deliveries without registered plots",
+        "expected": "UNVERIFIABLE",
+        "got": "UNVERIFIABLE",
+        "ok": true,
+        "verdict_sha256": "e69f9c692a1e2c8e57f379e58a58dcaf42e3fa4a25ff1932d263640c5634687e",
+        "model_calls": 4,
+        "rules_fallbacks": 0,
+        "models": [
+          "private/nvidia/nemotron-3.5-super-120b-a12b"
+        ],
+        "receipts_valid": 0,
+        "receipts": 0
+      },
+      {
+        "id": "B-06",
+        "title": "Untraced cocoa hidden in certified volume",
+        "expected": "UNVERIFIABLE",
+        "got": "UNVERIFIABLE",
+        "ok": true,
+        "verdict_sha256": "e69f9c692a1e2c8e57f379e58a58dcaf42e3fa4a25ff1932d263640c5634687e",
+        "model_calls": 4,
+        "rules_fallbacks": 0,
+        "models": [
+          "private/nvidia/nemotron-3.5-super-120b-a12b"
+        ],
+        "receipts_valid": 0,
+        "receipts": 0
+      },
+      {
+        "id": "B-07",
+        "title": "Low-confidence alert alone",
+        "expected": "PROVEN",
+        "got": "UNVERIFIABLE",
+        "ok": false,
+        "verdict_sha256": "d45e82b7f94bc08714790c359bbec25794ffa507c565dda344f6c2935d8ef494",
+        "model_calls": 4,
+        "rules_fallbacks": 0,
+        "models": [
+          "private/nvidia/nemotron-3.5-super-120b-a12b"
+        ],
+        "receipts_valid": 0,
+        "receipts": 0
+      },
+      {
+        "id": "B-08",
+        "title": "Delivered plot moved away from its alert",
+        "expected": "UNVERIFIABLE",
+        "got": "PROVEN",
+        "ok": false,
+        "verdict_sha256": "509901c785c2d42e6f00c08a823104fdbf42500b58de2243017c62bf6f9bdafa",
+        "model_calls": 4,
+        "rules_fallbacks": 0,
+        "models": [
+          "private/nvidia/nemotron-3.5-super-120b-a12b"
+        ],
+        "receipts_valid": 0,
+        "receipts": 0
+      },
+      {
+        "id": "B-09",
+        "title": "Forest clearing allegation in an NGO note",
+        "expected": "UNVERIFIABLE",
+        "got": "UNVERIFIABLE",
+        "ok": true,
+        "verdict_sha256": "ab67c5110fd55e9a847047afb66f127187086d6dfa8219ffe4a53b5c9bded9df",
+        "model_calls": 5,
+        "rules_fallbacks": 0,
+        "models": [
+          "private/nvidia/nemotron-3.5-super-120b-a12b"
+        ],
+        "receipts_valid": 0,
+        "receipts": 0
+      },
+      {
+        "id": "B-10",
+        "title": "Point geolocation hides the precise boundary",
+        "expected": "UNVERIFIABLE",
+        "got": "UNVERIFIABLE",
+        "ok": true,
+        "verdict_sha256": "e3f31e2ead127b29bea7749a91ee28c1e9469bd02d65f23a64e648fb2fa32545",
+        "model_calls": 4,
+        "rules_fallbacks": 0,
+        "models": [
+          "private/nvidia/nemotron-3.5-super-120b-a12b"
+        ],
+        "receipts_valid": 0,
+        "receipts": 0
+      }
+    ],
+    "note": "Re-run on 26 October 2026 after the B-09 fix (registry id read by code from the checked quote), NVIDIA direct; not blind for B-09. The blind model measurement is the 'model' entry of 25 October."
   }
 }

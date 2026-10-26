@@ -268,6 +268,7 @@ the first run), and `python -m scripts.blind_set run` refuses to start if the fi
 |---|---|---|---|
 | Rules alone, sample mode | **7/10** | **0** | 2 |
 | With Nemotron 3.5 Super, NVIDIA direct (16 model calls, 13 rule fallbacks after failed calls) | **6/10** | **0** | 3 |
+| Same set, re-run on 26 October after the B-09 fix below, so no longer blind for B-09 (NVIDIA direct, 37 model calls, 3 rule fallbacks) | 7/10 | 0 | 2 |
 
 The misses, as they came:
 
@@ -283,8 +284,8 @@ The misses, as they came:
 - **B-09**, with the model only. The NGO note named the supplier by its registry id (F-031); the
   model's reading put the id where a name goes, no supplier matched, and the mention was dropped:
   PROVEN, a false clear the rules alone did not make. Fixed after the run: the id is now read by
-  code from the checked quote (`tests/test_blind_set.py`). The scores above are from before the fix;
-  measuring it needs a fresh set.
+  code from the checked quote (`tests/test_blind_set.py`). The blind scores above are from before the fix;
+  the re-run of 26 October gets B-09 right, but a fair measure of the fix needs a fresh set.
 
 No case was accused wrongly. A first model pass the same evening also scored 7/10, with B-09 read by
 the rules after its model calls failed; only the second pass's details are kept. The author gave one
