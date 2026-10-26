@@ -8,8 +8,8 @@ PROVEN, CONTRADICTED or UNVERIFIABLE, shows why down to the database row,
 and ships every verdict with a receipt that one command re-derives offline.
 
 [![Track](https://img.shields.io/badge/Open%20Agent%20Hackathon%202026-The%20Agent%20That%20Can%20Explain%20Why-2f6f4a)](docs/SUBMISSION.md)
-[![Tests](https://img.shields.io/badge/tests-754%20passing-2f6f4a)](tests/)
-[![Nightshift](https://img.shields.io/badge/Nightshift%20receipts-89%2F89%20verified-2f6f4a)](data/bench_nightshift.json)
+[![Tests](https://img.shields.io/badge/tests-769%20passing-2f6f4a)](tests/)
+[![Nightshift](https://img.shields.io/badge/Nightshift%20receipts-85%2F85%20verified%2C%20memory%20isolated-2f6f4a)](data/bench_nightshift.json)
 [![Meterless](https://img.shields.io/badge/Meterless%20engines-World%20Model%20%C2%B7%20H--MEM%20%C2%B7%20Scout-5b3fa8)](meterless/)
 [![Zetaris](https://img.shields.io/badge/data-Zetaris-2b4c7e)](app/adapters/zetaris.py)
 [![License](https://img.shields.io/badge/license-Apache--2.0-555)](LICENSE)
