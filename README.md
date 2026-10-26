@@ -29,7 +29,7 @@ and ships every verdict with a receipt that one command re-derives offline.
 | **The problem** | From 30 December 2026, cocoa sold in the EU must come from land not deforested after 31 December 2020; the importer carries the proof, plot by plot |
 | **The rule that matters** | The model reads, fixed rules in code decide: same data, same verdict, same seal, live or offline |
 | **Against one model given everything** | Nemotron alone, with every table and our rules in its prompt: 5 to 12 of 21 right, 5 to 10 false accusations per pass. GreenTrace: 21/21, none |
-| **Every model call, signed** | Through Meterless Nightshift: 21/21 on the trap cases, 89/89 Ed25519 receipts verified (Nightshift's own memory was on: [see the bench](#bench-21-trap-cases)) |
+| **Every model call, signed** | Through Meterless Nightshift: 21/21 on the trap cases, 85/85 Ed25519 receipts verified, each call isolated from Nightshift's own memory ([found and fixed on 26 October](#bench-21-trap-cases)) |
 | **Check it yourself** | `python judge.py`: seven of these claims re-checked on your machine, offline, in about 90 s |
 | **Forged evidence** | 3,020 of 3,020 forged receipt values caught by `verify.py`, offline; 177 of 177 that would move the verdict, even with every hash rewritten |
 | **Tested in public** | Two Reddit posts, about 20,000 and 780 views, 30 upvotes and 30 comments (counted by the author on 25 October 2026); the practitioners' advice is in the build |
@@ -58,8 +58,8 @@ What practitioners told us on Reddit, and where it is in the build: [`docs/SUBMI
    No key, no network, no Zetaris, no Nightshift: it runs the real engine in sample mode and prints
    PASS or FAIL for seven claims of this README: the same seal twice and as committed; a receipt made
    on the spot that `verify.py` re-derives, and a forged copy (alert A-221 dated 2019-03-14) it
-   catches; the flip CONTRADICTED to PROVEN; the real plots P-042 and P-041; the 94 kept Nightshift
-   receipts re-verified (and how many say Nightshift's memory was on); the 21 trap cases at 18/21;
+   catches; the flip CONTRADICTED to PROVEN; the real plots P-042 and P-041; the 179 kept Nightshift
+   receipts re-verified, with how many say Nightshift's memory was on (25 October) or not (26 October); the 21 trap cases at 18/21;
    the blind set, its frozen hash checked, at 7/10 on rules alone.
    It writes `logs/judge/report.md`. On 26 October 2026 here: 7/7 in 90 s.
 
@@ -231,21 +231,29 @@ through the real agents.
 |---|---|
 | Rules alone, sample mode (`python -m scripts.bench`, checked by `tests/test_pipeline.py`) | **18/21** |
 | With Nemotron 3.5 (`python -m scripts.bench --model`, NVIDIA direct), measured on 22 October 2026 | **21/21** |
-| Through Meterless Nightshift (Nemotron 3 Ultra 550B), `--model --save-receipts`, 25 October 2026: 89 model calls, 0 rule fallbacks, **89/89 signed receipts verify** (`data/bench_nightshift.json`) | **21/21** |
+| Through Meterless Nightshift (Nemotron 3 Ultra 550B), `--model --save-receipts`, 25 October 2026, with Nightshift's own memory on (see below): 89 model calls, 0 rule fallbacks, 89/89 signed receipts verify (`data/bench_nightshift_25_10_memory_on.json`) | 21/21 |
+| Through Meterless Nightshift again, 26 October 2026, with a `meterless-scope` of its own on every call (`METERLESS_FRESH_SCOPE=1`), so Nightshift's memory injects nothing: **85/85 signed receipts verify, 0 with memory injected**; case 10 went to NVIDIA directly when Nightshift's model list timed out, and one of its reads to the rules after an NVIDIA 500 (`data/bench_nightshift.json`) | **21/21** |
 
 Rules alone miss cases 12, 17 and 18: an NGO naming a supplier and a plot in free text, a "100%"
 that covers only the labelled programme, and an admission hidden in an annex need a model to read
 the reports. The 21/21 is a dated measurement, not a promise:
 model answers can vary from run to run.
 
-One thing we found in our own receipts on 26 October, after the run: Nightshift's built-in memory
-was on. Each of the 89 receipts records `hmem.injected` = 1 or 2 (records Nightshift added to our
-prompt itself), and the receipts keep their ids, not their text. So the cases of the Nightshift run
-were not isolated from each other at the model level, and we cannot rule out that an earlier case's
-answer reached a later one. What bounds the effect: the verdict comes from the rules on the case's own
-rows, and a quote counts only if it is found word for word in the case's own documents. The rules-alone
-18/21, the NVIDIA-direct 21/21 and the blind set do not go through Nightshift. Next run: Nightshift's
-memory off, and the bench repeated.
+Found in our own receipts on 26 October, then fixed and measured again the same day. During the
+25 October run, Nightshift's built-in memory was on: each of its 89 receipts records `hmem.injected`
+= 1 or 2. Nightshift's code says what that is (`engine/js/engine/orchestrator.js`): it adds "PRIOR
+VETTED ANSWERS to similar past requests" of the same `meterless-scope` in front of the prompt, and
+its store held our earlier Extractor answers, NGO quotes included. So the cases of that
+run were not isolated from each other at the model level. What bounded the effect: the verdict comes
+from the rules on the case's own rows, and a quote counts only if it is found word for word in the
+case's own documents. The fix uses Nightshift's own rule: its scope is a hard wall on read and write
+(`hmem.js`), so with `METERLESS_FRESH_SCOPE=1` every call gets a scope of its own and nothing from
+another case, or another client, can reach it (`app/adapters/llm.py`, tested in `tests/test_llm.py`).
+Re-run on 26 October: 21/21, and 0 of the 85 receipts with memory injected. Nine answers came back
+without their signed envelope inline; `python -m scripts.recover_nightshift_receipts` took those nine
+from Nightshift's own receipt log by receipt id, kept them only because their Ed25519 signatures
+verify under the same key, and marks each `envelope_source`. For a compliance tool this is not a
+detail: one importer's answers must never reach another importer's prompt.
 
 ### A blind set, written by another model
 
@@ -489,8 +497,8 @@ more. Decision support, not a legal opinion, not a public rating.
   models run in NVIDIA's cloud, Nightshift routes, signs a receipt per answer and keeps the cache.
   Nightshift currently excludes Nemotron 3.5 Super VL (repeated empty answers), so the deep lane is
   pinned to Nemotron 3 Ultra 550B through it. The public demo still runs in sample mode, with no key.
-  Nightshift's own memory was on during our recorded Nightshift runs (the bench and the live run in
-  `output_examples/live/`): see the note under the bench.
+  Nightshift's own memory was on during the 25 October runs (the first bench and the live run in
+  `output_examples/live/`); the 26 October bench gives every call its own scope: see the note under the bench.
 - A satellite alert or a map cell is not legal proof; 30 m maps can misread a few cells.
 - Every verdict needs a human review before any decision. The plot file says "no issue found by
   GreenTrace", never more; supplier letters are drafts that ask, never accuse.

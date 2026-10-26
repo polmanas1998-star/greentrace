@@ -147,13 +147,15 @@ def check_nightshift() -> tuple[bool, str]:
     from scripts.verify_nightshift_receipts import check
     files = sorted((ROOT / "data" / "nightshift_receipts").glob("*.jsonl")) \
         + sorted((ROOT / "output_examples" / "live").glob("*receipts.jsonl"))
-    lines = [json.loads(t) for f in files for t in f.read_text(encoding="utf-8").splitlines() if t.strip()]
-    valid = sum(not check(line) for line in lines)
-    injected = sum(bool(((line["envelope"]["body"].get("receipt") or {}).get("hmem") or {}).get("injected"))
-                   for line in lines)
-    return valid == len(lines) > 0, f"{valid}/{len(lines)} signed receipts verify (signer meterlessd); " \
-                                    f"{injected} of them say Nightshift's own memory added records " \
-                                    f"to the prompt (disclosed in the README)"
+    parts, total, total_valid = [], 0, 0
+    for f in files:
+        lines = [json.loads(t) for t in f.read_text(encoding="utf-8").splitlines() if t.strip()]
+        valid = sum(not check(line) for line in lines)
+        injected = sum(bool(((line["envelope"]["body"].get("receipt") or {}).get("hmem") or {}).get("injected"))
+                       for line in lines if isinstance(line.get("envelope"), dict))
+        total, total_valid = total + len(lines), total_valid + valid
+        parts.append(f"{f.stem}: {valid}/{len(lines)} verify, Nightshift's memory injected in {injected}")
+    return total_valid == total > 0, f"{total_valid}/{total} signed receipts verify (signer meterlessd). " + "; ".join(parts)
 
 
 CHECKS = [

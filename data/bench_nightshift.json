@@ -1,12 +1,11 @@
 {
-  "measured_on": "2026-10-25",
-  "receipts_file": "data/nightshift_receipts/bench_20261025T1154Z.jsonl",
+  "measured_on": "2026-10-26",
+  "receipts_file": "data/nightshift_receipts/bench_20261026T1826Z.jsonl",
   "cases": 21,
   "score": 21,
-  "model_calls": 89,
-  "rules_fallbacks": 0,
-  "receipts": 89,
-  "receipts_valid": 89,
+  "model_calls": 87,
+  "rules_fallbacks": 1,
+  "receipts": 85,
   "routed_models": [
     "nvidia/nemotron-3-ultra-550b-a55b"
   ],
@@ -150,7 +149,7 @@
       "model_calls": 4,
       "rules_fallbacks": 0,
       "receipts": 4,
-      "receipts_valid": 4,
+      "receipts_valid": 2,
       "models": [
         "nvidia/nemotron-3-ultra-550b-a55b"
       ]
@@ -163,12 +162,12 @@
       "ok": true,
       "verdict_sha256": "e7511098a094795258d80b0873a026c74094a47c5a47b3664335a92e6c3e00d9",
       "degraded": false,
-      "model_calls": 4,
-      "rules_fallbacks": 0,
-      "receipts": 4,
-      "receipts_valid": 4,
+      "model_calls": 2,
+      "rules_fallbacks": 1,
+      "receipts": 0,
+      "receipts_valid": 0,
       "models": [
-        "nvidia/nemotron-3-ultra-550b-a55b"
+        "private/nvidia/nemotron-3.5-super-120b-a12b"
       ]
     },
     {
@@ -182,7 +181,7 @@
       "model_calls": 4,
       "rules_fallbacks": 0,
       "receipts": 4,
-      "receipts_valid": 4,
+      "receipts_valid": 3,
       "models": [
         "nvidia/nemotron-3-ultra-550b-a55b"
       ]
@@ -198,7 +197,7 @@
       "model_calls": 5,
       "rules_fallbacks": 0,
       "receipts": 5,
-      "receipts_valid": 5,
+      "receipts_valid": 4,
       "models": [
         "nvidia/nemotron-3-ultra-550b-a55b"
       ]
@@ -214,7 +213,7 @@
       "model_calls": 5,
       "rules_fallbacks": 0,
       "receipts": 5,
-      "receipts_valid": 5,
+      "receipts_valid": 4,
       "models": [
         "nvidia/nemotron-3-ultra-550b-a55b"
       ]
@@ -230,7 +229,7 @@
       "model_calls": 4,
       "rules_fallbacks": 0,
       "receipts": 4,
-      "receipts_valid": 4,
+      "receipts_valid": 3,
       "models": [
         "nvidia/nemotron-3-ultra-550b-a55b"
       ]
@@ -310,7 +309,7 @@
       "model_calls": 5,
       "rules_fallbacks": 0,
       "receipts": 5,
-      "receipts_valid": 5,
+      "receipts_valid": 4,
       "models": [
         "nvidia/nemotron-3-ultra-550b-a55b"
       ]
@@ -326,7 +325,7 @@
       "model_calls": 4,
       "rules_fallbacks": 0,
       "receipts": 4,
-      "receipts_valid": 4,
+      "receipts_valid": 3,
       "models": [
         "nvidia/nemotron-3-ultra-550b-a55b"
       ]
@@ -342,10 +341,14 @@
       "model_calls": 4,
       "rules_fallbacks": 0,
       "receipts": 4,
-      "receipts_valid": 4,
+      "receipts_valid": 3,
       "models": [
         "nvidia/nemotron-3-ultra-550b-a55b"
       ]
     }
-  ]
+  ],
+  "receipts_valid_inline": 76,
+  "receipts_valid_after_recovery": 85,
+  "memory_isolation": "METERLESS_FRESH_SCOPE=1: a meterless-scope per call; 0 of 85 receipts with hmem injected",
+  "recovery": "9 envelopes missing inline, taken from Nightshift's receipt log by scripts/recover_nightshift_receipts.py, kept because their signatures verify"
 }

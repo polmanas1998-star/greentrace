@@ -102,6 +102,19 @@ def test_meterless_answers_first_on_a_pinned_lane_with_replayable_settings(trace
     assert traced.lines()[1]["model"] == FAST  # the model that answered, not just the lane asked for
 
 
+def test_fresh_scope_gives_every_call_a_meterless_scope_of_its_own(traced):
+    # Nightshift injects prior answers of the same scope into a prompt; a scope per call injects none.
+    fakes = {"meterless": FakeClient(GOOD, GOOD, model=FAST), "nvidia": FakeClient()}
+    models = gate(env(METERLESS_FRESH_SCOPE="1"), fakes, traced)
+
+    models.complete_json("Writer", "Word the verdict.", BLOCKS, SCHEMA)
+    models.complete_json("Evaluator", "Refute it.", BLOCKS, SCHEMA)
+
+    scopes = [call["extra_headers"]["meterless-scope"] for call in fakes["meterless"].calls]
+    assert len(scopes) == 2 and len(set(scopes)) == 2
+    assert all(scope.startswith("greentrace-") and scope != "user" for scope in scopes)
+
+
 def test_fallback_chain_meterless_then_nvidia_then_rules(traced):
     # Guarded on purpose: stop the chain after one provider, or drop the retry, and this goes red.
     fakes = {"meterless": FakeClient(down(), down()), "nvidia": FakeClient(GOOD, down(), down())}

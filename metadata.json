@@ -60,7 +60,7 @@
         "app/memory/scout.py",
         "scripts/scout_bench.py"
       ],
-      "measured": "21 trap cases through Nightshift: 21/21, 89 model calls, 0 rule fallbacks, 89/89 receipts verify (data/bench_nightshift.json), with Nightshift's own memory on (1-2 records injected per call, see README); live run with every sponsor: output_examples/live/02_contradicted_live_nightshift.*; Scout: official harness all gates passed (32-example smoke set), 1/27 case paragraphs blocked (the case-19 injection), held-out 4/5 attacks and 0/4 clean look-alikes blocked (data/bench_scout.json); blind set of 10 cases written by another model and frozen by hash before the run: 7/10 rules alone, 6/10 with Nemotron (NVIDIA direct, 13 rule fallbacks), 0 false accusations (data/bench_blind.json)"
+      "measured": "21 trap cases through Nightshift: 21/21 on 25 Oct with Nightshift's own memory on (89/89 receipts, data/bench_nightshift_25_10_memory_on.json), and 21/21 again on 26 Oct with a meterless-scope per call so its memory injects nothing (85/85 receipts verify, 0 injected, data/bench_nightshift.json); live run with every sponsor: output_examples/live/02_contradicted_live_nightshift.*; Scout: official harness all gates passed (32-example smoke set), 1/27 case paragraphs blocked (the case-19 injection), held-out 4/5 attacks and 0/4 clean look-alikes blocked (data/bench_scout.json); blind set of 10 cases written by another model and frozen by hash before the run: 7/10 rules alone, 6/10 with Nemotron (NVIDIA direct, 13 rule fallbacks), 0 false accusations (data/bench_blind.json)"
     },
     "nvidia": {
       "used_for": "Nemotron 3.5 on two pinned lanes (fast, deep): reading reports, planning, proposing refutations; the rules decide",

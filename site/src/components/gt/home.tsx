@@ -262,7 +262,7 @@ export function Proof() {
             <span className="text-gt-muted">seal 24035b459821721e168619c808d35a6a03819b9feb113dac3ffabca4cba56eb0</span>{"\n\n"}
             <span className="text-gt-muted">$</span> python judge.py{"\n"}
             <span className="text-gt-proven">7/7</span> checks pass in 90 s: same seal twice, a forged receipt caught, the flip, the
-            real plots, 94 Nightshift receipts, the 21 trap cases, the blind set.
+            real plots, 179 Nightshift receipts, the 21 trap cases, the blind set.
           </pre>
         </div>
         <div className="flex flex-col justify-between rounded-[14px] border border-gt-line bg-[linear-gradient(160deg,#14402B_0%,#0f2a1d_100%)] p-8 md:col-span-2">

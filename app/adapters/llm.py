@@ -35,6 +35,7 @@ import os
 import re
 import time
 import urllib.parse
+import uuid
 from dataclasses import dataclass, field
 from typing import Any, Callable, Mapping, Optional, Sequence
 
@@ -89,6 +90,22 @@ _FENCE = re.compile(r"^```(?:json)?\s*|\s*```$")
 _SECRET_SHAPES = re.compile(r"\b(?:nvapi|sk)-[\w-]+|Bearer\s+\S+")
 
 
+def _flag(env: Mapping[str, str], name: str) -> bool:
+    return env.get(name, "").strip().lower() in ("1", "true", "yes", "on")
+
+
+def _chat_headers(provider: "Provider") -> Optional[dict[str, str]]:
+    """The chat headers of one request. Nightshift keeps prior answers in its own H-MEM tier and
+    injects the closest ones into later prompts of the same meterless-scope ("PRIOR VETTED ANSWERS",
+    engine/js/engine/orchestrator.js); its scope is a hard wall on read and write (hmem.js). With
+    METERLESS_FRESH_SCOPE=1 every call gets a scope of its own, so nothing from another case, or
+    another client, can reach the prompt. Without it, the contract's meterless-scope: user."""
+    headers = dict(provider.chat_headers)
+    if provider.fresh_scope:
+        headers["meterless-scope"] = f"greentrace-{uuid.uuid4().hex}"
+    return headers or None
+
+
 @dataclass
 class Provider:
     name: str  # meterless | nvidia
@@ -100,6 +117,7 @@ class Provider:
     chat_headers: dict[str, str]  # on chat requests only
     local: bool  # on this machine or the local network: never through a proxy
     chat_body: dict[str, Any] = field(default_factory=dict)  # extra request fields on chat requests
+    fresh_scope: bool = False  # Meterless: a new meterless-scope per call, so Nightshift's memory injects nothing
     client: Any = None
     seed_ok: bool = True
     down: Optional[str] = None  # why it stopped answering during this run
@@ -155,7 +173,7 @@ def configure(name: str, env: Mapping[str, str]) -> tuple[Optional[Provider], Op
                                  f"never meterless/auto: {model!r}")
         return Provider("meterless", normalise_runtime_url(url), token, models, TIMEOUT_S["meterless"],
                         {"meterless-app": APP_ID}, {"meterless-scope": "user"}, local=True,
-                        chat_body=NO_THINKING), None
+                        chat_body=NO_THINKING, fresh_scope=_flag(env, "METERLESS_FRESH_SCOPE")), None
     if name == "nvidia":
         key = env.get("MODEL_API_KEY", "").strip()
         if not key:
@@ -420,7 +438,7 @@ class ModelGate:
             try:
                 response = self._patiently(provider, agent, asked, lambda: provider.client.chat.completions.create(
                     model=model, messages=messages, temperature=0, max_tokens=max_tokens,
-                    extra_headers=provider.chat_headers or None, extra_body=provider.chat_body or None,
+                    extra_headers=_chat_headers(provider), extra_body=provider.chat_body or None,
                     **({"seed": SEED} if provider.seed_ok else {}),
                     **({"timeout": min(timeout_s, provider.timeout_s)} if timeout_s else {}),
                 ))
