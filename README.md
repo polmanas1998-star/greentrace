@@ -30,7 +30,7 @@ and ships every verdict with a receipt that one command re-derives offline.
 | **The rule that matters** | The model reads, fixed rules in code decide: same data, same verdict, same seal, live or offline |
 | **Against one model given everything** | Nemotron alone, with every table and our rules in its prompt: 5 to 12 of 21 right, 5 to 10 false accusations per pass. GreenTrace: 21/21, none |
 | **Every model call, signed** | Through Meterless Nightshift: 21/21 on the trap cases, 89/89 Ed25519 receipts verified (Nightshift's own memory was on: [see the bench](#bench-21-trap-cases)) |
-| **Check it yourself** | `python judge.py`: six of these claims re-checked on your machine, offline, in about a minute |
+| **Check it yourself** | `python judge.py`: seven of these claims re-checked on your machine, offline, in about 90 s |
 | **Forged evidence** | 3,020 of 3,020 forged receipt values caught by `verify.py`, offline; 177 of 177 that would move the verdict, even with every hash rewritten |
 | **Tested in public** | Two Reddit posts, about 20,000 and 780 views, 30 upvotes and 30 comments (counted by the author on 25 October 2026); the practitioners' advice is in the build |
 
@@ -52,15 +52,16 @@ What practitioners told us on Reddit, and where it is in the build: [`docs/SUBMI
 0. **One command that re-checks our claims on your machine.** After `pip install -r requirements.txt`:
 
    ```bash
-   python judge.py          # about a minute; --quick skips the 21-case bench (about 20 s)
+   python judge.py          # about 90 s; --quick skips the two benches (about 20 s)
    ```
 
    No key, no network, no Zetaris, no Nightshift: it runs the real engine in sample mode and prints
-   PASS or FAIL for six claims of this README: the same seal twice and as committed; a receipt made
+   PASS or FAIL for seven claims of this README: the same seal twice and as committed; a receipt made
    on the spot that `verify.py` re-derives, and a forged copy (alert A-221 dated 2019-03-14) it
    catches; the flip CONTRADICTED to PROVEN; the real plots P-042 and P-041; the 94 kept Nightshift
-   receipts re-verified (and how many say Nightshift's memory was on); the 21 trap cases at 18/21.
-   It writes `logs/judge/report.md`. On 26 October 2026 here: 6/6 in 67 s.
+   receipts re-verified (and how many say Nightshift's memory was on); the 21 trap cases at 18/21;
+   the blind set, its frozen hash checked, at 7/10 on rules alone.
+   It writes `logs/judge/report.md`. On 26 October 2026 here: 7/7 in 90 s.
 
 1. **The real plot P-042.** On https://greentrace-eudr.higgsfield.app/investigate, press "Run the
    real plot P-042". The verdict is CONTRADICTED: "3.42 ha that the EU map counted as forest in
